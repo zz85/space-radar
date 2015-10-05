@@ -8,17 +8,25 @@ function explore(dir, level) {
 	level ++
 	let total = 0
 
-	let stat = fs.lstatSync(dir)
-	if (stat.isFile())
-	  total += stat.size
-	else if (stat.isDirectory()) {
-		let files = fs.readdirSync(dir)
-		files.forEach(file => {
-			total += explore(path.join(dir, file), level)
-		})
+	try {
+		let stat = fs.lstatSync(dir)
+		if (stat.isFile())
+		  total += stat.size
+		else if (stat.isDirectory()) {
+			let files = fs.readdirSync(dir)
+			files.forEach(file => {
+				total += explore(path.join(dir, file), level)
+			})
+			// for (let f = 0; f < files.length; f++) {
+			// 	total += explore(path.join(dir, files[f]), level)
+			// }
+		}
+
+		// if (level <= 2) console.log(format(total), dir, level)
+	} catch (e) {
+		console.error(e.stack)
 	}
 
-	// if (level <= 2) console.log(format(total), dir, level)
 	return total
 }
 
@@ -32,7 +40,7 @@ function format(bytes) {
 	return mb.toFixed(2) + 'MB'
 }
 
-let target = '..'
+let target = '../..'
 console.time('sync')
 console.log(fs, path, format(explore(target)));
 console.timeEnd('sync')
