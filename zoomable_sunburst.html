@@ -9,8 +9,7 @@ path {
 
 </style>
 <body>
-<script src="node_modules/d3/d3.min.js"></script>
-<script src="du.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 <script>
 
 var width = 960,
@@ -40,7 +39,7 @@ var arc = d3.svg.arc()
     .innerRadius(function(d) { return Math.max(0, y(d.y)); })
     .outerRadius(function(d) { return Math.max(0, y(d.y + d.dy)); });
 
-d3.json("flare.json", function(error, root) {
+d3.json("/mbostock/raw/4063550/flare.json", function(error, root) {
   if (error) throw error;
 
   var path = svg.selectAll("path")
@@ -72,22 +71,3 @@ function arcTween(d) {
 }
 
 </script>
-
-
-<!-- <!DOCTYPE html>
-<hmtl>
-   <head>
-     <title>Hello World!</title>
-   </head>
-   <body>
-      <h1>Hello World!</h1>
-      <script>
-      var fs = require('fs');
-
-      var main = fs.readFileSync('index.html')
-      console.log(main + '');
-
-        console.log('hello from renderer');
-      </script>
-   </body>
-</html> -->
