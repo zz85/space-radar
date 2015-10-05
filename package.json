@@ -14,5 +14,8 @@
     "visualization"
   ],
   "author": "Joshua Koo",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "d3": "^3.5.6"
+  }
 }
