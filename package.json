@@ -16,6 +16,7 @@
   "author": "Joshua Koo",
   "license": "MIT",
   "devDependencies": {
-    "d3": "^3.5.6"
+    "d3": "^3.5.6",
+    "du": "^0.1.0"
   }
 }
