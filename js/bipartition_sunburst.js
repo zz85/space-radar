@@ -8,7 +8,7 @@ var width = len,
     height = len,
     radius = len / 2 - 10;
 
-var LEVELS = 2;
+var LEVELS = 5;
 
 var hue = d3.scale.category10();
 
@@ -30,17 +30,11 @@ var partition = d3.layout.partition()
     .size([2 * Math.PI, radius])
     ;
 
-// var arc = d3.svg.arc()
-//     .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
-//     .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
-//     .innerRadius(function(d) { return Math.max(0, y(d.y)); })
-//     .outerRadius(function(d) { return Math.max(0, y(d.y + d.dy)); });
-
 var arc = d3.svg.arc()
     .startAngle(function(d) { return d.x; })
     .endAngle(function(d) { return d.x + d.dx - .01 / (d.depth + .5); })
-    .innerRadius(function(d) { return radius / 3 * d.depth; })
-    .outerRadius(function(d) { return radius / 3 * (d.depth + 1) - 1; });
+    .innerRadius(function(d) { return radius / LEVELS * d.depth; })
+    .outerRadius(function(d) { return radius / LEVELS * (d.depth + 1) - 1; });
 
 
 // d3.json("flare.json", onJson);
@@ -65,11 +59,11 @@ function onJson(error, root) {
 
   // Now redefine the value function to use the previously-computed sum.
   partition
-      .children(function(d, depth) { return depth < LEVELS ? d._children : null; })
+      .children(function(d, depth) { return depth < LEVELS - 1 ? d._children : null; })
       .value(function(d) { return d.sum; });
 
   var center = svg.append("circle")
-      .attr("r", radius / 3)
+      .attr("r", radius / LEVELS)
       .on("click", zoomOut);
 
   center.append("title")

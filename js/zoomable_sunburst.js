@@ -6,7 +6,7 @@ function onResize() {
 
 var width = len,
     height = len,
-    radius = len / 2;
+    radius = len / 3;
 
 var x = d3.scale.linear()
     .range([0, 2 * Math.PI]);
@@ -36,7 +36,7 @@ var partition = d3.layout.partition()
     // .size([2 * Math.PI, radius])
     ;
 
-var expanded = 100;
+var expanded = 50;
 var arc = d3.svg.arc()
     .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
     .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
