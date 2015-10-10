@@ -11,6 +11,10 @@ function onResize() {
    - filetype
    - last modified
    - number of files
+
+DONE
+ - custom levels
+ - percentage as root of inner core
 */
 
 var width = len,
@@ -89,9 +93,8 @@ function onJson(error, root) {
       .on("mouseover", mouseover)
 
   function mouseover(d) {
-    // TODO make precentage as root of inner core.
-    var percent = d.parent ? (d.value / d.parent.value * 100).toFixed(2) + '%' : ''
-    console.log(format(d.value), percent, d.key, d.sum, root)
+    var percent = (d.value / root.value * 100).toFixed(2) + '%'
+    console.log(format(d.value), percent, d.key, d.sum)
     center.text(d.name + '\t' + format(d.value))
 
   }
