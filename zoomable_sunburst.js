@@ -11,7 +11,8 @@ var width = len,
 var x = d3.scale.linear()
     .range([0, 2 * Math.PI]);
 
-var y = d3.scale.sqrt()
+// d3.scale.sqrt
+var y = d3.scale.linear()
     .range([0, radius]);
 
 var color = d3.scale.category20c();
@@ -35,11 +36,12 @@ var partition = d3.layout.partition()
     // .size([2 * Math.PI, radius])
     ;
 
+var expanded = 100;
 var arc = d3.svg.arc()
     .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
     .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
-    .innerRadius(function(d) { return Math.max(0, y(d.y)); })
-    .outerRadius(function(d) { return Math.max(0, y(d.y + d.dy)); });
+    .innerRadius(function(d) { return expanded + Math.max(0, y(d.y)); })
+    .outerRadius(function(d) { return expanded + Math.max(0, y(d.y + d.dy)); });
 
 // d3.json("flare.json", onJson);
 // d3.json("test.json", onJson);

@@ -85,7 +85,9 @@ function onJson(error, root) {
       .on("mouseover", mouseover)
 
   function mouseover(d) {
+    console.log(d.name + '\t' + format(d.value))
     center.text(d.name + '\t' + format(d.value))
+    if (d.parent) console.log((d.value / d.parent.value * 100).toFixed(2) + '%')
   }
 
   function click(d) {
