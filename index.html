@@ -7,10 +7,48 @@ path {
   fill-rule: evenodd;
 }
 
+
+circle,
+path {
+  cursor: pointer;
+}
+
+circle {
+  fill: none;
+  pointer-events: all;
+}
+
+
+/* treemap */
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 960px;
+}
+
+form {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.node {
+  border: solid 1px white;
+  font: 10px sans-serif;
+  line-height: 12px;
+  overflow: hidden;
+  position: absolute;
+  text-indent: 2px;
+}
+
+
 </style>
 <body>
 <script src="node_modules/d3/d3.js"></script>
 <script src="du.js"></script>
 <script src="zoomable_sunburst.js"></script>
+<!-- <script src="treemap.js"></script> -->
 </body>
 </html>

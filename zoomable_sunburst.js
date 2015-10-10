@@ -37,10 +37,15 @@ function onJson(error, root) {
     .enter().append("path")
       .attr("d", arc)
       .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
-      .on("click", click);
+      .on("click", click)
+      .on('mouseover', mouseover);
+
+  function mouseover(d) {
+    console.log(d.name, format(d.value));
+  }
 
   function click(d) {
-    console.log(d);
+    console.log(d.name, format(d.value));
     path.transition()
       .duration(750)
       .attrTween("d", arcTween(d));

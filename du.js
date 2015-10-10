@@ -78,7 +78,7 @@ function format(bytes) {
 	return mb.toFixed(2) + 'MB'
 }
 
-let target = '..'
+let target = '.'
 
 console.time('jsonFS')
 var json = jsonFS(target)
