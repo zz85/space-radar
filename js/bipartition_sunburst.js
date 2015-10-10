@@ -4,11 +4,21 @@ function onResize() {
 
 }
 
+/*
+ TODOs
+ - color by
+   - size
+   - filetype
+   - last modified
+   - number of files
+*/
+
 var width = len,
     height = len,
     radius = len / 2 - 10;
 
 var LEVELS = 5;
+var PATH_DELIMITER = '/'
 
 var hue = d3.scale.category10();
 
@@ -79,9 +89,11 @@ function onJson(error, root) {
       .on("mouseover", mouseover)
 
   function mouseover(d) {
-    console.log(d.name + '\t' + format(d.value))
+    // TODO make precentage as root of inner core.
+    var percent = d.parent ? (d.value / d.parent.value * 100).toFixed(2) + '%' : ''
+    console.log(format(d.value), percent, d.key, d.sum, root)
     center.text(d.name + '\t' + format(d.value))
-    if (d.parent) console.log((d.value / d.parent.value * 100).toFixed(2) + '%')
+
   }
 
   function click(d) {
@@ -156,7 +168,7 @@ function onJson(error, root) {
 function key(d) {
   var k = [], p = d;
   while (p.depth) k.push(p.name), p = p.parent;
-  return k.reverse().join(".");
+  return k.reverse().join(PATH_DELIMITER);
 }
 
 function fill(d) {
