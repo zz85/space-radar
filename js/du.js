@@ -38,7 +38,6 @@ function jsonFS(parent, name, level) {
 	let dir = name ? path.join(parent, name) : parent
 	name = name ? name : parent;
 
-
 	try {
 		let stat = fs.lstatSync(dir)
 		if (stat.isFile()) {
@@ -78,11 +77,11 @@ function format(bytes) {
 	return mb.toFixed(2) + 'MB'
 }
 
-let target = '.'
+let target = '..'
 
 console.time('jsonFS')
 var json = jsonFS(target)
-fs.writeFileSync('test.json', JSON.stringify(json))
+// fs.writeFileSync('test.json', JSON.stringify(json))
 console.log('json', json)
 
 console.timeEnd('jsonFS')

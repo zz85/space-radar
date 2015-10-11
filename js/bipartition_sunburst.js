@@ -10,13 +10,17 @@ function onResize() {
    - last modified
    - number of files
 - Explorer Tree View
-- Async file chec
+- Async file checking
 - Responsive
 - Git integration
 - Real Disk usage
 - Labels
 - Pie Magnifier
 - File Types
+- Threshold - hide small files
+- Hover stats
+- Canvas implementation: http://bl.ocks.org/mbostock/1276463
+- Absolute or relative file size intensity
 
 DONE
  - custom levels
@@ -30,14 +34,14 @@ var width = innerWidth,
     height = innerHeight,
     radius = len / 3;
 
-var LEVELS = 3
+var LEVELS = 5
   , PATH_DELIMITER = '/'
   , USE_COUNT = 0
 
 var hue = d3.scale.category10();
 
 var luminance = d3.scale.sqrt()
-    .domain([0, 1e6])
+    .domain([0, 1e9])
     .clamp(true)
     .range([90, 20]);
 
@@ -67,15 +71,19 @@ var legend = d3.select("body").append("div")
 // d3.json("flare.json", onJson);
 // d3.json("test.json", onJson);
 onJson(null, json)
+var current_p;
 
 function onJson(error, root) {
   if (error) throw error;
+
+
 
   // Compute the initial layout on the entire tree to sum sizes.
   // Also compute the full name and fill color for each node,
   // and stash the children so they can be restored as we descend.
   partition
     .value(d => {
+      if (Math.random() < 0.01) console.log('value1')
       return 1
     })
     .nodes(root)
@@ -85,6 +93,7 @@ function onJson(error, root) {
 
   partition
       .value((d) => {
+        if (Math.random() < 0.01)console.log('value2')
         return d.size;
       })
       .nodes(root)
@@ -97,7 +106,21 @@ function onJson(error, root) {
 
   // Now redefine the value function to use the previously-computed sum.
   partition
-      .children(function(d, depth) { return depth < LEVELS - 1 ? d._children : null; })
+      .children(function(d, depth) {
+        console.log('children');
+        if (depth >= LEVELS - 1) return null
+        if (!d._children) return null;
+
+        var children = [];
+        d._children.forEach(c => {
+          var ref = current_p || root
+          if (c.sum / ref.sum * 100 > 0.1) children.push(c)
+        })
+
+        return children;
+
+        return depth < LEVELS - 1 ? d._children : null;
+      })
       .value(function(d) {
         // decide count or sum
         return USE_COUNT ? d.count : d.sum
@@ -120,18 +143,9 @@ function onJson(error, root) {
       .on("mouseover", mouseover)
 
   function mouseover(d) {
-    var percent = (d.value / root.value * 100).toFixed(2) + '%'
-    console.log(format(d.value), percent, d.key, d.sum)
-    center.select('title').text(d.name + '\t' + format(d.value))
-
+    var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
+    // center.select('title').text(d.name + '\t' + format(d.value))
     legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
-
-
-
-  }
-
-  function click(d) {
-    console.log(d.name, format(d.value), d);
   }
 
   ///
@@ -146,9 +160,13 @@ function onJson(error, root) {
     zoom(p.parent, p);
   }
 
+  window.redraw = () => zoom(current_p, current_p);
+
   // Zoom to the specified new root.
   function zoom(root, p) {
-    click(p);
+    console.log(p.name, format(p.value), p);
+    current_p = root;
+
     if (document.documentElement.__transition__) return;
 
     // Rescale outside angles to match the new layout.
@@ -210,8 +228,8 @@ function fill(d) {
   var p = d;
   while (p.depth > 1) p = p.parent;
   // var c = d3.lab(hue(p.name));
-  var c = d3.lab(hue(p.children));
-  // var c = d3.lab(hue(p.children ? p.children.length : 0));
+  // var c = d3.lab(hue(p.children));
+  var c = d3.lab(hue(p.children ? p.children.length : 0));
   c.l = luminance(d.sum);
   return c;
 }
