@@ -1,5 +1,3 @@
-var len = Math.min(window.innerWidth, window.innerHeight);
-
 function onResize() {
 
 }
@@ -11,18 +9,30 @@ function onResize() {
    - filetype
    - last modified
    - number of files
+- Explorer Tree View
+- Async file chec
+- Responsive
+- Git integration
+- Real Disk usage
+- Labels
+- Pie Magnifier
+- File Types
 
 DONE
  - custom levels
  - percentage as root of inner core
+
 */
 
-var width = len,
-    height = len,
-    radius = len / 2 - 10;
+var len = Math.min(window.innerWidth, window.innerHeight);
 
-var LEVELS = 5;
-var PATH_DELIMITER = '/'
+var width = innerWidth,
+    height = innerHeight,
+    radius = len / 3;
+
+var LEVELS = 3
+  , PATH_DELIMITER = '/'
+  , USE_COUNT = 0
 
 var hue = d3.scale.category10();
 
@@ -50,6 +60,9 @@ var arc = d3.svg.arc()
     .innerRadius(function(d) { return radius / LEVELS * d.depth; })
     .outerRadius(function(d) { return radius / LEVELS * (d.depth + 1) - 1; });
 
+// var legend = d3.select("#legend")
+var legend = d3.select("body").append("div")
+  .attr('id', 'legend')
 
 // d3.json("flare.json", onJson);
 // d3.json("test.json", onJson);
@@ -62,7 +75,18 @@ function onJson(error, root) {
   // Also compute the full name and fill color for each node,
   // and stash the children so they can be restored as we descend.
   partition
-      .value(function(d) { return d.size; })
+    .value(d => {
+      return 1
+    })
+    .nodes(root)
+    .forEach(d => {
+      d.count = d.value
+    })
+
+  partition
+      .value((d) => {
+        return d.size;
+      })
       .nodes(root)
       .forEach(function(d) {
         d._children = d.children;
@@ -74,7 +98,10 @@ function onJson(error, root) {
   // Now redefine the value function to use the previously-computed sum.
   partition
       .children(function(d, depth) { return depth < LEVELS - 1 ? d._children : null; })
-      .value(function(d) { return d.sum; });
+      .value(function(d) {
+        // decide count or sum
+        return USE_COUNT ? d.count : d.sum
+      })
 
   var center = svg.append("circle")
       .attr("r", radius / LEVELS)
@@ -95,7 +122,11 @@ function onJson(error, root) {
   function mouseover(d) {
     var percent = (d.value / root.value * 100).toFixed(2) + '%'
     console.log(format(d.value), percent, d.key, d.sum)
-    center.text(d.name + '\t' + format(d.value))
+    center.select('title').text(d.name + '\t' + format(d.value))
+
+    legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
+
+
 
   }
 
@@ -158,7 +189,8 @@ function onJson(error, root) {
           .style("fill-opacity", function(d) { return d.depth === 2 - (root === p) ? 1 : 0; })
           .style("fill", function(d) { return d.fill; })
           .on("click", zoomIn)
-          .each(function(d) { this._current = enterArc(d); });
+          .each(function(d) { this._current = enterArc(d); })
+          .on("mouseover", mouseover);
 
       path.transition()
           .style("fill-opacity", 1)
