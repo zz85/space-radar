@@ -1,6 +1,14 @@
-function onResize() {
+// window.addEventListener('resize', onResize)
 
-}
+// function onResize() {
+//   console.log('resize')
+//   width = innerWidth
+//   height = innerHeight
+//   svg
+//     .attr("width", width)
+//     .attr("height", height)
+//   redraw()
+// }
 
 /*
  TODOs
@@ -10,8 +18,7 @@ function onResize() {
    - last modified
    - number of files
 - Explorer Tree View
-- Async file checking
-- Responsive
+- Responsive resizing
 - Git integration
 - Real Disk usage
 - Labels
@@ -22,11 +29,13 @@ function onResize() {
 - Absolute or relative file size intensity
 - return Max Depth
 - combine hidden file sizes
+- add drives
 
 DONE
  - custom levels
  - percentage as root of inner core
-- Threshold - hide small files
+ - threshold - hide small files
+ - Async file checking
 
 */
 
@@ -36,7 +45,7 @@ var width = innerWidth,
     height = innerHeight,
     radius = len / 3;
 
-var LEVELS = 5
+var LEVELS = 6
   , PATH_DELIMITER = '/'
   , USE_COUNT = 0
   , HIDE_THRESHOLD = 0.1 // percentage (use 0.01, 1)
@@ -71,19 +80,17 @@ var arc = d3.svg.arc()
 var legend = d3.select("body").append("div")
   .attr('id', 'legend')
 
-// d3.json("flare.json", onJson);
-// d3.json("test.json", onJson);
-// onJson(null, json)
 var current_p;
 
 function onJson(error, root) {
   if (error) throw error;
 
-
+  current_p = root;
 
   // Compute the initial layout on the entire tree to sum sizes.
   // Also compute the full name and fill color for each node,
   // and stash the children so they can be restored as we descend.
+  console.time('compute1')
   partition
     .value(d => {
       if (Math.random() < 0.01) console.log('value1')
@@ -93,7 +100,9 @@ function onJson(error, root) {
     .forEach(d => {
       d.count = d.value
     })
+  console.timeEnd('compute1')
 
+  console.time('compute2')
   partition
       .value((d) => {
         if (Math.random() < 0.01)console.log('value2')
@@ -106,7 +115,9 @@ function onJson(error, root) {
         d.key = key(d);
         d.fill = fill(d);
       });
+  console.timeEnd('compute2')
 
+  console.time('compute3')
   // Now redefine the value function to use the previously-computed sum.
   partition
       .children(function(d, depth) {
@@ -122,12 +133,13 @@ function onJson(error, root) {
 
         return children;
 
-        return depth < LEVELS - 1 ? d._children : null;
+        // return depth < LEVELS - 1 ? d._children : null;
       })
       .value(function(d) {
         // decide count or sum
         return USE_COUNT ? d.count : d.sum
       })
+  console.timeEnd('compute3')
 
   var center = svg.append("circle")
       .attr("r", radius / LEVELS)
@@ -205,7 +217,8 @@ function onJson(error, root) {
     // Exiting outside arcs transition to the new layout.
     if (root !== p) enterArc = insideArc, exitArc = outsideArc, outsideAngle.range([p.x, p.x + p.dx]);
 
-    d3.transition().duration(d3.event.altKey ? 7500 : 750).each(function() {
+    var transition = d3.event && d3.event.altKey ? 7500 : 750
+    d3.transition().duration(transition).each(function() {
       path.exit().transition()
           .style("fill-opacity", function(d) { return d.depth === 1 + (root === p) ? 1 : 0; })
           .attrTween("d", function(d) { return arcTween.call(this, exitArc(d)); })

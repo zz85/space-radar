@@ -97,14 +97,14 @@ function test(options, callback) {
 	// console.log('process', dir, name)
 
 	fs.lstat(dir, (err, stat) => {
-
-		let size = stat.size;
-		// console.log(dir, stat.blocks, stat.blocks * 512, stat.size)
-
 		if (err) {
 			console.error(err.stack)
 			return callback(err)
 		}
+
+		let size = stat.size;
+		// console.log(dir, stat.blocks, stat.blocks * 512, stat.size)
+
 
 		if (stat.isFile()) {
 			// console.log(name);
@@ -145,6 +145,7 @@ let queue = async.queue(test, 10)
 queue.drain = function() {
     console.log("All files are uploaded");
     console.timeEnd('async2')
+    clearInterval(checker);
 
     console.log(json);
 
@@ -152,7 +153,11 @@ queue.drain = function() {
 };
 
 var json = {};
-queue.push({parent: '..', node: json})
+let checker = setInterval(function() {
+	console.log('scanning...');
+	onJson(null, json)
+}, 5000);
+queue.push({parent: target, node: json})
 
 
 /*
