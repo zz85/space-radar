@@ -17,14 +17,16 @@ function onResize() {
 - Labels
 - Pie Magnifier
 - File Types
-- Threshold - hide small files
 - Hover stats
 - Canvas implementation: http://bl.ocks.org/mbostock/1276463
 - Absolute or relative file size intensity
+- return Max Depth
+- combine hidden file sizes
 
 DONE
  - custom levels
  - percentage as root of inner core
+- Threshold - hide small files
 
 */
 
@@ -37,6 +39,7 @@ var width = innerWidth,
 var LEVELS = 5
   , PATH_DELIMITER = '/'
   , USE_COUNT = 0
+  , HIDE_THRESHOLD = 0.01 // percentage (use 0.01, 1)
 
 var hue = d3.scale.category10();
 
@@ -114,7 +117,7 @@ function onJson(error, root) {
         var children = [];
         d._children.forEach(c => {
           var ref = current_p || root
-          if (c.sum / ref.sum * 100 > 0.1) children.push(c)
+          if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
         })
 
         return children;
@@ -141,6 +144,11 @@ function onJson(error, root) {
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)
       .on("mouseover", mouseover)
+      // .style("visibility", function(d) {
+      //   var ref = current_p || root
+      //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
+      //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
+      // })
 
   function mouseover(d) {
     var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
@@ -227,9 +235,14 @@ function key(d) {
 function fill(d) {
   var p = d;
   while (p.depth > 1) p = p.parent;
+  var c = d3.lab(hue(p.count));
+  // var c = d3.lab(hue(p.key));
   // var c = d3.lab(hue(p.name));
-  // var c = d3.lab(hue(p.children));
-  var c = d3.lab(hue(p.children ? p.children.length : 0));
+  // var c = d3.lab(hue(p._children));
+  // var c = d3.lab(hue(p.children ? p.children.length : 0));
+
+
+
   c.l = luminance(d.sum);
   return c;
 }
