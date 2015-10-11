@@ -177,7 +177,9 @@ function key(d) {
 function fill(d) {
   var p = d;
   while (p.depth > 1) p = p.parent;
-  var c = d3.lab(hue(p.name));
+  // var c = d3.lab(hue(p.name));
+  var c = d3.lab(hue(p.children));
+  // var c = d3.lab(hue(p.children ? p.children.length : 0));
   c.l = luminance(d.sum);
   return c;
 }

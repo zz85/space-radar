@@ -20,7 +20,7 @@ form {
   <label><input type="radio" name="mode" value="size"> Size</label>
   <label><input type="radio" name="mode" value="count" checked> Count</label>
 </form>
-<script src="node_modules/d3/d3.min.js"></script>
+<script src="../node_modules/d3/d3.min.js"></script>
 <script>
 
 var width = 960,
@@ -45,7 +45,7 @@ var arc = d3.svg.arc()
     .innerRadius(function(d) { return Math.sqrt(d.y); })
     .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
 
-d3.json("flare.json", function(error, root) {
+d3.json("../flare.json", function(error, root) {
   if (error) throw error;
 
   var path = svg.datum(root).selectAll("path")

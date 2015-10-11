@@ -26,7 +26,7 @@ path {
   <label><input type="radio" name="mode" value="size"> Size</label>
   <label><input type="radio" name="mode" value="count" checked> Count</label>
 </form>
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="../node_modules/d3/d3.min.js"></script>
 <script>
 
 var width = 960,
@@ -60,7 +60,7 @@ var arc = d3.svg.arc()
 // Keep track of the node that is currently being displayed as the root.
 var node;
 
-d3.json("/d/4063550/flare.json", function(error, root) {
+d3.json("../flare.json", function(error, root) {
   node = root;
   var path = svg.datum(root).selectAll("path")
       .data(partition.nodes)

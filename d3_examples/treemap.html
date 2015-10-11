@@ -29,7 +29,7 @@ form {
   <label><input type="radio" name="mode" value="size" checked> Size</label>
   <label><input type="radio" name="mode" value="count"> Count</label>
 </form>
-<script src="node_modules/d3/d3.min.js"></script>
+<script src="../node_modules/d3/d3.min.js"></script>
 <script>
 
 var margin = {top: 40, right: 10, bottom: 10, left: 10},
@@ -50,7 +50,7 @@ var div = d3.select("body").append("div")
     .style("left", margin.left + "px")
     .style("top", margin.top + "px");
 
-d3.json("flare.json", function(error, root) {
+d3.json("../flare.json", function(error, root) {
   if (error) throw error;
 
   var node = div.datum(root).selectAll(".node")

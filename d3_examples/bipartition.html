@@ -14,7 +14,7 @@ circle {
 
 </style>
 <body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<script src="../node_modules/d3/d3.min.js"></script>
 <script>
 
 var margin = {top: 350, right: 480, bottom: 350, left: 480},
@@ -43,7 +43,7 @@ var arc = d3.svg.arc()
     .innerRadius(function(d) { return radius / 3 * d.depth; })
     .outerRadius(function(d) { return radius / 3 * (d.depth + 1) - 1; });
 
-d3.json("/mbostock/raw/4063550/flare.json", function(error, root) {
+d3.json("../flare.json", function(error, root) {
 
   // Compute the initial layout on the entire tree to sum sizes.
   // Also compute the full name and fill color for each node,
