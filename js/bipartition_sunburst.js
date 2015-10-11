@@ -39,7 +39,7 @@ var width = innerWidth,
 var LEVELS = 5
   , PATH_DELIMITER = '/'
   , USE_COUNT = 0
-  , HIDE_THRESHOLD = 0.01 // percentage (use 0.01, 1)
+  , HIDE_THRESHOLD = 0.1 // percentage (use 0.01, 1)
 
 var hue = d3.scale.category10();
 
@@ -73,7 +73,7 @@ var legend = d3.select("body").append("div")
 
 // d3.json("flare.json", onJson);
 // d3.json("test.json", onJson);
-onJson(null, json)
+// onJson(null, json)
 var current_p;
 
 function onJson(error, root) {
@@ -235,13 +235,11 @@ function key(d) {
 function fill(d) {
   var p = d;
   while (p.depth > 1) p = p.parent;
-  var c = d3.lab(hue(p.count));
-  // var c = d3.lab(hue(p.key));
+  // var c = d3.lab(hue(p.count));
+  var c = d3.lab(hue(p.key));
   // var c = d3.lab(hue(p.name));
   // var c = d3.lab(hue(p._children));
   // var c = d3.lab(hue(p.children ? p.children.length : 0));
-
-
 
   c.l = luminance(d.sum);
   return c;

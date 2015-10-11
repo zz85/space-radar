@@ -79,12 +79,91 @@ function format(bytes) {
 
 let target = '..'
 
+let async = require("async")
+
+function test(options, callback) {
+	// console.log('test', arguments);
+
+	let dir, name, node;
+	node = options.node;
+	if (!options.name) {
+		dir = options.parent
+		name = options.parent
+	} else {
+		dir = path.join(options.parent, options.name)
+		name = options.name
+	}
+
+	// console.log('process', dir, name)
+
+	fs.lstat(dir, (err, stat) => {
+
+		let size = stat.size;
+		// console.log(dir, stat.blocks, stat.blocks * 512, stat.size)
+
+		if (err) {
+			console.error(err.stack)
+			return callback(err)
+		}
+
+		if (stat.isFile()) {
+			// console.log(name);
+			node.name = name;
+			node.size = size;
+			return callback(null, 0)
+		}
+
+		if (stat.isDirectory()) {
+			return fs.readdir(dir, (err, list) => {
+				if (err) console.error(err.stack)
+
+				node.name = name;
+				// node.size = size;
+				node.children = []
+
+
+				list.forEach(file => {
+					let childNode = {};
+					node.children.push(childNode)
+					queue.push({parent: dir, name: file, node: childNode})
+				}
+				);
+
+				callback(null, 0);
+			})
+		}
+
+		// console.log('ohoh', stat)
+		callback();
+	})
+}
+
+console.log('lets go');
+console.time('async2')
+let queue = async.queue(test, 10)
+
+queue.drain = function() {
+    console.log("All files are uploaded");
+    console.timeEnd('async2')
+
+    console.log(json);
+
+    onJson(null, json)
+};
+
+var json = {};
+queue.push({parent: '..', node: json})
+
+
+/*
 console.time('jsonFS')
 var json = jsonFS(target)
 // fs.writeFileSync('test.json', JSON.stringify(json))
 console.log('json', json)
-
 console.timeEnd('jsonFS')
+*/
+
+
 
 /*
 console.time('sync')
