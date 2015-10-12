@@ -43,13 +43,14 @@ var len = Math.min(window.innerWidth, window.innerHeight);
 
 var width = innerWidth,
     height = innerHeight,
-    radius = len / 3;
+    radius = len * 0.45;
 
-var LEVELS = 6
+var LEVELS = 2
   , PATH_DELIMITER = '/'
   , USE_COUNT = 0
   , HIDE_THRESHOLD = 0.1 // percentage (use 0.01, 1)
-
+  , CORE_RADIUS = radius * 0.4 // radius / LEVELS
+  , OUTER_RADIUS = radius - CORE_RADIUS
 var hue = d3.scale.category10();
 
 var luminance = d3.scale.sqrt()
@@ -73,14 +74,15 @@ var partition = d3.layout.partition()
 var arc = d3.svg.arc()
     .startAngle(function(d) { return d.x; })
     .endAngle(function(d) { return d.x + d.dx - .01 / (d.depth + .5); })
-    .innerRadius(function(d) { return radius / LEVELS * d.depth; })
-    .outerRadius(function(d) { return radius / LEVELS * (d.depth + 1) - 1; });
+    .innerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / LEVELS * (d.depth - 1); })
+    .outerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / LEVELS * (d.depth + 0) - 1; });
 
 // var legend = d3.select("#legend")
 var legend = d3.select("body").append("div")
   .attr('id', 'legend')
 
-var current_p;
+
+var current_p, max_level, current_level = 0;
 
 function onJson(error, root) {
   if (error) throw error;
@@ -105,7 +107,7 @@ function onJson(error, root) {
   console.time('compute2')
   partition
       .value((d) => {
-        if (Math.random() < 0.01)console.log('value2')
+        if (Math.random() < 0.01) console.log('value2')
         return d.size;
       })
       .nodes(root)
@@ -122,7 +124,10 @@ function onJson(error, root) {
   partition
       .children(function(d, depth) {
         console.log('children');
-        if (depth >= LEVELS - 1) return null
+        if (depth >= LEVELS) {
+          max_level = Math.max(depth, max_level);
+          return null
+        }
         if (!d._children) return null;
 
         var children = [];
@@ -133,7 +138,7 @@ function onJson(error, root) {
 
         return children;
 
-        // return depth < LEVELS - 1 ? d._children : null;
+        // return depth < LEVELS ? d._children : null;
       })
       .value(function(d) {
         // decide count or sum
@@ -141,12 +146,19 @@ function onJson(error, root) {
       })
   console.timeEnd('compute3')
 
-  var center = svg.append("circle")
-      .attr("r", radius / LEVELS)
-      .on("click", zoomOut);
+  var center = svg.append("g")
+    .on("click", zoomOut);
+
+  center
+      .append("circle")
+      .attr("r", CORE_RADIUS)
 
   center.append("title")
-      .text("zoom out");
+    .text("zoom out");
+
+  var center_text = center.append("text")
+    .attr("dx", function(d){return -20})
+    .text('hello')
 
   var path = svg.selectAll("path")
       .data(partition.nodes(root).slice(1))
@@ -170,8 +182,11 @@ function onJson(error, root) {
 
   ///
  function zoomIn(p) {
-    if (p.depth > 1) p = p.parent;
+    if (p.depth > 1) {
+      p = p.parent;
+    }
     if (!p.children) return;
+    current_level++;
     zoom(p, p);
   }
 
@@ -184,8 +199,11 @@ function onJson(error, root) {
 
   // Zoom to the specified new root.
   function zoom(root, p) {
-    console.log(p.name, format(p.value), p);
-    current_p = root;
+    max_level = 0;
+    current_level += p.depth - current_p.depth
+    center_text.html(p.key + ' - ' + format(p.value))
+    current_p = root
+    console.log('current_level', current_level)
 
     if (document.documentElement.__transition__) return;
 

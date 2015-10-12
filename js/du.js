@@ -140,12 +140,14 @@ function test(options, callback) {
 
 console.log('lets go');
 console.time('async2')
+loading.style.display = 'inline-block'
 let queue = async.queue(test, 10)
 
 queue.drain = function() {
     console.log("All files are uploaded");
     console.timeEnd('async2')
     clearInterval(checker);
+    loading.style.display = 'none'
 
     console.log(json);
 

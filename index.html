@@ -69,9 +69,29 @@ form {
   font-variant:small-caps;
 }
 
+#loading {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: fixed;
+  display: inline-block;
+  margin: auto;
+  z-index: 10;
+  width: 100px;
+  height: 100px;
+  display: none;
+}
+
 </style>
 <body>
 <script src="node_modules/d3/d3.js"></script>
+<link rel="stylesheet" href="throbber.css" type="text/css">
+<div id="loading">
+  <div class="throbber-loader">
+    Loading…
+  </div>
+</div>
 <script src="js/du.js"></script>
 <script src="js/bipartition_sunburst.js"></script>
 <!-- <script src="js/zoomable_sunburst.js"></script> -->
