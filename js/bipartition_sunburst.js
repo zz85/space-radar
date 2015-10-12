@@ -36,7 +36,7 @@ DONE
  - percentage as root of inner core
  - threshold - hide small files
  - Async file checking
-
+ - hover over states
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -147,6 +147,7 @@ function onJson(error, root) {
   console.timeEnd('compute3')
 
   var center = svg.append("g")
+    .attr("id", "core")
     .on("click", zoomOut);
 
   center
@@ -164,6 +165,7 @@ function onJson(error, root) {
       .data(partition.nodes(root).slice(1))
     .enter().append("path")
       .attr("d", arc)
+      .attr("class", "hmm")
       .style("fill", function(d) { return d.fill; })
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)
@@ -175,6 +177,8 @@ function onJson(error, root) {
       // })
 
   function mouseover(d) {
+    // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
+
     var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
     // center.select('title').text(d.name + '\t' + format(d.value))
     legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
@@ -247,6 +251,7 @@ function onJson(error, root) {
           .style("fill", function(d) { return d.fill; })
           .on("click", zoomIn)
           .each(function(d) { this._current = enterArc(d); })
+          .attr("class", "hmm")
           .on("mouseover", mouseover);
 
       path.transition()

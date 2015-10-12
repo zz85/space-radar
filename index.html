@@ -10,12 +10,17 @@ path {
 
 circle,
 path {
-  cursor: pointer;
+
 }
 
 circle {
   fill: none;
   pointer-events: all;
+}
+
+#core:hover {
+  opacity: 0.5;
+  cursor: pointer;
 }
 
 
@@ -83,6 +88,15 @@ form {
   display: none;
 }
 
+.hmm {
+  opacity: 0.8;
+  cursor: pointer;
+}
+.hmm:hover {
+  stroke: #999;
+  stroke-width: 2px;
+  opacity: 1;
+}
 </style>
 <body>
 <script src="node_modules/d3/d3.js"></script>
