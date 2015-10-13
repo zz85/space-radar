@@ -69,17 +69,19 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + width / 2 + "," + (height / 2 + 10) + ")");
 
-var partition = d3.layout.partition()
-    .value(function(d) { return d.size; })
-    .sort(function(a, b) { return d3.ascending(a.name, b.name); })
-    .size([2 * Math.PI, radius])
-    ;
+var partition;
 
 var arc = d3.svg.arc()
     .startAngle(function(d) { return d.x; })
     .endAngle(function(d) { return d.x + d.dx - .01 / (d.depth + .5); })
-    .innerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth - 1); })
-    .outerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1; });
+    .innerRadius(function(d) {
+      return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth - 1);
+      // return Math.sqrt(d.y); // ROOT
+    })
+    .outerRadius(function(d) {
+      // return Math.sqrt(d.y + d.dy); // ROOT
+      return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1;
+    });
 
 // var legend = d3.select("#legend")
 var legend = d3.select("body").append("div")
@@ -189,11 +191,21 @@ var path;
   window.redraw = () => zoom(current_p, current_p);
 
 var jsoned = false;
+
+var realroot;
 var root;
 function onJson(error, r) {
   root = r;
+  realroot = r;
+
   if (error) throw error;
 
+  partition = d3.layout.partition()
+    .value(function(d) { return d.size; })
+    .sort(function(a, b) { return d3.ascending(a.name, b.name); })
+    .size([2 * Math.PI, radius])
+    // .size([2 * Math.PI, radius * radius]) // ROOT
+    ;
 
   // Compute the initial layout on the entire tree to sum sizes.
   // Also compute the full name and fill color for each node,
@@ -230,6 +242,8 @@ function onJson(error, r) {
       ;
   console.timeEnd('compute2')
 
+  console.log('ROOT SIZE', format(root.value))
+
 
   console.time('compute3')
   // Now redefine the value function to use the previously-computed sum.
@@ -260,11 +274,13 @@ function onJson(error, r) {
 
   console.timeEnd('compute3')
 
-  // if (jsoned) {
-  //   return redraw();
-  // }
-  // jsoned = true;
+
   current_p = root;
+  if (jsoned) {
+    return redraw();
+    // path.remove()
+  }
+  jsoned = true;
 
 
 

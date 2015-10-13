@@ -80,7 +80,7 @@ function format(bytes) {
 
 window.format = format;
 
-let target = '..'
+let target = '../..'
 
 let async = require("async")
 
@@ -159,38 +159,37 @@ queue.drain = function() {
 var json = {};
 let checker = setInterval(function() {
 	console.log('scanning...');
-	// onJson(null, json)
-}, 2000);
+	onJson(null, clone(json))
+}, 4000);
 queue.push({parent: target, node: json})
 
-/*
-window.x = {
-	name: 'test',
-	children: [
-		{
-			name: 'a',
-			size: 10
-		},
-		{
-			name: 'b',
-			size: 10
-		}
 
-	]
+function clone(json) {
+	return JSON.parse(JSON.stringify(json))
 }
 
+// window.x = {
+// 	name: 'test',
+// 	children: [
+// 		{
+// 			name: 'a',
+// 			size: 10
+// 		},
+// 		{
+// 			name: 'b',
+// 			size: 10
+// 		}
 
-setTimeout(()=>onJson(null, JSON.parse(JSON.stringify(x))))
+// 	]
+// }
 
 
-x.children.push({
-	name: 'c',
-	size: 20
-})
-onJson(null, x)
+// setTimeout(()=>onJson(null,x))
 
-onJson(null, JSON.parse(JSON.stringify(x)))
-*/
+// onJson(null, x)
+// x.children.push({ name: 'c', size: 20 })
+// onJson(null, JSON.parse(JSON.stringify(x)))
+
 
 
 /*
