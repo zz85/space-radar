@@ -1,3 +1,4 @@
+() => {
 'use strict'
 
 const fs = require('fs')
@@ -77,6 +78,8 @@ function format(bytes) {
 	return mb.toFixed(2) + 'MB'
 }
 
+window.format = format;
+
 let target = '..'
 
 let async = require("async")
@@ -104,7 +107,6 @@ function test(options, callback) {
 
 		let size = stat.size;
 		// console.log(dir, stat.blocks, stat.blocks * 512, stat.size)
-
 
 		if (stat.isFile()) {
 			// console.log(name);
@@ -157,9 +159,38 @@ queue.drain = function() {
 var json = {};
 let checker = setInterval(function() {
 	console.log('scanning...');
-	onJson(null, json)
-}, 5000);
+	// onJson(null, json)
+}, 2000);
 queue.push({parent: target, node: json})
+
+/*
+window.x = {
+	name: 'test',
+	children: [
+		{
+			name: 'a',
+			size: 10
+		},
+		{
+			name: 'b',
+			size: 10
+		}
+
+	]
+}
+
+
+setTimeout(()=>onJson(null, JSON.parse(JSON.stringify(x))))
+
+
+x.children.push({
+	name: 'c',
+	size: 20
+})
+onJson(null, x)
+
+onJson(null, JSON.parse(JSON.stringify(x)))
+*/
 
 
 /*
@@ -189,3 +220,5 @@ du(
 	}
 )
 */
+
+}()

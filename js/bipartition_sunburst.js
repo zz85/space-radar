@@ -17,6 +17,7 @@
    - filetype
    - last modified
    - number of files
+- Streaming updates
 - Explorer Tree View
 - Responsive resizing
 - Git integration
@@ -30,6 +31,7 @@
 - return Max Depth
 - combine hidden file sizes
 - add drives
+- idea: show children only upon mouseover
 
 DONE
  - custom levels
@@ -45,12 +47,14 @@ var width = innerWidth,
     height = innerHeight,
     radius = len * 0.45;
 
-var LEVELS = 2
+var LEVELS = 11
+  , INNER_LEVEL = 7
   , PATH_DELIMITER = '/'
   , USE_COUNT = 0
   , HIDE_THRESHOLD = 0.1 // percentage (use 0.01, 1)
   , CORE_RADIUS = radius * 0.4 // radius / LEVELS
   , OUTER_RADIUS = radius - CORE_RADIUS
+  , FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL)
 var hue = d3.scale.category10();
 
 var luminance = d3.scale.sqrt()
@@ -74,8 +78,8 @@ var partition = d3.layout.partition()
 var arc = d3.svg.arc()
     .startAngle(function(d) { return d.x; })
     .endAngle(function(d) { return d.x + d.dx - .01 / (d.depth + .5); })
-    .innerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / LEVELS * (d.depth - 1); })
-    .outerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / LEVELS * (d.depth + 0) - 1; });
+    .innerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth - 1); })
+    .outerRadius(function(d) { return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1; });
 
 // var legend = d3.select("#legend")
 var legend = d3.select("body").append("div")
@@ -84,97 +88,22 @@ var legend = d3.select("body").append("div")
 
 var current_p, max_level, current_level = 0;
 
-function onJson(error, root) {
-  if (error) throw error;
-
-  current_p = root;
-
-  // Compute the initial layout on the entire tree to sum sizes.
-  // Also compute the full name and fill color for each node,
-  // and stash the children so they can be restored as we descend.
-  console.time('compute1')
-  partition
-    .value(d => {
-      if (Math.random() < 0.01) console.log('value1')
-      return 1
-    })
-    .nodes(root)
-    .forEach(d => {
-      d.count = d.value
-    })
-  console.timeEnd('compute1')
-
-  console.time('compute2')
-  partition
-      .value((d) => {
-        if (Math.random() < 0.01) console.log('value2')
-        return d.size;
-      })
-      .nodes(root)
-      .forEach(function(d) {
-        d._children = d.children;
-        d.sum = d.value;
-        d.key = key(d);
-        d.fill = fill(d);
-      });
-  console.timeEnd('compute2')
-
-  console.time('compute3')
-  // Now redefine the value function to use the previously-computed sum.
-  partition
-      .children(function(d, depth) {
-        console.log('children');
-        if (depth >= LEVELS) {
-          max_level = Math.max(depth, max_level);
-          return null
-        }
-        if (!d._children) return null;
-
-        var children = [];
-        d._children.forEach(c => {
-          var ref = current_p || root
-          if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
-        })
-
-        return children;
-
-        // return depth < LEVELS ? d._children : null;
-      })
-      .value(function(d) {
-        // decide count or sum
-        return USE_COUNT ? d.count : d.sum
-      })
-  console.timeEnd('compute3')
-
-  var center = svg.append("g")
+var center = svg.append("g")
     .attr("id", "core")
     .on("click", zoomOut);
 
-  center
-      .append("circle")
-      .attr("r", CORE_RADIUS)
+center
+    .append("circle")
+    .attr("r", CORE_RADIUS)
 
-  center.append("title")
-    .text("zoom out");
+center.append("title")
+  .text("zoom out");
 
-  var center_text = center.append("text")
-    .attr("dx", function(d){return -20})
-    .text('hello')
+var center_text = center.append("text")
+  .attr("dx", function(d){return -20})
+  .text('hello')
 
-  var path = svg.selectAll("path")
-      .data(partition.nodes(root).slice(1))
-    .enter().append("path")
-      .attr("d", arc)
-      .attr("class", "hmm")
-      .style("fill", function(d) { return d.fill; })
-      .each(function(d) { this._current = updateArc(d); })
-      .on("click", zoomIn)
-      .on("mouseover", mouseover)
-      // .style("visibility", function(d) {
-      //   var ref = current_p || root
-      //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
-      //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
-      // })
+var path;
 
   function mouseover(d) {
     // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
@@ -184,7 +113,6 @@ function onJson(error, root) {
     legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
   }
 
-  ///
  function zoomIn(p) {
     if (p.depth > 1) {
       p = p.parent;
@@ -199,9 +127,7 @@ function onJson(error, root) {
     zoom(p.parent, p);
   }
 
-  window.redraw = () => zoom(current_p, current_p);
-
-  // Zoom to the specified new root.
+    // Zoom to the specified new root.
   function zoom(root, p) {
     max_level = 0;
     current_level += p.depth - current_p.depth
@@ -259,6 +185,112 @@ function onJson(error, root) {
           .attrTween("d", function(d) { return arcTween.call(this, updateArc(d)); });
     });
   }
+
+  window.redraw = () => zoom(current_p, current_p);
+
+var jsoned = false;
+var root;
+function onJson(error, r) {
+  root = r;
+  if (error) throw error;
+
+
+  // Compute the initial layout on the entire tree to sum sizes.
+  // Also compute the full name and fill color for each node,
+  // and stash the children so they can be restored as we descend.
+  console.time('compute1')
+  partition
+    .value(d => {
+      if (Math.random() < 0.01) console.log('value1')
+      return 1
+    })
+    .nodes(root)
+    .forEach(d => {
+      d.count = d.value
+    })
+  console.timeEnd('compute1')
+
+  console.time('compute2')
+  partition
+      .value((d) => {
+        if (Math.random() < 0.01) console.log('value2')
+        return d.size;
+      })
+      .nodes(root)
+      // .filter(function(d) {
+      //   return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
+      // })
+      .forEach(function(d) {
+        d._children = d.children;
+        d.sum = d.value;
+        d.key = key(d);
+        d.fill = fill(d);
+      })
+
+      ;
+  console.timeEnd('compute2')
+
+
+  console.time('compute3')
+  // Now redefine the value function to use the previously-computed sum.
+  partition
+      .children(function(d, depth) {
+        console.log('children');
+        if (depth >= LEVELS) {
+          max_level = Math.max(depth, max_level);
+          return null
+        }
+        if (!d._children) return null;
+
+        var children = [];
+        d._children.forEach(c => {
+          var ref = current_p || root
+          if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
+        })
+
+        return children;
+
+        // return depth < LEVELS ? d._children : null;
+      })
+      .value(function(d) {
+        // decide count or sum
+        return USE_COUNT ? d.count : d.sum
+      })
+
+
+  console.timeEnd('compute3')
+
+  // if (jsoned) {
+  //   return redraw();
+  // }
+  // jsoned = true;
+  current_p = root;
+
+
+
+  // path = svg.selectAll("path")
+  //     .data(partition.nodes(root).slice(1))
+  // .exit()
+  //         .remove();
+
+  path = svg.selectAll("path")
+      .data(partition.nodes(root).slice(1))
+    .enter().append("path")
+      .attr("d", arc)
+      .attr("class", "hmm")
+      .style("fill", function(d) { return d.fill; })
+      .each(function(d) { this._current = updateArc(d); })
+      .on("click", zoomIn)
+      .on("mouseover", mouseover)
+      // .style("visibility", function(d) {
+      //   var ref = current_p || root
+      //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
+      //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
+      // })
+
+
+
+  ///
 
 }
 
