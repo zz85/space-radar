@@ -17,7 +17,6 @@
    - filetype
    - last modified
    - number of files
-- Streaming updates
 - Explorer Tree View
 - Responsive resizing
 - Git integration
@@ -32,6 +31,7 @@
 - combine hidden file sizes
 - add drives
 - idea: show children only upon mouseover
+- do computation in webworkers
 
 DONE
  - custom levels
@@ -39,6 +39,7 @@ DONE
  - threshold - hide small files
  - Async file checking
  - hover over states
+ - Streaming/incremental updates (sort of by recreating partitions & jsons)
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -58,7 +59,7 @@ var LEVELS = 11
 var hue = d3.scale.category10();
 
 var luminance = d3.scale.sqrt()
-    .domain([0, 1e9])
+    .domain([0, 1e11])
     .clamp(true)
     .range([90, 20]);
 
@@ -213,7 +214,7 @@ function onJson(error, r) {
   console.time('compute1')
   partition
     .value(d => {
-      if (Math.random() < 0.01) console.log('value1')
+      // if (Math.random() < 0.01) console.log('value1')
       return 1
     })
     .nodes(root)
@@ -225,7 +226,7 @@ function onJson(error, r) {
   console.time('compute2')
   partition
       .value((d) => {
-        if (Math.random() < 0.01) console.log('value2')
+        // if (Math.random() < 0.01) console.log('value2')
         return d.size;
       })
       .nodes(root)

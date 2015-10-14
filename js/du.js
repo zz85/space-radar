@@ -75,17 +75,35 @@ function format(bytes) {
 	let gb = bytes / 1024 / 1024 / 1024;
 	let tb = bytes / 1024 / 1024 / 1024 / 1024;
 
-	return mb.toFixed(2) + 'MB'
+	var units = {
+		KB: kb,
+		MB: mb,
+		GB: gb,
+		TB: tb,
+	};
+
+	var last_unit = 'B';
+	var last_value = bytes;
+	for (var u in units) {
+		if (units[u] < 1) {
+			return last_value + last_unit
+		}
+		last_unit = u;
+		last_value = units[u].toFixed(2);
+	}
+	return last_value + last_unit
 }
 
 window.format = format;
 
-let target = '../..'
+let target = '../../..'
+// DNF - /
 
 let async = require("async")
 
 function test(options, callback) {
 	// console.log('test', arguments);
+
 
 	let dir, name, node;
 	node = options.node;
@@ -97,7 +115,8 @@ function test(options, callback) {
 		name = options.name
 	}
 
-	// console.log('process', dir, name)
+	if (Math.random() < 0.01)
+		console.log('process', dir, name)
 
 	fs.lstat(dir, (err, stat) => {
 		if (err) {
@@ -140,6 +159,8 @@ function test(options, callback) {
 	})
 }
 
+var INCREMENTAL_INTERVAL  = 5000
+
 console.log('lets go');
 console.time('async2')
 loading.style.display = 'inline-block'
@@ -148,51 +169,59 @@ let queue = async.queue(test, 10)
 queue.drain = function() {
     console.log("All files are uploaded");
     console.timeEnd('async2')
-    clearInterval(checker);
+    clearTimeout(checker)
     loading.style.display = 'none'
 
     console.log(json);
 
-    onJson(null, json)
+    console.time('write')
+    fs.writeFileSync('test.json', JSON.stringify(json))
+    console.timeEnd('write')
+
+    onJson(null, clone2(json))
 };
 
 var json = {};
-let checker = setInterval(function() {
+
+let checker
+
+function updatePartialFS() {
+	clearTimeout(checker)
 	console.log('scanning...');
-	onJson(null, clone(json))
-}, 4000);
+	console.time('clone')
+	let cloneJson = clone2(json)
+	console.timeEnd('clone')
+	onJson(null, cloneJson)
+	// checker = setTimeout(updatePartialFS, INCREMENTAL_INTERVAL);
+}
+
 queue.push({parent: target, node: json})
+
+setTimeout(updatePartialFS, 1000)
 
 
 function clone(json) {
 	return JSON.parse(JSON.stringify(json))
 }
 
-// window.x = {
-// 	name: 'test',
-// 	children: [
-// 		{
-// 			name: 'a',
-// 			size: 10
-// 		},
-// 		{
-// 			name: 'b',
-// 			size: 10
-// 		}
-
-// 	]
-// }
+function clone2(source, target) {
+	if (!target) target = {};
 
 
-// setTimeout(()=>onJson(null,x))
+	if (source.name) target.name = source.name;
+	if (source.size) target.size = source.size;
+	if (source.children) {
+		target.children = [];
+		source.children.forEach( node => {
+			target.children.push(clone2(node, {}))
+		})
+	}
 
-// onJson(null, x)
-// x.children.push({ name: 'c', size: 20 })
-// onJson(null, JSON.parse(JSON.stringify(x)))
-
-
+	return target;
+}
 
 /*
+// Synchronous fashion
 console.time('jsonFS')
 var json = jsonFS(target)
 // fs.writeFileSync('test.json', JSON.stringify(json))
@@ -218,6 +247,21 @@ du(
 	  console.timeEnd('du')
 	}
 )
+
+
+clone: 101.325ms
+bipartition_sunburst.js:224 compute1: 679.538ms
+bipartition_sunburst.js:244 compute2: 1215.207ms
+bipartition_sunburst.js:246 ROOT SIZE 51.10GB
+
+
+clone: 157.148ms
+bipartition_sunburst.js:224 compute1: 326.347ms
+bipartition_sunburst.js:244 compute2: 1160.225ms
+bipartition_sunburst.js:246 ROOT SIZE 40.68GB
+
+24MB - 100GB
+
 */
 
 }()
