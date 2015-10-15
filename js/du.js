@@ -101,6 +101,7 @@ let target = '../..'
 
 let async = require("async")
 
+let counter = 0;
 function test(options, callback) {
 	// console.log('test', arguments);
 	let dir, name, node;
@@ -113,9 +114,11 @@ function test(options, callback) {
 		name = options.name
 	}
 
-	if (Math.random() < 0.001) {
+	counter++;
+	if (counter % 1000 === 0) {
 		if (window.onProcess) window.onProcess(dir, name);
-		console.log('process', dir, name)
+		// console.log('process', dir, name)
+		if (counter % 10000 === 0) console.log('scanned', counter);
 	}
 
 	fs.lstat(dir, (err, stat) => {
@@ -166,7 +169,7 @@ loading.style.display = 'inline-block'
 let queue = async.queue(test, 10)
 
 queue.drain = function() {
-    console.log("All jobs are ran");
+    console.log("Scan completed", counter, "files");
     console.timeEnd('async2')
     clearTimeout(checker)
     loading.style.display = 'none'

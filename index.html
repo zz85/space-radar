@@ -115,6 +115,43 @@ form {
 }
 
 
+#sequence {
+  width: 600px;
+  height: 70px;
+}
+
+#legend {
+  padding: 10px 0 0 3px;
+}
+
+#sequence text, #legend text {
+  font-weight: 600;
+  fill: #fff;
+}
+
+#chart {
+  position: relative;
+}
+
+#chart path {
+  stroke: #fff;
+}
+
+#explanation {
+  position: absolute;
+  top: 260px;
+  left: 305px;
+  width: 140px;
+  text-align: center;
+  color: #666;
+  z-index: -1;
+}
+
+#percentage {
+  font-size: 2.5em;
+}
+
+
 </style>
 <body>
 <script src="node_modules/d3/d3.js"></script>
@@ -124,6 +161,9 @@ form {
     Loading…
   </div>
 </div>
+
+<div id="sequence"></div>
+
 <script src="js/du.js"></script>
 <script src="js/bipartition_sunburst.js"></script>
 <!-- <script src="js/zoomable_sunburst.js"></script> -->
