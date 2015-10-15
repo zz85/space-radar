@@ -97,6 +97,24 @@ form {
   stroke-width: 2px;
   opacity: 1;
 }
+
+
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%; /* aspect ratio */
+    vertical-align: top;
+    overflow: hidden;
+}
+.svg-content-responsive {
+    display: inline-block;
+    position: absolute;
+    top: 10px;
+    left: 0;
+}
+
+
 </style>
 <body>
 <script src="node_modules/d3/d3.js"></script>

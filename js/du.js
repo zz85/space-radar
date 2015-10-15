@@ -96,15 +96,13 @@ function format(bytes) {
 
 window.format = format;
 
-let target = '../../..'
+let target = '../..'
 // DNF - /
 
 let async = require("async")
 
 function test(options, callback) {
 	// console.log('test', arguments);
-
-
 	let dir, name, node;
 	node = options.node;
 	if (!options.name) {
@@ -115,8 +113,10 @@ function test(options, callback) {
 		name = options.name
 	}
 
-	if (Math.random() < 0.01)
+	if (Math.random() < 0.001) {
+		if (window.onProcess) window.onProcess(dir, name);
 		console.log('process', dir, name)
+	}
 
 	fs.lstat(dir, (err, stat) => {
 		if (err) {
@@ -142,7 +142,6 @@ function test(options, callback) {
 				// node.size = size;
 				node.children = []
 
-
 				list.forEach(file => {
 					let childNode = {};
 					node.children.push(childNode)
@@ -159,7 +158,7 @@ function test(options, callback) {
 	})
 }
 
-var INCREMENTAL_INTERVAL  = 5000
+var INCREMENTAL_INTERVAL = 5000
 
 console.log('lets go');
 console.time('async2')
@@ -167,7 +166,7 @@ loading.style.display = 'inline-block'
 let queue = async.queue(test, 10)
 
 queue.drain = function() {
-    console.log("All files are uploaded");
+    console.log("All jobs are ran");
     console.timeEnd('async2')
     clearTimeout(checker)
     loading.style.display = 'none'
@@ -192,9 +191,11 @@ function updatePartialFS() {
 	let cloneJson = clone2(json)
 	console.timeEnd('clone')
 	onJson(null, cloneJson)
-	// checker = setTimeout(updatePartialFS, INCREMENTAL_INTERVAL);
+	checker = setTimeout(updatePartialFS, INCREMENTAL_INTERVAL);
 }
 
+target = path.resolve(target);
+console.log(target);
 queue.push({parent: target, node: json})
 
 setTimeout(updatePartialFS, 1000)
@@ -206,7 +207,6 @@ function clone(json) {
 
 function clone2(source, target) {
 	if (!target) target = {};
-
 
 	if (source.name) target.name = source.name;
 	if (source.size) target.size = source.size;

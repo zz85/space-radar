@@ -1,14 +1,18 @@
-// window.addEventListener('resize', onResize)
+window.addEventListener('resize', onResize)
 
-// function onResize() {
-//   console.log('resize')
-//   width = innerWidth
-//   height = innerHeight
-//   svg
-//     .attr("width", width)
-//     .attr("height", height)
-//   redraw()
-// }
+function onResize() {
+  console.log('resize')
+  width = innerWidth
+  height = innerHeight
+  console.log(svg);
+  svg_container.select('svg')
+    // .attr("viewBox", "0 0 " + width + " " + height)
+    .attr("width", width)
+    .attr("height", height)
+  .select("g")
+    .attr("transform", "translate(" + width / 2 + "," + (height / 2 + 10) + ")");
+  redraw()
+}
 
 /*
  TODOs
@@ -32,6 +36,7 @@
 - add drives
 - idea: show children only upon mouseover
 - do computation in webworkers
+- use https://github.com/paulmillr/chokidar
 
 DONE
  - custom levels
@@ -64,9 +69,19 @@ var luminance = d3.scale.sqrt()
     .range([90, 20]);
 
 
-var svg = d3.select("body").append("svg")
+var svg_container = d3.select("body")
+  .append("div")
+   .classed("svg-container", true) //container class to make it responsive
+  ;
+
+var svg = svg_container
+  .append("svg")
     .attr("width", width)
     .attr("height", height)
+    // .attr("preserveAspectRatio", "xMinYMin meet")
+    // .attr("viewBox", "0 0 " + width + " " + height)
+    //class to make it responsive
+    .classed("svg-content-responsive", true)
   .append("g")
     .attr("transform", "translate(" + width / 2 + "," + (height / 2 + 10) + ")");
 
@@ -108,88 +123,88 @@ var center_text = center.append("text")
 
 var path;
 
-  function mouseover(d) {
-    // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
+function mouseover(d) {
+  // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
 
-    var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
-    // center.select('title').text(d.name + '\t' + format(d.value))
-    legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
+  var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
+  // center.select('title').text(d.name + '\t' + format(d.value))
+  legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
+}
+
+function zoomIn(p) {
+  if (p.depth > 1) {
+    p = p.parent;
+  }
+  if (!p.children) return;
+  current_level++;
+  zoom(p, p);
+}
+
+function zoomOut(p) {
+  if (!p || !p.parent) return;
+  zoom(p.parent, p);
+}
+
+// Zoom to the specified new root.
+function zoom(root, p) {
+  max_level = 0;
+  current_level += p.depth - current_p.depth
+  center_text.html(p.key + ' - ' + format(p.value))
+  current_p = root
+  console.log('current_level', current_level)
+
+  if (document.documentElement.__transition__) return;
+
+  // Rescale outside angles to match the new layout.
+  var enterArc,
+      exitArc,
+      outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI]);
+
+  function insideArc(d) {
+    return p.key > d.key
+        ? {depth: d.depth - 1, x: 0, dx: 0} : p.key < d.key
+        ? {depth: d.depth - 1, x: 2 * Math.PI, dx: 0}
+        : {depth: 0, x: 0, dx: 2 * Math.PI};
   }
 
- function zoomIn(p) {
-    if (p.depth > 1) {
-      p = p.parent;
-    }
-    if (!p.children) return;
-    current_level++;
-    zoom(p, p);
+  function outsideArc(d) {
+    return {depth: d.depth + 1, x: outsideAngle(d.x), dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x)};
   }
 
-  function zoomOut(p) {
-    if (!p || !p.parent) return;
-    zoom(p.parent, p);
-  }
+  center.datum(root);
 
-    // Zoom to the specified new root.
-  function zoom(root, p) {
-    max_level = 0;
-    current_level += p.depth - current_p.depth
-    center_text.html(p.key + ' - ' + format(p.value))
-    current_p = root
-    console.log('current_level', current_level)
+  // When zooming in, arcs enter from the outside and exit to the inside.
+  // Entering outside arcs start from the old layout.
+  if (root === p) enterArc = outsideArc, exitArc = insideArc, outsideAngle.range([p.x, p.x + p.dx]);
 
-    if (document.documentElement.__transition__) return;
+  path = path.data(partition.nodes(root).slice(1), function(d) { return d.key; });
 
-    // Rescale outside angles to match the new layout.
-    var enterArc,
-        exitArc,
-        outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI]);
+  // When zooming out, arcs enter from the inside and exit to the outside.
+  // Exiting outside arcs transition to the new layout.
+  if (root !== p) enterArc = insideArc, exitArc = outsideArc, outsideAngle.range([p.x, p.x + p.dx]);
 
-    function insideArc(d) {
-      return p.key > d.key
-          ? {depth: d.depth - 1, x: 0, dx: 0} : p.key < d.key
-          ? {depth: d.depth - 1, x: 2 * Math.PI, dx: 0}
-          : {depth: 0, x: 0, dx: 2 * Math.PI};
-    }
+  var transition = d3.event && d3.event.altKey ? 7500 : 750
+  d3.transition().duration(transition).each(function() {
+    path.exit().transition()
+        .style("fill-opacity", function(d) { return d.depth === 1 + (root === p) ? 1 : 0; })
+        .attrTween("d", function(d) { return arcTween.call(this, exitArc(d)); })
+        .remove();
 
-    function outsideArc(d) {
-      return {depth: d.depth + 1, x: outsideAngle(d.x), dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x)};
-    }
+    path.enter().append("path")
+        .style("fill-opacity", function(d) { return d.depth === 2 - (root === p) ? 1 : 0; })
+        .style("fill", function(d) { return d.fill; })
+        .on("click", zoomIn)
+        .each(function(d) { this._current = enterArc(d); })
+        .attr("class", "hmm")
+        .on("mouseover", mouseover);
 
-    center.datum(root);
+    path.transition()
+        .style("fill-opacity", 1)
+        .attrTween("d", function(d) { return arcTween.call(this, updateArc(d)); });
+  });
+}
 
-    // When zooming in, arcs enter from the outside and exit to the inside.
-    // Entering outside arcs start from the old layout.
-    if (root === p) enterArc = outsideArc, exitArc = insideArc, outsideAngle.range([p.x, p.x + p.dx]);
-
-    path = path.data(partition.nodes(root).slice(1), function(d) { return d.key; });
-
-    // When zooming out, arcs enter from the inside and exit to the outside.
-    // Exiting outside arcs transition to the new layout.
-    if (root !== p) enterArc = insideArc, exitArc = outsideArc, outsideAngle.range([p.x, p.x + p.dx]);
-
-    var transition = d3.event && d3.event.altKey ? 7500 : 750
-    d3.transition().duration(transition).each(function() {
-      path.exit().transition()
-          .style("fill-opacity", function(d) { return d.depth === 1 + (root === p) ? 1 : 0; })
-          .attrTween("d", function(d) { return arcTween.call(this, exitArc(d)); })
-          .remove();
-
-      path.enter().append("path")
-          .style("fill-opacity", function(d) { return d.depth === 2 - (root === p) ? 1 : 0; })
-          .style("fill", function(d) { return d.fill; })
-          .on("click", zoomIn)
-          .each(function(d) { this._current = enterArc(d); })
-          .attr("class", "hmm")
-          .on("mouseover", mouseover);
-
-      path.transition()
-          .style("fill-opacity", 1)
-          .attrTween("d", function(d) { return arcTween.call(this, updateArc(d)); });
-    });
-  }
-
-  window.redraw = () => zoom(current_p, current_p);
+window.redraw = () => zoom(current_p, current_p);
 
 var jsoned = false;
 
@@ -283,8 +298,6 @@ function onJson(error, r) {
   }
   jsoned = true;
 
-
-
   // path = svg.selectAll("path")
   //     .data(partition.nodes(root).slice(1))
   // .exit()
@@ -305,8 +318,6 @@ function onJson(error, r) {
       //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
       // })
 
-
-
   ///
 
 }
@@ -319,10 +330,11 @@ function key(d) {
 
 function fill(d) {
   var p = d;
-  while (p.depth > 1) p = p.parent;
+  // while (p.depth > 1) p = p.parent;
+  // var c = d3.lab(hue(p.sum));
   // var c = d3.lab(hue(p.count));
-  var c = d3.lab(hue(p.key));
-  // var c = d3.lab(hue(p.name));
+  // var c = d3.lab(hue(p.key));
+  var c = d3.lab(hue(p.name));
   // var c = d3.lab(hue(p._children));
   // var c = d3.lab(hue(p.children ? p.children.length : 0));
 
