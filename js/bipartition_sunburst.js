@@ -367,16 +367,6 @@ function updateArc(d) {
 // Breadcrumbs
 //
 
-var b = {
-  w: 75, h: 30, s: 3, t: 10
-};
-
-function initializeBreadcrumbTrail() {
-  var trail = d3
-    .select("#sequence")
-    .select('div')
-}
-
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
 function getAncestors(node) {
@@ -386,6 +376,16 @@ function getAncestors(node) {
     path.unshift(current);
     current = current.parent;
   }
+
+  // path.unshift(realroot);
+
+  path = realroot.name.split(PATH_DELIMITER).slice(1).map(d => {
+    return {
+      name: d,
+      depth: -1
+    }
+  }).concat(path)
+
   return path;
 }
 
@@ -403,15 +403,15 @@ function updateBreadcrumbs(nodeArray, percentageString) {
   var entering = g.enter().
     append('a')
     .attr('href', '#')
-      .style("fill", function(d) {
-        console.log(d.depth);
-        var h = hue(d.key);
-        console.log(h);
-        return h;
-        // var c = d3.lab(hue(p.name));
-        // c.l = luminance(d.sum);
-        // return colors[d.name];
-      });
+      // .style("background", function(d) {
+      //   console.log(d.depth);
+      //   var h = hue(d.key);
+      //   console.log(h);
+      //   return h;
+      //   // var c = d3.lab(hue(p.name));
+      //   // c.l = luminance(d.sum);
+      //   // return colors[d.name];
+      // });
 
   entering
     .text(function(d) { return d.name; });
@@ -434,8 +434,6 @@ function updateBreadcrumbs(nodeArray, percentageString) {
       */
 
 }
-
-initializeBreadcrumbTrail();
 
 
 // d3.select(self.frameElement).style("height", margin.top + margin.bottom + "px");
