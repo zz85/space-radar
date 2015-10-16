@@ -403,15 +403,15 @@ function updateBreadcrumbs(nodeArray, percentageString) {
   var entering = g.enter().
     append('a')
     .attr('href', '#')
-      // .style("background", function(d) {
-      //   console.log(d.depth);
-      //   var h = hue(d.key);
-      //   console.log(h);
-      //   return h;
-      //   // var c = d3.lab(hue(p.name));
-      //   // c.l = luminance(d.sum);
-      //   // return colors[d.name];
-      // });
+      .style("background", function(d) {
+        console.log(d.depth);
+        var h = hue(d.key);
+        console.log(h);
+        return h;
+        // var c = d3.lab(hue(p.name));
+        // c.l = luminance(d.sum);
+        // return colors[d.name];
+      });
 
   entering
     .text(function(d) { return d.name; });
