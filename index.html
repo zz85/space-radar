@@ -118,16 +118,9 @@ form {
 #sequence {
   width: 600px;
   height: 70px;
+  /*font-weight: 600;*/
 }
 
-#legend {
-  padding: 10px 0 0 3px;
-}
-
-#sequence text, #legend text {
-  font-weight: 600;
-  fill: #fff;
-}
 
 #chart {
   position: relative;
@@ -152,17 +145,28 @@ form {
 }
 
 
+
 </style>
 <body>
 <script src="node_modules/d3/d3.js"></script>
 <link rel="stylesheet" href="throbber.css" type="text/css">
+<link rel="stylesheet" href="breadcrumb.css" type="text/css">
+
 <div id="loading">
   <div class="throbber-loader">
     Loading…
   </div>
 </div>
 
-<div id="sequence"></div>
+<div id="sequence">
+  <!-- another version - flat style with animated hover effect -->
+  <div class="breadcrumb flat">
+    <!-- <a href="#" class="active">Browse</a>
+    <a href="#">Compare</a>
+    <a href="#">Order Confirmation</a>
+    <a href="#">Checkout</a> -->
+  </div>
+</div>
 
 <script src="js/du.js"></script>
 <script src="js/bipartition_sunburst.js"></script>
