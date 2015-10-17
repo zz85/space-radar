@@ -21,12 +21,12 @@ function format(bytes) {
 	var last_value = bytes;
 	for (var u in units) {
 		if (units[u] < 1) {
-			return last_value + last_unit
+			return last_value + ' ' + last_unit
 		}
 		last_unit = u;
 		last_value = units[u].toFixed(2);
 	}
-	return last_value + last_unit
+	return last_value + ' ' + last_unit
 }
 
 window.format = format;
@@ -135,12 +135,16 @@ function updatePartialFS() {
 target = path.resolve(target)
 console.log('Scanning target', target)
 
-// queue.push({parent: target, node: json})
-// setTimeout(updatePartialFS, 1000)
+queue.push({parent: target, node: json})
+setTimeout(updatePartialFS, 1000)
 
-json = fs.readFileSync('user.json', { encoding: 'utf-8'})
-setTimeout( () => onJson(null, JSON.parse(json)) )
-loading.style.display = 'none'
+// setTimeout( () => {
+// 	// for testing purposes only
+// 	json = fs.readFileSync('user.json', { encoding: 'utf-8'})
+// 	loading.style.display = 'none'
+// 	onJson(null, JSON.parse(json))
+// })
+
 
 function clone(json) {
 	return JSON.parse(JSON.stringify(json))

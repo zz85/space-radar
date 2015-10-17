@@ -57,6 +57,33 @@ form {
 
 /* legend */
 
+#explanation {
+  font-family: Avenir, Arial, Helvetica, sans-serif;
+  position: absolute;
+  /*top: 260px;
+  left: 305px*/;
+  width: 140px;
+  height: 140px;
+  margin: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  color: #333;
+  z-index: -1;
+  /*z-index: -1;*/
+}
+
+#core_top {
+  /*font-size: 2.5em;*/
+}
+
+#core_center {
+  font-size: 2em;
+}
+
+
 #legend {
   text-align:center;
   font-family: Avenir, Arial, Helvetica, sans-serif;
@@ -141,27 +168,6 @@ form {
   stroke: #fff;
 }
 
-#explanation {
-  position: absolute;
-  /*top: 260px;
-  left: 305px*/;
-  width: 140px;
-  height: 140px;
-  margin: auto;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  text-align: center;
-  color: #666;
-  z-index: -1;
-  /*z-index: -1;*/
-}
-
-#core_top {
-  /*font-size: 2.5em;*/
-}
-
 
 </style>
 </head>
@@ -185,9 +191,9 @@ form {
 <div id="legend"></div>
 
 <div id="explanation">
-  <span id="core_top">bla%</span>
-  <h2 id="core_center"></h2>
-  <span id="core_tag">Muah</span>
+  <span id="core_top">Loading...</span><br/>
+  <span id="core_center"></span><br/>
+  <span id="core_tag"></span>
 </div>
 
 <script src="js/du.js"></script>

@@ -134,9 +134,8 @@ function mouseover(d) {
   legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
   // 2. core
-
-  // core_tag.html('root/' + d.name + '<br/>' + format(d.value) + '<br/>' + percent)
-  core_tag.html('<h3>' + format(d.value) + ' (' + percent + ')</h3>'  + d.name )
+  core_tag.html('' + format(d.value) + ' (' + percent + ')<br/>'  + d.name)
+  core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
 
   // core_tag.html(percent)
   // core_tag.html(format(d.value))
@@ -192,8 +191,11 @@ function zoomOut(p) {
 function zoom(root, p) {
   updateBreadcrumbs(getAncestors(root), '');
 
-  core_top.html(root.name);
-  core_center.html(format(root.value))
+  // core_top.html(format(root.value));
+  // core_center.html(root.name)
+
+  core_center.html(format(root.value));
+  core_top.html(root.name)
 
   max_level = 0;
   current_level += p.depth - current_p.depth
@@ -308,13 +310,11 @@ function onJson(error, r) {
   console.timeEnd('compute2')
 
   console.log('ROOT SIZE', format(root.value))
-
-
   console.time('compute3')
   // Now redefine the value function to use the previously-computed sum.
   partition
       .children(function(d, depth) {
-        console.log('children');
+        // console.log('children');
         if (depth >= LEVELS) {
           max_level = Math.max(depth, max_level);
           return null
@@ -442,9 +442,9 @@ function updateBreadcrumbs(nodeArray, percentageString) {
     .append('a')
     .attr('href', '#')
       .style("background", function(d) {
-        console.log(d.depth);
         var h = hue(d.key);
-        console.log(h);
+        // console.log(d.depth);
+        // console.log(h);
         return h;
         // var c = d3.lab(hue(p.name));
         // c.l = luminance(d.sum);
