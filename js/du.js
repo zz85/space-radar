@@ -4,71 +4,6 @@
 const fs = require('fs')
 const path = require('path')
 
-function explore(dir, level) {
-	level = level || 0
-	level ++
-	let total = 0
-
-	try {
-		let stat = fs.lstatSync(dir)
-		if (stat.isFile())
-		  total += stat.size
-		else if (stat.isDirectory()) {
-			let files = fs.readdirSync(dir)
-			files.forEach(file => {
-				total += explore(path.join(dir, file), level)
-			})
-			// for (let f = 0; f < files.length; f++) {
-			// 	total += explore(path.join(dir, files[f]), level)
-			// }
-		}
-
-		// if (level <= 2) console.log(format(total), dir, level)
-	} catch (e) {
-		console.error(e.stack)
-	}
-
-	return total
-}
-
-function jsonFS(parent, name, level) {
-	level = level || 0
-	level ++
-	let ret;
-
-	let dir = name ? path.join(parent, name) : parent
-	name = name ? name : parent;
-
-	try {
-		let stat = fs.lstatSync(dir)
-		if (stat.isFile()) {
-			ret = {
-				name: name,
-				size: stat.size
-			}
-		}
-		else if (stat.isDirectory()) {
-			let files = fs.readdirSync(dir)
-			ret = {
-				name: name,
-				children: []
-			}
-			files.forEach(file => {
-				let child = jsonFS(dir, file, level)
-				if (child) ret.children.push(child)
-			})
-		}
-
-		// if (level <= 2) console.log(format(total), dir, level)
-	} catch (e) {
-		console.error(e.stack)
-	}
-
-	return ret
-}
-
-
-
 function format(bytes) {
 	let kb = bytes / 1024;
 	let mb = bytes / 1024 / 1024;
@@ -97,12 +32,12 @@ function format(bytes) {
 window.format = format;
 
 let target = '../..'
-// DNF - /
-
 let async = require("async")
 
 let counter = 0;
-function test(options, callback) {
+
+/* Asynchronous File System descender */
+function descendFS(options, callback) {
 	// console.log('test', arguments);
 	let dir, name, node;
 	node = options.node;
@@ -166,7 +101,7 @@ var INCREMENTAL_INTERVAL = 5000
 console.log('lets go');
 console.time('async2')
 loading.style.display = 'inline-block'
-let queue = async.queue(test, 10)
+let queue = async.queue(descendFS, 10)
 
 queue.drain = function() {
     console.log("Scan completed", counter, "files");
@@ -222,49 +157,5 @@ function clone2(source, target) {
 
 	return target;
 }
-
-/*
-// Synchronous fashion
-console.time('jsonFS')
-var json = jsonFS(target)
-// fs.writeFileSync('test.json', JSON.stringify(json))
-console.log('json', json)
-console.timeEnd('jsonFS')
-*/
-
-
-
-/*
-console.time('sync')
-console.log(fs, path, format(explore(target)));
-console.timeEnd('sync')
-
-
-let du = require('du')
-console.time('du')
-du(
-	target
-  // , { filter: function (f) { return /\.sst$/.test(f) } }
-  , function (err, size) {
-	  console.log('The size is:', format(size), 'bytes')
-	  console.timeEnd('du')
-	}
-)
-
-
-clone: 101.325ms
-bipartition_sunburst.js:224 compute1: 679.538ms
-bipartition_sunburst.js:244 compute2: 1215.207ms
-bipartition_sunburst.js:246 ROOT SIZE 51.10GB
-
-
-clone: 157.148ms
-bipartition_sunburst.js:224 compute1: 326.347ms
-bipartition_sunburst.js:244 compute2: 1160.225ms
-bipartition_sunburst.js:246 ROOT SIZE 40.68GB
-
-24MB - 100GB
-
-*/
 
 }()
