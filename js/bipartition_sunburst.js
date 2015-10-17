@@ -102,8 +102,9 @@ var arc = d3.svg.arc()
 
 var legend = d3.select("#legend")
 var explanation = d3.select("#explanation")
-var percentage = d3.select("#percentage")
-var directory_path = d3.select("#directory_path")
+var core_top = d3.select("#core_top")
+var core_center = d3.select("#core_center")
+var core_tag = d3.select("#core_tag")
 
 var current_p, max_level, current_level = 0;
 
@@ -133,14 +134,13 @@ function mouseover(d) {
   legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
   // 2. core
-  // percentage.html(format(d.value) + '<br/>' + percent)
-  // directory_path.html(d.name)
 
-  directory_path.html('<h2>' + format(current_p.value) + '</h2>' + 'root/' + d.key)
+  // core_tag.html('root/' + d.name + '<br/>' + format(d.value) + '<br/>' + percent)
+  core_tag.html('<h3>' + format(d.value) + ' (' + percent + ')</h3>'  + d.name )
 
-  // percentage.html(percent)
-  // percentage.html(format(d.value))
-  // percentage.html(d.name)
+  // core_tag.html(percent)
+  // core_tag.html(format(d.value))
+  // core_tag.html(d.name)
 
 
   // 3. breadcrumbs
@@ -192,8 +192,8 @@ function zoomOut(p) {
 function zoom(root, p) {
   updateBreadcrumbs(getAncestors(root), '');
 
-  percentage.html(root.name);
-  directory_path.html('<h2>' + format(root.value) + '</h2>' + 'root/' + root.key)
+  core_top.html(root.name);
+  core_center.html(format(root.value))
 
   max_level = 0;
   current_level += p.depth - current_p.depth
