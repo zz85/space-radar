@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
+  <title>Electron Space Radar</title>
 <style>
 
 path {
@@ -30,7 +32,7 @@ body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   margin: auto;
   position: relative;
-  width: 960px;
+  /*width: 960px;*/
 }
 
 form {
@@ -92,21 +94,22 @@ form {
   opacity: 0.8;
   cursor: pointer;
 }
+
 .hmm:hover {
   stroke: #999;
   stroke-width: 2px;
   opacity: 1;
 }
 
-
 .svg-container {
     display: inline-block;
     position: relative;
     width: 100%;
-    padding-bottom: 100%; /* aspect ratio */
+    /*padding-bottom: 100%;*/ /* aspect ratio */
     vertical-align: top;
     overflow: hidden;
 }
+
 .svg-content-responsive {
     display: inline-block;
     position: absolute;
@@ -114,8 +117,10 @@ form {
     left: 0;
 }
 
-
 #sequence {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   /*width: 600px;
   height: 70px;*/
 }
@@ -146,6 +151,7 @@ form {
 
 
 </style>
+</head>
 <body>
 <script src="node_modules/d3/d3.js"></script>
 <link rel="stylesheet" href="throbber.css" type="text/css">

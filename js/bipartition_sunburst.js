@@ -4,7 +4,6 @@ function onResize() {
   console.log('resize')
   width = innerWidth
   height = innerHeight
-  console.log(svg);
   svg_container.select('svg')
     // .attr("viewBox", "0 0 " + width + " " + height)
     .attr("width", width)
@@ -61,10 +60,10 @@ var LEVELS = 11
   , CORE_RADIUS = radius * 0.4 // radius / LEVELS
   , OUTER_RADIUS = radius - CORE_RADIUS
   , FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL)
-var hue = d3.scale.category20();
+var hue = d3.scale.category10();
 
 var luminance = d3.scale.sqrt()
-    .domain([0, 1e11])
+    .domain([0, 1e9])
     .clamp(true)
     .range([90, 20]);
 
@@ -130,9 +129,7 @@ function mouseover(d) {
   // center.select('title').text(d.name + '\t' + format(d.value))
   legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
-
-  var sequenceArray = getAncestors(d);
-  updateBreadcrumbs(sequenceArray, percent);
+  updateBreadcrumbs(getAncestors(d), percent);
 }
 
 
@@ -156,6 +153,9 @@ function zoomOut(p) {
 
 // Zoom to the specified new root.
 function zoom(root, p) {
+
+  updateBreadcrumbs(getAncestors(p), '');
+
   max_level = 0;
   current_level += p.depth - current_p.depth
   center_text.html(p.key + ' - ' + format(p.value))
@@ -382,7 +382,8 @@ function getAncestors(node) {
   path = realroot.name.split(PATH_DELIMITER).slice(1).map(d => {
     return {
       name: d,
-      depth: -1
+      depth: -1,
+      root: true
     }
   }).concat(path)
 
@@ -400,8 +401,8 @@ function updateBreadcrumbs(nodeArray, percentageString) {
       .data(nodeArray, function(d) { return d.name + d.depth; });
 
   // Add breadcrumb and label for entering nodes.
-  var entering = g.enter().
-    append('a')
+  var entering = g.enter()
+    .append('a')
     .attr('href', '#')
       .style("background", function(d) {
         console.log(d.depth);
@@ -411,10 +412,16 @@ function updateBreadcrumbs(nodeArray, percentageString) {
         // var c = d3.lab(hue(p.name));
         // c.l = luminance(d.sum);
         // return colors[d.name];
-      });
+      })
+    .on('click', d => {
+      if (d.root)
+        zoom(realroot, realroot)
+      else
+        zoom(d, d)
+    })
 
-  entering
-    .text(function(d) { return d.name; });
+  entering.text(function(d) { return d.name; })
+
 
   // Remove exiting nodes.
   g.exit().remove();
