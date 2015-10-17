@@ -1,6 +1,8 @@
 Space Radar Electron
 ====
-Space Radar Electron is a disk space visualizer built with d3.js and electron
+Space Radar Electron is a disk space visualizer built with [d3.js](d3js.org) and [atom electron](electron.atom.io)
+
+![](https://pbs.twimg.com/media/CRi_IYuU8AAhobo.png:large)
 
 
 Features
@@ -45,4 +47,4 @@ npm install
 
 Issues
 ==
-Use the github issue tracker or contact [@blurspline on twitter](http://twitter.com/blurspline)
+Use the [github issue tracker](https://github.com/zz85/space-radar-electron/issues) or contact [@blurspline on twitter](http://twitter.com/blurspline)
