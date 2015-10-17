@@ -133,8 +133,12 @@ function mouseover(d) {
   legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
   // 2. core
-  percentage.html(format(d.value) + '<br/>' + percent)
-  directory_path.html(d.name)
+  // percentage.html(format(d.value) + '<br/>' + percent)
+  // directory_path.html(d.name)
+
+  // percentage.html(percent)
+  percentage.html(format(d.value))
+
 
   // 3. breadcrumbs
   // updateBreadcrumbs(getAncestors(d), percent);
@@ -142,6 +146,25 @@ function mouseover(d) {
   // 4. hover over mouse
 
 }
+
+
+/*
+
+  // movable / static parts
+
+  // 1. lengend
+  // 2. core
+  // 3. breadcrumbs
+  // 4. hover over mouse
+
+  displayable items
+  1. size
+  2. directory name
+  3. directory path
+  4. precentage
+
+
+  */
 
 
 function onProcess(path, b) {
@@ -165,12 +188,15 @@ function zoomOut(p) {
 // Zoom to the specified new root.
 function zoom(root, p) {
 
-  updateBreadcrumbs(getAncestors(p), '');
+  updateBreadcrumbs(getAncestors(root), '');
+
+  directory_path.html(format(root.value) + '<br/>' + root.key)
 
   max_level = 0;
   current_level += p.depth - current_p.depth
-
   current_p = root
+
+
   console.log('current_level', current_level)
 
   if (document.documentElement.__transition__) return;
@@ -318,11 +344,6 @@ function onJson(error, r) {
   }
   jsoned = true;
 
-  // path = svg.selectAll("path")
-  //     .data(partition.nodes(root).slice(1))
-  // .exit()
-  //         .remove();
-
   path = svg.selectAll("path")
       .data(partition.nodes(root).slice(1))
     .enter().append("path")
@@ -337,6 +358,8 @@ function onJson(error, r) {
       //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
       //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
       // })
+
+  redraw()
 
   ///
 
@@ -436,20 +459,6 @@ function updateBreadcrumbs(nodeArray, percentageString) {
 
   // Remove exiting nodes.
   g.exit().remove();
-
-  /*
-  // Now move and update the percentage at the end.
-  d3.select("#trail").select("#endlabel")
-      .attr("x", (nodeArray.length + 0.5) * (b.w + b.s))
-      .attr("y", b.h / 2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", "middle")
-      .text(percentageString);
-
-  // Make the breadcrumb trail visible, if it's hidden.
-  d3.select("#trail")
-      .style("visibility", "");
-      */
 
 }
 
