@@ -1,6 +1,6 @@
-Electron Space Radar
+Space Radar Electron
 ====
-Electron Space Radar is a disk space visualizer built with d3.js and electron
+Space Radar Electron is a disk space visualizer built with d3.js and electron
 
 
 Features
@@ -27,10 +27,10 @@ Run
 electron .
 ```
 
-Check that you have electron installed, otherwise run
+Check that you have depdencies installed, otherwise run (this may take awhile for electron binaries)
 
 ```
-sudo npm install -g electron-prebuilt
+npm install
 ```
 
 Issues
