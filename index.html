@@ -16,7 +16,7 @@ path {
 }
 
 circle {
-  fill: none;
+  fill: #ddd;
   pointer-events: all;
 }
 
@@ -59,7 +59,8 @@ form {
   position: absolute;
   left: 0;
   right: 0;
-  top: 20px;
+  bottom: 80px;
+  z-index: 50;
 }
 
 #legend h2 {
@@ -137,18 +138,24 @@ form {
 
 #explanation {
   position: absolute;
-  top: 260px;
-  left: 305px;
+  /*top: 260px;
+  left: 305px*/;
   width: 140px;
+  height: 140px;
+  margin: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   text-align: center;
   color: #666;
-  z-index: -1;
+  z-index: 50;
+  /*z-index: -1;*/
 }
 
 #percentage {
   font-size: 2.5em;
 }
-
 
 
 </style>
@@ -168,6 +175,13 @@ form {
   <!-- another version - flat style with animated hover effect -->
   <div class="breadcrumb flat">
   </div>
+</div>
+
+<div id="legend"></div>
+
+<div id="explanation">
+  <span id="percentage">bla%</span><br/>
+  <span id="directory_path">Muah</span>
 </div>
 
 <script src="js/du.js"></script>

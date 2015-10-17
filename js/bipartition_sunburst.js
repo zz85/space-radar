@@ -31,11 +31,14 @@ function onResize() {
 - Canvas implementation: http://bl.ocks.org/mbostock/1276463
 - Absolute or relative file size intensity
 - return Max Depth
+- Pie chart zooming
+- Filter hidden directories / files
 - combine hidden file sizes
 - add drives
 - idea: show children only upon mouseover
 - do computation in webworkers
 - use https://github.com/paulmillr/chokidar
+- Directory caching
 
 DONE
  - custom levels
@@ -67,7 +70,6 @@ var luminance = d3.scale.sqrt()
     .clamp(true)
     .range([90, 20]);
 
-
 var svg_container = d3.select("body")
   .append("div")
    .classed("svg-container", true) //container class to make it responsive
@@ -98,16 +100,18 @@ var arc = d3.svg.arc()
       return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1;
     });
 
-// var legend = d3.select("#legend")
-var legend = d3.select("body").append("div")
-  .attr('id', 'legend')
-
+var legend = d3.select("#legend")
+var explanation = d3.select("#explanation")
+var percentage = d3.select("#percentage")
+var directory_path = d3.select("#directory_path")
 
 var current_p, max_level, current_level = 0;
 
 var center = svg.append("g")
     .attr("id", "core")
     .on("click", zoomOut);
+
+explanation.on('click', zoomOut)
 
 center
     .append("circle")
@@ -116,20 +120,27 @@ center
 center.append("title")
   .text("zoom out");
 
-var center_text = center.append("text")
-  .attr("dx", function(d){return -20})
-  .text('hello')
-
 var path;
 
 function mouseover(d) {
   // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
 
   var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
-  // center.select('title').text(d.name + '\t' + format(d.value))
+
+  // 3 or 4 movable parts
+
+  // 1. lengend
   legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
-  updateBreadcrumbs(getAncestors(d), percent);
+  // 2. core
+  percentage.html(format(d.value) + '<br/>' + percent)
+  directory_path.html(d.name)
+
+  // 3. breadcrumbs
+  // updateBreadcrumbs(getAncestors(d), percent);
+
+  // 4. hover over mouse
+
 }
 
 
@@ -158,7 +169,7 @@ function zoom(root, p) {
 
   max_level = 0;
   current_level += p.depth - current_p.depth
-  center_text.html(p.key + ' - ' + format(p.value))
+
   current_p = root
   console.log('current_level', current_level)
 

@@ -129,15 +129,18 @@ function updatePartialFS() {
 	let cloneJson = clone2(json)
 	console.timeEnd('clone')
 	onJson(null, cloneJson)
-	checker = setTimeout(updatePartialFS, INCREMENTAL_INTERVAL);
+	checker = setTimeout(updatePartialFS, INCREMENTAL_INTERVAL)
 }
 
-target = path.resolve(target);
-console.log(target);
-queue.push({parent: target, node: json})
+target = path.resolve(target)
+console.log('Scanning target', target)
 
-setTimeout(updatePartialFS, 1000)
+// queue.push({parent: target, node: json})
+// setTimeout(updatePartialFS, 1000)
 
+json = fs.readFileSync('user.json', { encoding: 'utf-8'})
+setTimeout( () => onJson(null, JSON.parse(json)) )
+loading.style.display = 'none'
 
 function clone(json) {
 	return JSON.parse(JSON.stringify(json))
