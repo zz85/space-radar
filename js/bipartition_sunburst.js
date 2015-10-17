@@ -136,8 +136,11 @@ function mouseover(d) {
   // percentage.html(format(d.value) + '<br/>' + percent)
   // directory_path.html(d.name)
 
+  directory_path.html('<h2>' + format(current_p.value) + '</h2>' + 'root/' + d.key)
+
   // percentage.html(percent)
-  percentage.html(format(d.value))
+  // percentage.html(format(d.value))
+  // percentage.html(d.name)
 
 
   // 3. breadcrumbs
@@ -187,10 +190,10 @@ function zoomOut(p) {
 
 // Zoom to the specified new root.
 function zoom(root, p) {
-
   updateBreadcrumbs(getAncestors(root), '');
 
-  directory_path.html(format(root.value) + '<br/>' + root.key)
+  percentage.html(root.name);
+  directory_path.html('<h2>' + format(root.value) + '</h2>' + 'root/' + root.key)
 
   max_level = 0;
   current_level += p.depth - current_p.depth
