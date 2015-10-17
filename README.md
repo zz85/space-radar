@@ -18,6 +18,10 @@ Future Enhancements
 - moar!!
 - let me know what you think
 
+Known Issues
+==
+- Electron may freeze when scanning really really large directories
+
 Development
 ==
 
@@ -25,6 +29,12 @@ Run
 
 ```
 electron .
+```
+
+or
+
+```
+npm run app
 ```
 
 Check that you have depdencies installed, otherwise run (this may take awhile for electron binaries)
