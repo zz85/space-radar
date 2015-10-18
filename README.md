@@ -4,6 +4,10 @@ Space Radar Electron is a disk space visualizer built with [d3.js](d3js.org) and
 
 ![](https://pbs.twimg.com/media/CRi_IYuU8AAhobo.png:large)
 
+Downloads
+==
+Right now only Mac builds over at the [releases page](https://github.com/zz85/space-radar-electron/releases)
+
 
 Features
 ==
