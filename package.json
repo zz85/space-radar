@@ -6,7 +6,7 @@
   "scripts": {
     "test": "standard",
     "app": "electron .",
-    "build": "electron-packager . SpaceRadar --platform=darwin --arch=x64 --version=0.30.1 --ignore='node_modules/electron-(packager|prebuild)'",
+    "build": "electron-packager . SpaceRadar --platform=darwin --arch=x64 --version=0.33.4 --ignore='node_modules/electron-(packager|prebuild)'",
     "publish": "publish-release SpaceRadar.zip"
   },
   "keywords": [
