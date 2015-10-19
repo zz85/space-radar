@@ -178,7 +178,6 @@ function zoomIn(p) {
     p = p.parent;
   }
   if (!p.children) return;
-  current_level++;
   zoom(p, p);
 }
 
@@ -191,18 +190,20 @@ function zoomOut(p) {
 function zoom(root, p) {
   updateBreadcrumbs(getAncestors(root), '');
 
-  // core_top.html(format(root.value));
-  // core_center.html(root.name)
-
   core_center.html(format(root.value));
   core_top.html(root.name)
 
-  max_level = 0;
-  current_level += p.depth - current_p.depth
+  max_level = 0
+  current_level = 0
+
+  var tmp = root.parent
+  while (tmp) {
+    current_level++
+    tmp = tmp.parent
+  }
+
   current_p = root
-
-
-  console.log('current_level', current_level)
+  // console.log('current_level', current_level)
 
   if (document.documentElement.__transition__) return;
 
@@ -233,6 +234,8 @@ function zoom(root, p) {
   // When zooming out, arcs enter from the inside and exit to the outside.
   // Exiting outside arcs transition to the new layout.
   if (root !== p) enterArc = insideArc, exitArc = outsideArc, outsideAngle.range([p.x, p.x + p.dx]);
+
+  FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level);
 
   var transition = d3.event && d3.event.altKey ? 7500 : 750
   d3.transition().duration(transition).each(function() {
@@ -445,8 +448,6 @@ function updateBreadcrumbs(nodeArray, percentageString) {
     .attr('href', '#')
       .style("background", function(d) {
         var h = hue(d.key);
-        // console.log(d.depth);
-        // console.log(h);
         return h;
         // var c = d3.lab(hue(p.name));
         // c.l = luminance(d.sum);
@@ -461,12 +462,7 @@ function updateBreadcrumbs(nodeArray, percentageString) {
 
   entering.text(function(d) { return d.name; })
 
-
   // Remove exiting nodes.
   g.exit().remove();
 
 }
-
-
-// d3.select(self.frameElement).style("height", margin.top + margin.bottom + "px");
-
