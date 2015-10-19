@@ -7,7 +7,7 @@
     "test": "standard",
     "app": "electron .",
     "clean": "rm -rf SpaceRadar-darwin-x64",
-    "build": "electron-packager . SpaceRadar --ignore=node_modules/standard --platform=darwin --arch=x64 --version=0.34.0 --ignore='node_modules/electron-(packager|prebuild)' --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar",
+    "build": "electron-packager . SpaceRadar --ignore=node_modules/standard --platform=win32 --arch=all --version=0.34.0 --ignore='node_modules/(electron-packager|electron-prebuilt|standard|publish-release)' --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar",
     "zip": "cd SpaceRadar-darwin-x64 && zip -ryX SpaceRadar.zip SpaceRadar.app",
     "publish": "publish-release SpaceRadar-darwin-x64/SpaceRadar.zip"
   },

@@ -312,11 +312,13 @@ function onJson(error, r) {
   console.log('ROOT SIZE', format(root.value))
   console.time('compute3')
   // Now redefine the value function to use the previously-computed sum.
+
+  max_level = 0;
   partition
       .children(function(d, depth) {
         // console.log('children');
+        max_level = Math.max(depth, max_level);
         if (depth >= LEVELS) {
-          max_level = Math.max(depth, max_level);
           return null
         }
         if (!d._children) return null;
