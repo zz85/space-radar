@@ -75,6 +75,27 @@ function layout(d) {
   }
 }
 
+function display(root) {
+  var total_size = root.value
+  var node = div.datum(root).selectAll(".node")
+    .data(
+      // root._children
+    treemap.nodes
+    )
+  .enter().append("div")
+    .attr("class", "node")
+    .call(position)
+    .style("background", function(d) {
+      return d.children ? color(d.name) : null;
+    })
+    .on('mousedown', function(d) {
+      var path = getPath(d).map(d => {return d.name }).join('/')
+      console.log(path, d);
+      d3.select('#legend').html(path)
+    })
+    .text(function(d) { return d.children ? null : d.size / total_size < 0.01 ? null: d.name });
+}
+
 function onJson(error, root) {
   if (error) throw error;
 
@@ -83,39 +104,19 @@ function onJson(error, root) {
   // layout(root)
   // console.log(root)
 
-  var total_size = root.value
+  display(root)
 
+  // function toggleCount() {
+  //   var value = this.value === "count"
+  //       ? function() { return 1; }
+  //       : function(d) { return d.size; };
 
-  var node = div.datum(root).selectAll(".node")
-      .data(
-        // root._children
-      treemap.nodes
-      )
-    .enter().append("div")
-      .attr("class", "node")
-      .call(position)
-      .style("background", function(d) {
-        return d.children ? color(d.name) : null;
-      })
-      .on('mousedown', function(d) {
-        var path = getPath(d).map(d => {return d.name }).join('/')
-        console.log(path, d);
-        d3.select('#legend').html(path)
-      })
-
-      .text(function(d) { return d.children ? null : d.size / total_size < 0.01 ? null: d.name });
-
-  function toggleCount() {
-    var value = this.value === "count"
-        ? function() { return 1; }
-        : function(d) { return d.size; };
-
-    node
-        .data(treemap.value(value).nodes)
-      .transition()
-        .duration(1500)
-        .call(position);
-  };
+  //   node
+  //       .data(treemap.value(value).nodes)
+  //     .transition()
+  //       .duration(1500)
+  //       .call(position);
+  // }
 }
 
 function position() {
