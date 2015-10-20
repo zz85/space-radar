@@ -27,7 +27,6 @@ function onResize() {
 - Labels
 - Pie Magnifier
 - File Types
-- Hover stats
 - Canvas implementation: http://bl.ocks.org/mbostock/1276463
 - Absolute or relative file size intensity
 - return Max Depth
@@ -47,6 +46,7 @@ DONE
  - Async file checking
  - hover over states
  - Streaming/incremental updates (sort of by recreating partitions & jsons)
+ - Hover stats
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -148,25 +148,6 @@ function mouseover(d) {
   // 4. hover over mouse
 
 }
-
-
-/*
-
-  // movable / static parts
-
-  // 1. lengend
-  // 2. core
-  // 3. breadcrumbs
-  // 4. hover over mouse
-
-  displayable items
-  1. size
-  2. directory name
-  3. directory path
-  4. precentage
-
-
-  */
 
 
 function onProcess(path, b) {

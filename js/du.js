@@ -135,15 +135,17 @@ function updatePartialFS() {
 target = path.resolve(target)
 console.log('Scanning target', target)
 
-queue.push({parent: target, node: json})
-setTimeout(updatePartialFS, 1000)
+// d3.json("flare.json", onJson);
 
-// setTimeout( () => {
-// 	// for testing purposes only
-// 	json = fs.readFileSync('user.json', { encoding: 'utf-8'})
-// 	loading.style.display = 'none'
-// 	onJson(null, JSON.parse(json))
-// })
+setTimeout( () => {
+	// queue.push({parent: target, node: json})
+	// updatePartialFS();
+
+	// for testing purposes only
+	json = fs.readFileSync('user.json', { encoding: 'utf-8'})
+	loading.style.display = 'none'
+	onJson(null, JSON.parse(json).children[10])
+})
 
 
 function clone(json) {
