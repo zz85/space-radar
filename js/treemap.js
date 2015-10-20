@@ -10,7 +10,7 @@ var treemap = d3.layout.treemap()
     .size([width, height])
     .sticky(true)
     .round(false)
-    .children(function(d, depth) { return depth ? null : d._children; })
+    // .children(function(d, depth) { return depth ? null : d._children; })
     .sort(function(a, b) { return a.value - b.value; })
     .value(function(d) { return d.size; });
 
@@ -78,17 +78,19 @@ function layout(d) {
 function onJson(error, root) {
   if (error) throw error;
 
-  initialize(root)
-  accumulate(root)
-  layout(root)
-  console.log(root)
+  // initialize(root)
+  // accumulate(root)
+  // layout(root)
+  // console.log(root)
 
   var total_size = root.value
 
 
   var node = div.datum(root).selectAll(".node")
-      .data(root._children)
-      // treemap.nodes
+      .data(
+        // root._children
+      treemap.nodes
+      )
     .enter().append("div")
       .attr("class", "node")
       .call(position)
