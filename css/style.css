@@ -1,0 +1,189 @@
+path {
+  stroke: #fff;
+  fill-rule: evenodd;
+}
+
+
+circle,
+path {
+
+}
+
+circle {
+  fill: none;
+  pointer-events: all;
+}
+
+circle:hover {
+  fill: #999;
+  opacity: 0.5;
+}
+
+#core:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+
+/* treemap */
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+pre {
+  font-size: 18px;
+}
+
+line {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.string, .regexp {
+  color: #f39;
+}
+
+.keyword {
+  color: #00c;
+}
+
+.comment {
+  color: #777;
+  font-style: oblique;
+}
+
+.number {
+  color: #369;
+}
+
+.class, .special {
+  color: #1181B8;
+}
+
+/* end treemap */
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  overflow: none;
+}
+
+.cell > rect:hover {
+  fill: yellow;
+}
+
+/* legend */
+
+#explanation {
+  font-family: Avenir, Arial, Helvetica, sans-serif;
+  position: absolute;
+  /*top: 260px;
+  left: 305px*/;
+  width: 140px;
+  height: 140px;
+  margin: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  color: #333;
+  z-index: -1;
+  /*z-index: -1;*/
+}
+
+#core_top {
+  /*font-size: 2.5em;*/
+}
+
+#core_center {
+  font-size: 2em;
+}
+
+
+#legend {
+  text-align:center;
+  font-family: Avenir, Arial, Helvetica, sans-serif;
+  padding-top:20px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40px;
+  z-index: 50;
+}
+
+#legend h2 {
+  font-size:1.2em;
+  font-style:inherit;
+  margin: 0;
+  padding: 0;
+}
+#legend p {
+  font-size:.9em;
+  margin: 0;
+  padding: 0;
+  text-transform: uppercase;
+  font-variant:small-caps;
+}
+
+#loading {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: fixed;
+  display: inline-block;
+  margin: auto;
+  z-index: 10;
+  width: 100px;
+  height: 100px;
+  display: none;
+}
+
+.hmm {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.hmm:hover {
+  stroke: #999;
+  stroke-width: 2px;
+  opacity: 1;
+}
+
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    /*padding-bottom: 100%;*/ /* aspect ratio */
+    vertical-align: top;
+    overflow: hidden;
+}
+
+.svg-content-responsive {
+    display: inline-block;
+    position: absolute;
+    top: 10px;
+    left: 0;
+}
+
+#sequence {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  /*width: 600px;
+  height: 70px;*/
+}
+
+
+#chart {
+  position: relative;
+}
+
+#chart path {
+  stroke: #fff;
+}

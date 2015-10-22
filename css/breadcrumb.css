@@ -39,12 +39,14 @@
 
 /*hover/active styles*/
 .breadcrumb a.active, .breadcrumb a:hover{
-	background: #333;
-	background: linear-gradient(#333, #000);
+	/*background: #333;
+	background: linear-gradient(#333, #000);*/
+	opacity: 0.8;
 }
 .breadcrumb a.active:after, .breadcrumb a:hover:after {
-	background: #333;
-	background: linear-gradient(135deg, #333, #000);
+	/*background: #333;
+	background: linear-gradient(135deg, #333, #000);*/
+	opacity: 0.8;
 }
 
 /*adding the arrows for the breadcrumbs using rotated pseudo elements*/
@@ -108,5 +110,5 @@
 }
 .flat a:hover, .flat a.active,
 .flat a:hover:after, .flat a.active:after{
-	background: #9EEB62;
+	/*background: #9EEB62;*/
 }

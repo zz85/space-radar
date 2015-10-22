@@ -27,7 +27,6 @@ function onResize() {
 - Labels
 - Pie Magnifier
 - File Types
-- Hover stats
 - Canvas implementation: http://bl.ocks.org/mbostock/1276463
 - Absolute or relative file size intensity
 - return Max Depth
@@ -47,6 +46,7 @@ DONE
  - Async file checking
  - hover over states
  - Streaming/incremental updates (sort of by recreating partitions & jsons)
+ - Hover stats
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -149,36 +149,11 @@ function mouseover(d) {
 
 }
 
-
-/*
-
-  // movable / static parts
-
-  // 1. lengend
-  // 2. core
-  // 3. breadcrumbs
-  // 4. hover over mouse
-
-  displayable items
-  1. size
-  2. directory name
-  3. directory path
-  4. precentage
-
-
-  */
-
-
-function onProcess(path, b) {
-  legend.html("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
-}
-
 function zoomIn(p) {
   if (p.depth > 1) {
     p = p.parent;
   }
   if (!p.children) return;
-  current_level++;
   zoom(p, p);
 }
 
@@ -191,18 +166,20 @@ function zoomOut(p) {
 function zoom(root, p) {
   updateBreadcrumbs(getAncestors(root), '');
 
-  // core_top.html(format(root.value));
-  // core_center.html(root.name)
-
   core_center.html(format(root.value));
   core_top.html(root.name)
 
-  max_level = 0;
-  current_level += p.depth - current_p.depth
+  max_level = 0
+  current_level = 0
+
+  var tmp = root.parent
+  while (tmp) {
+    current_level++
+    tmp = tmp.parent
+  }
+
   current_p = root
-
-
-  console.log('current_level', current_level)
+  // console.log('current_level', current_level)
 
   if (document.documentElement.__transition__) return;
 
@@ -233,6 +210,8 @@ function zoom(root, p) {
   // When zooming out, arcs enter from the inside and exit to the outside.
   // Exiting outside arcs transition to the new layout.
   if (root !== p) enterArc = insideArc, exitArc = outsideArc, outsideAngle.range([p.x, p.x + p.dx]);
+
+  FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level);
 
   var transition = d3.event && d3.event.altKey ? 7500 : 750
   d3.transition().duration(transition).each(function() {
@@ -312,11 +291,13 @@ function onJson(error, r) {
   console.log('ROOT SIZE', format(root.value))
   console.time('compute3')
   // Now redefine the value function to use the previously-computed sum.
+
+  max_level = 0;
   partition
       .children(function(d, depth) {
         // console.log('children');
+        max_level = Math.max(depth, max_level);
         if (depth >= LEVELS) {
-          max_level = Math.max(depth, max_level);
           return null
         }
         if (!d._children) return null;
@@ -407,6 +388,7 @@ function updateArc(d) {
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
 function getAncestors(node) {
+  if (!node) return []
   var path = [];
   var current = node;
   while (current.parent) {
@@ -443,8 +425,6 @@ function updateBreadcrumbs(nodeArray, percentageString) {
     .attr('href', '#')
       .style("background", function(d) {
         var h = hue(d.key);
-        // console.log(d.depth);
-        // console.log(h);
         return h;
         // var c = d3.lab(hue(p.name));
         // c.l = luminance(d.sum);
@@ -459,12 +439,7 @@ function updateBreadcrumbs(nodeArray, percentageString) {
 
   entering.text(function(d) { return d.name; })
 
-
   // Remove exiting nodes.
   g.exit().remove();
 
 }
-
-
-// d3.select(self.frameElement).style("height", margin.top + margin.bottom + "px");
-
