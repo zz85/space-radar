@@ -4,9 +4,7 @@
 const fs = require('fs')
 const path = require('path')
 
-let target = '../..'
-let async = require("async")
-
+let target = '../../..'
 let counter = 0;
 
 /* Synchronous File System descender */
@@ -52,10 +50,11 @@ function jsonFS(parent, name, ret) {
 }
 
 /* Asynchronous File System descender */
-function descendFS(options, callback) {
-	// console.log('test', arguments);
-	let dir, name, node;
-	node = options.node;
+function descendFS(options, done) {
+	let dir, name, node
+
+	node = options.node
+
 	if (!options.name) {
 		dir = options.parent
 		name = options.parent
@@ -64,50 +63,65 @@ function descendFS(options, callback) {
 		name = options.name
 	}
 
-	counter++;
+	counter++
 	if (counter % 1000 === 0) {
-		if (window.onProcess) window.onProcess(dir, name);
-		// console.log('process', dir, name)
-		if (counter % 10000 === 0) console.log('scanned', counter);
+		if (options.onprogress) options.onprogress(dir, name);
+		if (counter % 10000 === 0) console.log('scanning', counter, dir);
 	}
 
 	fs.lstat(dir, (err, stat) => {
 		if (err) {
-			console.error(err.stack)
-			return callback(err)
+			console.log(err.stack)
+			return done(dir)
 		}
 
 		let size = stat.size;
 		// console.log(dir, stat.blocks, stat.blocks * 512, stat.size)
 
+		if (stat.isSymbolicLink()) return done(dir)
+
 		if (stat.isFile()) {
-			// console.log(name);
-			node.name = name;
-			node.size = size;
-			return callback(null, 0)
+			node.name = name
+			node.size = size
+			return done(dir)
 		}
 
 		if (stat.isDirectory()) {
-			return fs.readdir(dir, (err, list) => {
-				if (err) console.error(err.stack)
+			node.name = name;
+			// node.size = size;
+			node.children = []
 
-				node.name = name;
-				// node.size = size;
-				node.children = []
+			fs.readdir(dir, (err, list) => {
+				if (err) {
+					console.error(err.stack)
+					return done(dir)
+				}
+
+				var left = list.length;
+
+				function ok(bla) {
+					left--;
+					if (left === 0) done(name)
+				}
 
 				list.forEach(file => {
 					let childNode = {};
 					node.children.push(childNode)
-					queue.push({parent: dir, name: file, node: childNode})
-				}
-				);
+					descendFS({
+						parent: dir,
+						name: file,
+						node: childNode,
+						onprogress: options.onprogress
+					}, ok)
+				});
 
-				callback(null, 0);
+				if (!left) done(name)
 			})
+
+			return
 		}
 
-		// console.log('ohoh', stat)
-		callback();
+		return done(dir)
 	})
 }
 
@@ -132,17 +146,16 @@ function complete() {
     onJson(null, clone2(json))
 };
 
-
+let checker
 
 var json = {};
-
-let checker
 
 function updatePartialFS() {
 	clearTimeout(checker)
 	console.log('scanning...');
 	console.time('clone')
 	let cloneJson = clone2(json)
+	console.log(cloneJson)
 	console.timeEnd('clone')
 	onJson(null, cloneJson)
 	checker = setTimeout(updatePartialFS, INCREMENTAL_INTERVAL)
@@ -154,10 +167,18 @@ console.log('Scanning target', target)
 // d3.json("flare.json", onJson);
 
 setTimeout( () => {
-	// jsonFS({parent: target, node: json}, complete)
-	jsonFS(target, null, json)
-	complete()
+	// jsonFS(target, null, json)
+	// complete()
+
+	descendFS({
+		parent: target,
+		node: json,
+		onprogress: window.onProcess
+	}, complete)
+
 	// updatePartialFS();
+
+	setTimeout(updatePartialFS, INCREMENTAL_INTERVAL);
 
 	// for testing purposes only
 	// json = fs.readFileSync('user.json', { encoding: 'utf-8'})

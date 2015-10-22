@@ -393,6 +393,7 @@ function updateArc(d) {
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
 function getAncestors(node) {
+  if (!node) return []
   var path = [];
   var current = node;
   while (current.parent) {
