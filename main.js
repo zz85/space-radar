@@ -12,6 +12,7 @@ app.on('window-all-closed', function() {
   // }
 })
 
+
 app.on('ready', function() {
   console.log('app is ready');
   mainWindow = new BrowserWindow({
@@ -23,8 +24,14 @@ app.on('ready', function() {
 
   mainWindow.openDevTools()
 
+
   mainWindow.on('closed', function() {
     // console.log('window is closed');
     mainWindow = null
   })
+
+  // require(__dirname +  '/du.js')
+
+
 })
+
