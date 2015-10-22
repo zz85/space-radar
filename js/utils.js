@@ -25,6 +25,26 @@ function format(bytes) {
 	return last_value + ' ' + last_unit
 }
 
+function clone(json) {
+	return JSON.parse(JSON.stringify(json))
+}
+
+function clone2(source, target) {
+	if (!target) target = {};
+
+	if (source.name) target.name = source.name;
+	if (source.size) target.size = source.size;
+	if (source.children) {
+		target.children = [];
+		source.children.forEach( node => {
+			target.children.push(clone2(node, {}))
+		})
+	}
+
+	return target;
+}
+
 if (window) {
-	window.format = format;
+	window.format = format
+	window.clone2 = clone
 }
