@@ -63,9 +63,10 @@ function descendFS(options, done) {
 	}
 
 	counter++
-	if (counter % 1000 === 0) {
+	if (counter % 4000 === 0) {
 		if (options.onprogress) options.onprogress(dir, name);
-		if (counter % 10000 === 0) console.log('scanning', counter, dir);
+		// if (counter % 10000 === 0) console.log('scanning', counter, dir);
+		if (counter % 100000 === 0) if (options.onrefresh) options.onrefresh(dir, name);
 	}
 
 	fs.lstat(dir, (err, stat) => {
@@ -110,7 +111,8 @@ function descendFS(options, done) {
 						parent: dir,
 						name: file,
 						node: childNode,
-						onprogress: options.onprogress
+						onprogress: options.onprogress,
+						onrefresh: options.onrefresh
 					}, ok)
 				});
 

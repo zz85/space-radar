@@ -8,6 +8,8 @@ require('crash-reporter').start()
 var mainWindow = null
 var duWindow = null
 
+var DEBUG = 0
+
 
 app.on('window-all-closed', function() {
   console.log('window all closed');
@@ -16,17 +18,35 @@ app.on('window-all-closed', function() {
   // }
 })
 
+var ipc_senders = {};
 
-ipc.on('ducomms', function(event, arg) {
-  console.log('MAIN argum', arg)
-  var z = 'hi'
-  z = {moo: 'pong', msg: arg}
-  // JSON.stringify({moo: 'pong'})
-  event.sender.send('ducomms', z);
+// from viz / du
+ipc.on('register', function(event, whoami) {
+  console.log('ipc registered', whoami)
+  ipc_senders[whoami] = event.sender;
+
+  if ('viz' in ipc_senders && 'du' in ipc_senders) {
+    ipc_senders.viz.send('ready')
+    ipc_senders.du.send('ready')
+  }
 })
 
-// ipc.send('ducomms', 'hohoho')
+// simple router
+ipc.on('call', function(event, target, channel, a, b, c, d, e) {
+  // if (channel != 'progress') console.log('call', target, channel, a, b, c, d, e)
+  ipc_senders[target].send(channel, a, b, c, d, e);
+})
 
+// ipc.on('message', function(event, target, msg) {
+//   console.log('main received', target, msg)
+//   ipc_senders[target].send('message', msg);
+// })
+
+// ipc.on('broadcast', function(event, msg) {
+//   for (var ids in ipc_senders) {
+//     ipc_senders[ids].send('broadcast', msg);
+//   }
+// })
 
 app.on('ready', function() {
   console.log('app is ready');
@@ -35,19 +55,22 @@ app.on('ready', function() {
     height: 600
   })
 
-  // {show: false}
-  duWindow = new BrowserWindow({
+  duWindow = new BrowserWindow(
+    DEBUG ?
+  {
     width: 880,
     height: 600
-  })
+  } : {show: false})
 
   // var window2 = new BrowserWindow({width: 800, height: 600});
 
   mainWindow.loadUrl('file://' + __dirname + '/index.html');
   duWindow.loadUrl('file://' + __dirname + '/headless.html');
 
-  duWindow.openDevTools()
-  mainWindow.openDevTools()
+  if (DEBUG) {
+    duWindow.openDevTools()
+    mainWindow.openDevTools()
+  }
 
   // duWindow.webContents.on('did-finish-load', function() {
   //   duWindow.webContents.send('args', ['test', '1', '2', '3'])

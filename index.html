@@ -12,11 +12,39 @@
 
 var ipc = require('ipc')
 
+const ipc_name = 'viz'
+ipc.send('register', ipc_name)
 
- ipc.send('ducomms', 'frommm index 123')
-ipc.on('ducomms', function(arg) {
-  console.log('index Renderer argum', arg)
+ipc.on('message', function(arg) {
+  console.log('[' + ipc_name + '] message', arg)
 })
+
+ipc.on('ready', function(arg) {
+  console.log('lets go');
+  loading.style.display = 'inline-block'
+})
+
+ipc.on('progress', function(dir, name) {
+  // console.log('[' + ipc_name + '] progress', name)
+  onProcess(dir, name)
+})
+
+ipc.on('refresh', function(json) {
+  // console.log('[' + ipc_name + '] refresh..', json)
+  onJson(null, json)
+})
+
+ipc.on('complete', function(json) {
+  loading.style.display = 'none'
+  // console.log('[' + ipc_name + '] complete..', json)
+  onJson(null, json)
+})
+
+function onProcess(path, b) {
+  legend.html("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
+}
+
+
 </script>
 <div id="loading">
   <div class="throbber-loader">

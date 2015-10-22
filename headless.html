@@ -1,0 +1,112 @@
+<html>
+<head>
+  <title>DU headless</title>
+</head>
+<body>
+  <script>
+
+  'use strict';
+
+  const path = require('path')
+  const ipc = require('ipc')
+  const du = require('./js/du')
+
+  const ipc_name = 'du'
+  ipc.send('register', ipc_name)
+
+  ipc.on('ready', function() {
+    console.log('all is ready')
+    go();
+  })
+
+  ipc.on('broadcast', function(arg) {
+    console.log('[' + ipc_name + '] broadcast', arg)
+  })
+
+  ipc.on('message', function(arg) {
+    console.log('[' + ipc_name + '] message', arg)
+  })
+
+  function go() {
+
+    let target = '../../..'
+    var INCREMENTAL_INTERVAL = 30000
+
+    let checker
+    let json = {}
+    console.time('async2')
+
+    function complete(counter) {
+        // console.log("Scan completed", counter, "files");
+        console.timeEnd('async2')
+        clearTimeout(checker)
+
+        console.log(json);
+
+        // cache
+        // console.time('write')
+        // fs.writeFileSync('test.json', JSON.stringify(json))
+        // console.timeEnd('write')
+
+        ipc.send('call', 'viz', 'complete', json)
+    };
+
+    function refresh() {
+      clearTimeout(checker)
+      console.log('scanning...');
+
+      ipc.send('call', 'viz', 'refresh', json)
+      checker = setTimeout(refresh, INCREMENTAL_INTERVAL)
+    }
+
+    function progress(path, name) {
+      ipc.send('call', 'viz', 'progress', path, name)
+    }
+
+    target = path.resolve(target)
+    console.log('Scanning target', target)
+
+    // yay
+    du({
+        parent: target,
+        node: json,
+        onprogress: progress,
+        // onrefresh: refresh
+      }, complete)
+
+    setTimeout(refresh, 5000)
+  }
+
+
+    // // d3.json("flare.json", onJson);
+    //   // for testing purposes only
+    //   // json = fs.readFileSync('user.json', { encoding: 'utf-8'})
+    //   // loading.style.display = 'none'
+    //   // onJson(null, JSON.parse(json).children[10])
+    //   // onJson(null, JSON.parse(json))
+    // })
+
+
+  </script>
+  <script>
+  // // redirect log to stdout
+  // console.log = require('console').log
+  // // redirect errors to stderr
+  // window.addEventListener('error', function (e) {
+  //   e.preventDefault()
+  //   require('console').error(e.error.stack || 'Uncaught ' + e.error)
+  // })
+
+  // ipc.on('args', function (args) {
+  //   console.log('yoz i got something!!!')
+  //   // var app
+  //   // if (path.isAbsolute(args[2])) {
+  //   //   app = require(args[2])
+  //   // } else {
+  //   //   app = require(path.join(process.cwd(), args[2]))
+  //   // }
+  //   // if (typeof app === 'function') app(args.slice(2))
+  // })
+  </script>
+</body>
+</html>

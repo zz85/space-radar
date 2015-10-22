@@ -149,11 +149,6 @@ function mouseover(d) {
 
 }
 
-
-function onProcess(path, b) {
-  legend.html("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
-}
-
 function zoomIn(p) {
   if (p.depth > 1) {
     p = p.parent;
