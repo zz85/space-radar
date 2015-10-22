@@ -4,8 +4,13 @@ var margin = {
   width = 760 - margin.left - margin.right,
   height = 500 - margin.top - margin.bottom,
 
-  x = d3.scale.linear().range([0, width]),
-  y = d3.scale.linear().range([0, height])
+  x = d3.scale.linear()
+    .domain([0, width])
+    .range([0, width]),
+  y = d3.scale.linear()
+    .domain([0, height])
+    .range([0, height])
+
 
 var color = d3.scale.category20c();
 
@@ -13,9 +18,13 @@ var treemap = d3.layout.treemap()
     .size([width, height])
     .sticky(true)
     .round(false)
-    // .children(function(d, depth) { return depth ? null : d._children; })
+    // .children(function(d, depth) {
+    //   return (depth > 2) ? null : d.children
+    //   // return depth ? null : d._children;
+    // })
     .sort(function(a, b) { return a.value - b.value; })
     .value(function(d) { return d.size; });
+
 
 var div = d3.select("body").append("div")
   .attr("class", "chart")
@@ -23,11 +32,15 @@ var div = d3.select("body").append("div")
     .style("height", height + "px")
 
 var svg = div
-  .append("svg:svg")
+  .append("svg")
     .attr("width", width)
     .attr("height", height)
-  .append("svg:g")
-    .attr("transform", "translate(.5,.5)");
+    .style("margin-left", -margin.left + "px")
+    .style("margin.right", -margin.right + "px")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .style("shape-rendering", "crispEdges")
+
 
 function getPath(d) {
   var path = [d]
@@ -87,28 +100,38 @@ function display(data) {
 
   var total_size = root.value
 
+  console.time('treemap')
   var nodes = treemap.nodes(root)
-    .filter( d => { return !d.children } )
+    // .filter( d => { return !d.children } )
+  console.timeEnd('treemap')
 
   var cell = svg.selectAll('g')
     .data( nodes )
-    .enter().append( 'svg:g' )
+    .enter().append('g')
       .attr("class", "cell")
-      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+      .call(rect)
+      // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
       .on("click", function(d) { return zoom(node == d.parent ? root : d.parent); });
 
-  cell.append("svg:rect")
-    .attr("width", function(d) { return d.dx - 1; })
-    .attr("height", function(d) { return d.dy - 1; })
-    .style("fill", function(d) { return color(d.parent.name); });
+  cell.append("rect")
+    .style("fill", function(d) {
+      // return color(d.parent.name);\
+        return color(d.name);
+    })
+    .call(rect)
 
-  cell.append("svg:text")
+  cell.append("text")
     .attr("x", function(d) { return d.dx / 2; })
     .attr("y", function(d) { return d.dy / 2; })
-    .attr("dy", ".35em")
+    .call(text)
     .attr("text-anchor", "middle")
     .text(function(d) { return d.name; })
     .style("opacity", function(d) { d.w = this.getComputedTextLength(); return d.dx > d.w ? 1 : 0; });
+
+    var d = data
+
+    x.domain([d.x, d.x + d.dx]);
+    y.domain([d.y, d.y + d.dy]);
 
 
   //   .on('mousedown', function(d) {
@@ -120,6 +143,21 @@ function display(data) {
   //   })
   //   .text(function(d) { return d.children ? null : d.size / total_size < 0.01 ? null: d.name });
 }
+
+function rect(rect) {
+  rect.attr("x", function(d) { return x(d.x); })
+      .attr("y", function(d) { return y(d.y); })
+      .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+      .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+}
+
+function text(text) {
+  text.attr("x", function(d) { return x(d.x) + 6; })
+      .attr("y", function(d) { return y(d.y) + 6; });
+}
+
+
+
 
 function onJson(error, data) {
   if (error) throw error;
@@ -134,7 +172,11 @@ function onJson(error, data) {
 
   display(root)
 
-  d3.select(window).on("click", function() { zoom(root); });
+  d3.select(window).on("click", function() {
+    console.log('click root')
+    // zoom(root);
+    zoom(current.parent)
+  });
 
   // d3.select("select").on("change", function() {
   //   treemap.value(this.value == "size" ? size : count).nodes(root);
@@ -142,25 +184,44 @@ function onJson(error, data) {
   // });
 }
 
-
+var zooming = false;
+var current;
 function zoom(d) {
-  var kx = width / d.dx, ky = height / d.dy;
+  if (zooming || !d) return;
+  zooming = true;
+  current = d;
+
+  console.log('hee')
+
+
+  // var g2 = display(d),
+  // t1 = g1.transition().duration(750),
+  // t2 = g2.transition().duration(750);
+
+  // Update the domain only after entering new elements.
   x.domain([d.x, d.x + d.dx]);
   y.domain([d.y, d.y + d.dy]);
 
+  display(d)
+
+  // Enable anti-aliasing during the transition.
+  svg.style("shape-rendering", null);
+
+  // var kx = width / d.dx, ky = height / d.dy;
+
   var t = svg.selectAll("g.cell").transition()
       .duration(d3.event.altKey ? 7500 : 750)
-      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+      // .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+      .call(rect)
 
   t.select("rect")
-      .attr("width", function(d) { return kx * d.dx - 1; })
-      .attr("height", function(d) { return ky * d.dy - 1; })
+      .call(rect)
 
   t.select("text")
-      .attr("x", function(d) { return kx * d.dx / 2; })
-      .attr("y", function(d) { return ky * d.dy / 2; })
-      .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
+      .call(text)
+      // .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
 
   node = d;
   d3.event.stopPropagation();
+  zooming = false;
 }

@@ -138,13 +138,14 @@ console.log('Scanning target', target)
 // d3.json("flare.json", onJson);
 
 setTimeout( () => {
-	// queue.push({parent: target, node: json})
-	// updatePartialFS();
+	queue.push({parent: target, node: json})
+	updatePartialFS();
 
 	// for testing purposes only
-	json = fs.readFileSync('user.json', { encoding: 'utf-8'})
-	loading.style.display = 'none'
-	onJson(null, JSON.parse(json).children[10])
+	// json = fs.readFileSync('user.json', { encoding: 'utf-8'})
+	// loading.style.display = 'none'
+	// onJson(null, JSON.parse(json).children[10])
+	// onJson(null, JSON.parse(json))
 })
 
 
