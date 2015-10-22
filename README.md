@@ -24,9 +24,18 @@ Future Enhancements
 - moar!!
 - let me know what you think
 
+Whats New
+==
+
+2.0.0
+- Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
+- Runs disk scanning as a separate headless renderer process
+- Json is passed back via IPC
+- Remove Async npm dependency
+
 Known Issues
 ==
-- Electron may freeze when scanning really really large directories
+- UI may freeze momentary loading large data sets
 
 Development
 ==

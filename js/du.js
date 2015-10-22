@@ -6,48 +6,6 @@ const path = require('path')
 
 let counter = 0;
 
-/* Synchronous File System descender */
-function jsonFS(parent, name, ret) {
-	counter++;
-
-	let dir = name ? path.join(parent, name) : parent
-	name = name ? name : parent;
-
-	if (counter % 100000 == 0) console.log(counter, dir);
-
-	try {
-		let stat = fs.lstatSync(dir)
-		if (stat.isSymbolicLink()) {
-			ret.name = name;
-			ret.size = 0;
-
-		} else if (stat.isFile()) {
-			ret.name = name;
-			ret.size = stat.size;
-		}
-		else if (stat.isDirectory()) {
-			let files = fs.readdirSync(dir)
-
-			ret.name = name;
-			ret.children = [];
-
-			files.forEach(file => {
-				let child = {}
-				ret.children.push(child)
-				jsonFS(dir, file, child)
-
-				// let child = jsonFS(dir, file, {})
-				// if (child) ret.children.push(child)
-			})
-		}
-
-	} catch (e) {
-		console.error(e.stack)
-	}
-
-	return ret
-}
-
 /* Asynchronous File System descender */
 function descendFS(options, done) {
 	let dir, name, node
