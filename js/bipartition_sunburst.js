@@ -125,6 +125,9 @@ var center = svg.append("g")
     .attr("id", "core")
     .on("click", zoomOut);
 
+var circular_meter = svg.append('g');
+// TODO make a tiny border around the rim of center to show the percentage of current space
+
 explanation.on('click', zoomOut)
 
 center
@@ -141,14 +144,16 @@ function mouseover(d) {
 
   var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
 
-  // 3 or 4 movable parts
-
   // 1. lengend
-  legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
+  // legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
   // 2. core
-  core_tag.html('' + format(d.value) + ' (' + percent + ')<br/>'  + d.name)
-  core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
+  // core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
+
+  core_top.html(d.name)
+  core_center.html(format(d.value).split(' ').join('<br/>'))
+  core_tag.html(percent + '<br/>' + '<br/>' + format(current_p.value))
+  // + ' (' + percent + ')<br/>'
 
 
   svg.selectAll("path")
@@ -234,7 +239,6 @@ function zoom(root, p) {
   center
     .datum(root)
     .on('mouseover', function(d) {
-      console.log('center!')
       mouseover(d)
 
       // path.style('opacity', 1)
