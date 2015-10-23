@@ -21,6 +21,7 @@ function onResize() {
   - Directory caching
   - add drives
   - Real Disk usage
+  - Grab free space!
 
 - UI
    - color by
@@ -37,6 +38,7 @@ function onResize() {
   - Labels
   - Pie Magnifier
   - Absolute or relative file size intensity
+  - Back / Fwd paths
 
 - UI Perf
   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
@@ -144,6 +146,30 @@ function mouseover(d) {
   // 2. core
   core_tag.html('' + format(d.value) + ' (' + percent + ')<br/>'  + d.name)
   core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
+
+
+  console.log(d.depth)
+  svg.selectAll("path")
+      .style("opacity", 1 / (1. + d.depth));
+
+  // console.log('mouseover', d)
+
+  var path = svg.selectAll("path")
+    // .data()
+    .filter(node => {
+      if (node.depth < d.depth) {
+        // node is parent of d
+        return false
+      } else {
+        // d is parent of node
+        var e = node;
+        while (e) {
+          if (e == d) return true
+          e = e.parent
+        }
+        return false
+      }
+    }).style("opacity", 1);
 
   // core_tag.html(percent)
   // core_tag.html(format(d.value))

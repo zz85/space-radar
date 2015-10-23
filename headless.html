@@ -49,7 +49,9 @@
         // console.timeEnd('write')
 
         // ipc.send('call', 'viz', 'complete', json)
+        setTimeout( () =>
         transfer('complete', json)
+        )
     };
 
     function refresh() {
