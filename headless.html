@@ -45,12 +45,12 @@
 
         // cache
         // console.time('write')
-        // fs.writeFileSync('test.json', JSON.stringify(json))
+        // require('fs').writeFileSync('test.json', JSON.stringify(json))
         // console.timeEnd('write')
 
         // ipc.send('call', 'viz', 'complete', json)
         setTimeout( () =>
-        transfer('complete', json)
+          transfer('complete', json)
         )
     };
 
@@ -97,13 +97,8 @@
   }
 
 
-  // // d3.json("flare.json", onJson);
-  //   // for testing purposes only
-  //   // json = fs.readFileSync('user.json', { encoding: 'utf-8'})
-  //   // loading.style.display = 'none'
-  //   // onJson(null, JSON.parse(json).children[10])
-  //   // onJson(null, JSON.parse(json))
-  // })
+  // onJson(null, JSON.parse(json).children[10])
+  // onJson(null, JSON.parse(json))
 
 
   </script>

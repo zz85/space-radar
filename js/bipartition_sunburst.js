@@ -196,6 +196,8 @@ function zoomOut(p) {
 
 // Zoom to the specified new root.
 function zoom(root, p) {
+  if (document.documentElement.__transition__) return;
+
   updateBreadcrumbs(getAncestors(root), '');
 
   core_center.html(format(root.value));
@@ -213,8 +215,6 @@ function zoom(root, p) {
   current_p = root
   // console.log('current_level', current_level)
 
-  if (document.documentElement.__transition__) return;
-
   // Rescale outside angles to match the new layout.
   var enterArc,
       exitArc,
@@ -231,7 +231,14 @@ function zoom(root, p) {
     return {depth: d.depth + 1, x: outsideAngle(d.x), dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x)};
   }
 
-  center.datum(root);
+  center
+    .datum(root)
+    .on('mouseover', function(d) {
+      console.log('center!')
+      mouseover(d)
+
+      // path.style('opacity', 1)
+    });
 
   // When zooming in, arcs enter from the outside and exit to the inside.
   // Entering outside arcs start from the old layout.
