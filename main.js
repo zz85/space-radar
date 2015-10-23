@@ -6,7 +6,7 @@ var ipc = require('ipc')
 require('crash-reporter').start()
 
 var mainWindow = null
-var DEBUG = 1
+var DEBUG = 0
 
 
 app.on('window-all-closed', function() {
