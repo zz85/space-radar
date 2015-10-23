@@ -15,38 +15,51 @@ function onResize() {
 
 /*
  TODOs
- - color by
-   - size
-   - filetype
-   - last modified
-   - number of files
-- Explorer Tree View
-- Responsive resizing
-- Git integration
-- Real Disk usage
-- Labels
-- Pie Magnifier
-- File Types
-- Canvas implementation: http://bl.ocks.org/mbostock/1276463
-- Absolute or relative file size intensity
-- return Max Depth
-- Pie chart zooming
-- Filter hidden directories / files
-- combine hidden file sizes
-- add drives
-- idea: show children only upon mouseover
-- do computation in webworkers
-- use https://github.com/paulmillr/chokidar
-- Directory caching
+
+- HDD Scanning
+  - Monitoring - eg https://github.com/paulmillr/chokidar
+  - Directory caching
+  - add drives
+  - Real Disk usage
+  - Grab free space!
+
+- UI
+   - color by
+     - size
+     - filetype
+     - last modified
+     - number of files
+  - Explorer Tree View
+  - Responsive resizing (Zooming)
+  - idea: show children only upon mouseover
+  - do computation in webworkers
+  - Filter hidden directories / files
+  - combine hidden file sizes
+  - Labels
+  - Pie Magnifier
+  - Absolute or relative file size intensity
+  - Back / Fwd paths
+
+  - correct hover states for core
+  - change numbers of center to selection
+
+- UI Perf
+  - Canvas implementation: http://bl.ocks.org/mbostock/1276463
+
+- Others
+  - Git integration
+  - Spotlike style
+  - Mac Preview style
 
 DONE
- - custom levels
+ - Custom levels rendering
  - percentage as root of inner core
  - threshold - hide small files
  - Async file checking
  - hover over states
  - Streaming/incremental updates (sort of by recreating partitions & jsons)
  - Hover stats
+ - Faster scanning
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -112,6 +125,9 @@ var center = svg.append("g")
     .attr("id", "core")
     .on("click", zoomOut);
 
+var circular_meter = svg.append('g');
+// TODO make a tiny border around the rim of center to show the percentage of current space
+
 explanation.on('click', zoomOut)
 
 center
@@ -128,14 +144,35 @@ function mouseover(d) {
 
   var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
 
-  // 3 or 4 movable parts
-
   // 1. lengend
-  legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
+  // legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
 
   // 2. core
-  core_tag.html('' + format(d.value) + ' (' + percent + ')<br/>'  + d.name)
-  core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
+  // core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
+
+  core_top.html(d.name)
+  core_center.html(format(d.value).split(' ').join('<br/>'))
+  core_tag.html(percent + '<br/>' + '<br/>' + format(current_p.value))
+  // + ' (' + percent + ')<br/>'
+
+
+  svg.selectAll("path")
+    .style("opacity", 1 / (1. + d.depth))
+    .filter(node => {
+      if (node.depth < d.depth) {
+        // node is parent of d
+        return false
+      } else {
+        // d is parent of node
+        var e = node;
+        while (e) {
+          if (e == d) return true
+          e = e.parent
+        }
+        return false
+      }
+    })
+    .style("opacity", 1);
 
   // core_tag.html(percent)
   // core_tag.html(format(d.value))
@@ -164,6 +201,8 @@ function zoomOut(p) {
 
 // Zoom to the specified new root.
 function zoom(root, p) {
+  if (document.documentElement.__transition__) return;
+
   updateBreadcrumbs(getAncestors(root), '');
 
   core_center.html(format(root.value));
@@ -181,8 +220,6 @@ function zoom(root, p) {
   current_p = root
   // console.log('current_level', current_level)
 
-  if (document.documentElement.__transition__) return;
-
   // Rescale outside angles to match the new layout.
   var enterArc,
       exitArc,
@@ -199,7 +236,13 @@ function zoom(root, p) {
     return {depth: d.depth + 1, x: outsideAngle(d.x), dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x)};
   }
 
-  center.datum(root);
+  center
+    .datum(root)
+    .on('mouseover', function(d) {
+      mouseover(d)
+
+      // path.style('opacity', 1)
+    });
 
   // When zooming in, arcs enter from the outside and exit to the inside.
   // Entering outside arcs start from the old layout.
@@ -225,7 +268,7 @@ function zoom(root, p) {
         .style("fill", function(d) { return d.fill; })
         .on("click", zoomIn)
         .each(function(d) { this._current = enterArc(d); })
-        .attr("class", "hmm")
+        .attr("class", "area")
         .on("mouseover", mouseover);
 
     path.transition()
@@ -332,7 +375,7 @@ function onJson(error, r) {
       .data(partition.nodes(root).slice(1))
     .enter().append("path")
       .attr("d", arc)
-      .attr("class", "hmm")
+      .attr("class", "area")
       .style("fill", function(d) { return d.fill; })
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)

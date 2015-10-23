@@ -6,8 +6,6 @@ var ipc = require('ipc')
 require('crash-reporter').start()
 
 var mainWindow = null
-var duWindow = null
-
 var DEBUG = 0
 
 
@@ -37,17 +35,6 @@ ipc.on('call', function(event, target, channel, a, b, c, d, e) {
   ipc_senders[target].send(channel, a, b, c, d, e);
 })
 
-// ipc.on('message', function(event, target, msg) {
-//   console.log('main received', target, msg)
-//   ipc_senders[target].send('message', msg);
-// })
-
-// ipc.on('broadcast', function(event, msg) {
-//   for (var ids in ipc_senders) {
-//     ipc_senders[ids].send('broadcast', msg);
-//   }
-// })
-
 app.on('ready', function() {
   console.log('app is ready');
   mainWindow = new BrowserWindow({
@@ -55,31 +42,18 @@ app.on('ready', function() {
     height: 600
   })
 
-  duWindow = new BrowserWindow(
-    DEBUG ?
-  {
-    width: 880,
-    height: 600
-  } : {show: false})
-
   // var window2 = new BrowserWindow({width: 800, height: 600});
 
   mainWindow.loadUrl('file://' + __dirname + '/index.html');
-  duWindow.loadUrl('file://' + __dirname + '/headless.html');
+  // duWindow.loadUrl('file://' + __dirname + '/headless.html');
 
   if (DEBUG) {
-    duWindow.openDevTools()
     mainWindow.openDevTools()
   }
-
-  // duWindow.webContents.on('did-finish-load', function() {
-  //   duWindow.webContents.send('args', ['test', '1', '2', '3'])
-  // })
 
   mainWindow.on('closed', function() {
     // console.log('window is closed');
     mainWindow = null
-    duWindow = null
   })
 
 })

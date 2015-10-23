@@ -21,7 +21,7 @@ function descendFS(options, done) {
 	}
 
 	counter++
-	if (counter % 4000 === 0) {
+	if (counter % 10000 === 0) {
 		if (options.onprogress) options.onprogress(dir, name);
 		// if (counter % 10000 === 0) console.log('scanning', counter, dir);
 		if (counter % 100000 === 0) if (options.onrefresh) options.onrefresh(dir, name);

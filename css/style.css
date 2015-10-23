@@ -10,13 +10,13 @@ path {
 }
 
 circle {
-  fill: none;
   pointer-events: all;
+  fill: #eee;
+  opacity: 0.2;
 }
 
 circle:hover {
-  fill: #999;
-  opacity: 0.5;
+  fill: none;
 }
 
 #core:hover {
@@ -96,7 +96,7 @@ body {
 }
 
 #core_top {
-  /*font-size: 2.5em;*/
+  font-size: 1.3em;
 }
 
 #core_center {
@@ -143,12 +143,12 @@ body {
   display: none;
 }
 
-.hmm {
-  opacity: 0.8;
+.area {
+  /*opacity: 0.8;*/
   cursor: pointer;
 }
 
-.hmm:hover {
+.area:hover {
   stroke: #999;
   stroke-width: 2px;
   opacity: 1;

@@ -8,44 +8,6 @@
 <link rel="stylesheet" href="css/style.css" type="text/css">
 <link rel="stylesheet" href="css/throbber.css" type="text/css">
 <link rel="stylesheet" href="css/breadcrumb.css" type="text/css">
-<script>
-
-var ipc = require('ipc')
-
-const ipc_name = 'viz'
-ipc.send('register', ipc_name)
-
-ipc.on('message', function(arg) {
-  console.log('[' + ipc_name + '] message', arg)
-})
-
-ipc.on('ready', function(arg) {
-  console.log('lets go');
-  loading.style.display = 'inline-block'
-})
-
-ipc.on('progress', function(dir, name) {
-  // console.log('[' + ipc_name + '] progress', name)
-  onProcess(dir, name)
-})
-
-ipc.on('refresh', function(json) {
-  // console.log('[' + ipc_name + '] refresh..', json)
-  onJson(null, json)
-})
-
-ipc.on('complete', function(json) {
-  loading.style.display = 'none'
-  // console.log('[' + ipc_name + '] complete..', json)
-  onJson(null, json)
-})
-
-function onProcess(path, b) {
-  legend.html("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
-}
-
-
-</script>
 <div id="loading">
   <div class="throbber-loader">
     Loading…
@@ -69,5 +31,82 @@ function onProcess(path, b) {
 <!-- <script src="js/du.js"></script> -->
 <script src="js/bipartition_sunburst.js"></script>
 <!-- <script src="js/treemap.js"></script> -->
+
+<script>
+
+var ipc = require('ipc')
+
+const ipc_name = 'viz'
+ipc.send('register', ipc_name)
+
+ipc.on('message', function(arg) {
+  console.log('[' + ipc_name + '] message', arg)
+})
+
+ipc.on('ready', function(arg) {
+  console.log('lets go');
+  loading.style.display = 'inline-block'
+})
+
+// ipc listeners
+ipc.on('progress', progress)
+ipc.on('refresh', refresh)
+ipc.on('complete', complete)
+
+function progress(dir, name) {
+  console.log('[' + ipc_name + '] progress', name)
+  onProcess(dir, name)
+}
+
+function refresh(json) {
+  console.log('[' + ipc_name + '] refresh..')
+  onJson(null, json)
+}
+
+function complete(json) {
+  loading.style.display = 'none'
+  console.log('[' + ipc_name + '] complete..', json)
+  onJson(null, json)
+  win.close()
+}
+
+function onProcess(path, b) {
+  legend.html("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
+}
+
+const DEBUG = 0
+
+var remote = require('remote')
+var BrowserWindow = remote.require('browser-window')
+var win = new BrowserWindow(
+  DEBUG ? { width: 800, height: 600 } : { show: false }
+)
+
+win.loadUrl('file://' + __dirname + '/headless.html');
+if (DEBUG) win.openDevTools()
+
+//
+win.webContents.on('did-finish-load', function() {
+  // win.webContents.send('ready')
+})
+
+window.addEventListener('storage', function (e) {
+ if (e.key == 'lsipc') {
+  var args = JSON.parse(e.newValue)
+  var cmd = args.shift()
+  switch (cmd) {
+    case 'progress':
+      return progress.apply(null, args)
+    case 'refresh':
+      return refresh.apply(null, args)
+    case 'complete':
+      return complete(args[0])
+  }
+ }
+});
+
+
+</script>
+
 </body>
 </html>
