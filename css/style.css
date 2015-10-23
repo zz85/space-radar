@@ -143,12 +143,12 @@ body {
   display: none;
 }
 
-.hmm {
-  opacity: 0.8;
+.area {
+  /*opacity: 0.8;*/
   cursor: pointer;
 }
 
-.hmm:hover {
+.area:hover {
   stroke: #999;
   stroke-width: 2px;
   opacity: 1;

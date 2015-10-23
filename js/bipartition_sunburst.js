@@ -40,6 +40,9 @@ function onResize() {
   - Absolute or relative file size intensity
   - Back / Fwd paths
 
+  - correct hover states for core
+  - change numbers of center to selection
+
 - UI Perf
   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
 
@@ -148,14 +151,8 @@ function mouseover(d) {
   core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
 
 
-  console.log(d.depth)
   svg.selectAll("path")
-      .style("opacity", 1 / (1. + d.depth));
-
-  // console.log('mouseover', d)
-
-  var path = svg.selectAll("path")
-    // .data()
+    .style("opacity", 1 / (1. + d.depth))
     .filter(node => {
       if (node.depth < d.depth) {
         // node is parent of d
@@ -169,7 +166,8 @@ function mouseover(d) {
         }
         return false
       }
-    }).style("opacity", 1);
+    })
+    .style("opacity", 1);
 
   // core_tag.html(percent)
   // core_tag.html(format(d.value))
@@ -259,7 +257,7 @@ function zoom(root, p) {
         .style("fill", function(d) { return d.fill; })
         .on("click", zoomIn)
         .each(function(d) { this._current = enterArc(d); })
-        .attr("class", "hmm")
+        .attr("class", "area")
         .on("mouseover", mouseover);
 
     path.transition()
@@ -366,7 +364,7 @@ function onJson(error, r) {
       .data(partition.nodes(root).slice(1))
     .enter().append("path")
       .attr("d", arc)
-      .attr("class", "hmm")
+      .attr("class", "area")
       .style("fill", function(d) { return d.fill; })
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)
