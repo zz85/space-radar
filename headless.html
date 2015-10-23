@@ -48,20 +48,24 @@
         // fs.writeFileSync('test.json', JSON.stringify(json))
         // console.timeEnd('write')
 
-        ipc.send('call', 'viz', 'complete', json)
+        // ipc.send('call', 'viz', 'complete', json)
+        transfer('complete', json)
     };
 
     function refresh() {
       clearTimeout(checker)
       console.log('scanning...');
 
-      ipc.send('call', 'viz', 'refresh', json)
+      // ipc.send('call', 'viz', 'refresh', json)
+      transfer('refresh', json)
       checker = setTimeout(refresh, INCREMENTAL_INTERVAL)
     }
 
     function progress(path, name) {
-      ipc.send('call', 'viz', 'progress', path, name)
+      // ipc.send('call', 'viz', 'progress', path, name)
+      transfer('progress', path, name)
     }
+
 
     target = path.resolve(target)
     console.log('Scanning target', target)
@@ -77,14 +81,19 @@
     setTimeout(refresh, 5000)
   }
 
+  function transfer(target) {
+    var args = JSON.stringify(Array.prototype.slice.call(arguments))
+    localStorage.lsipc = args;
+  }
 
-    // // d3.json("flare.json", onJson);
-    //   // for testing purposes only
-    //   // json = fs.readFileSync('user.json', { encoding: 'utf-8'})
-    //   // loading.style.display = 'none'
-    //   // onJson(null, JSON.parse(json).children[10])
-    //   // onJson(null, JSON.parse(json))
-    // })
+
+  // // d3.json("flare.json", onJson);
+  //   // for testing purposes only
+  //   // json = fs.readFileSync('user.json', { encoding: 'utf-8'})
+  //   // loading.style.display = 'none'
+  //   // onJson(null, JSON.parse(json).children[10])
+  //   // onJson(null, JSON.parse(json))
+  // })
 
 
   </script>

@@ -51,11 +51,6 @@ app.on('ready', function() {
     mainWindow.openDevTools()
   }
 
-  // {show: false}
-  // duWindow.webContents.on('did-finish-load', function() {
-  //   duWindow.webContents.send('args', ['test', '1', '2', '3'])
-  // })
-
   mainWindow.on('closed', function() {
     // console.log('window is closed');
     mainWindow = null

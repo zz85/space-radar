@@ -15,38 +15,46 @@ function onResize() {
 
 /*
  TODOs
- - color by
-   - size
-   - filetype
-   - last modified
-   - number of files
-- Explorer Tree View
-- Responsive resizing
-- Git integration
-- Real Disk usage
-- Labels
-- Pie Magnifier
-- File Types
-- Canvas implementation: http://bl.ocks.org/mbostock/1276463
-- Absolute or relative file size intensity
-- return Max Depth
-- Pie chart zooming
-- Filter hidden directories / files
-- combine hidden file sizes
-- add drives
-- idea: show children only upon mouseover
-- do computation in webworkers
-- use https://github.com/paulmillr/chokidar
-- Directory caching
+
+- HDD Scanning
+  - Monitoring - eg https://github.com/paulmillr/chokidar
+  - Directory caching
+  - add drives
+  - Real Disk usage
+
+- UI
+   - color by
+     - size
+     - filetype
+     - last modified
+     - number of files
+  - Explorer Tree View
+  - Responsive resizing (Zooming)
+  - idea: show children only upon mouseover
+  - do computation in webworkers
+  - Filter hidden directories / files
+  - combine hidden file sizes
+  - Labels
+  - Pie Magnifier
+  - Absolute or relative file size intensity
+
+- UI Perf
+  - Canvas implementation: http://bl.ocks.org/mbostock/1276463
+
+- Others
+  - Git integration
+  - Spotlike style
+  - Mac Preview style
 
 DONE
- - custom levels
+ - Custom levels rendering
  - percentage as root of inner core
  - threshold - hide small files
  - Async file checking
  - hover over states
  - Streaming/incremental updates (sort of by recreating partitions & jsons)
  - Hover stats
+ - Faster scanning
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
