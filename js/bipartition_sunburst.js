@@ -139,9 +139,8 @@ center.append("title")
 
 var path;
 
-function mouseover(d) {
+function updateCore(d) {
   // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
-
   var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
 
   // 1. lengend
@@ -152,9 +151,15 @@ function mouseover(d) {
 
   core_top.html(d.name)
   core_center.html(format(d.value).split(' ').join('<br/>'))
-  core_tag.html(percent + '<br/>' + '<br/>' + format(current_p.value))
+  core_tag.html(percent + '<br/>')
+   // + '<br/>' + format(current_p.value)
   // + ' (' + percent + ')<br/>'
+}
 
+function mouseover(d) {
+  lastover = d
+
+  updateCore(d)
 
   svg.selectAll("path")
     .style("opacity", 1 / (1. + d.depth))
@@ -174,16 +179,15 @@ function mouseover(d) {
     })
     .style("opacity", 1);
 
-  // core_tag.html(percent)
-  // core_tag.html(format(d.value))
-  // core_tag.html(d.name)
-
-
   // 3. breadcrumbs
   // updateBreadcrumbs(getAncestors(d), percent);
+}
 
-  // 4. hover over mouse
+function mouseout(d) {
+  lastover = null
 
+  path.style('opacity', 1)
+  updateCore(current_p)
 }
 
 function zoomIn(p) {
@@ -238,11 +242,8 @@ function zoom(root, p) {
 
   center
     .datum(root)
-    .on('mouseover', function(d) {
-      mouseover(d)
-
-      // path.style('opacity', 1)
-    });
+    .on('mouseover', mouseover)
+    .on('mouseout', mouseout)
 
   // When zooming in, arcs enter from the outside and exit to the inside.
   // Entering outside arcs start from the old layout.
@@ -269,7 +270,8 @@ function zoom(root, p) {
         .on("click", zoomIn)
         .each(function(d) { this._current = enterArc(d); })
         .attr("class", "area")
-        .on("mouseover", mouseover);
+        .on("mouseover", mouseover)
+        .on('mouseout', mouseout)
 
     path.transition()
         .style("fill-opacity", 1)
@@ -283,6 +285,9 @@ var jsoned = false;
 
 var realroot;
 var root;
+var lastover;
+
+
 function onJson(error, r) {
   root = r;
   realroot = r;
@@ -380,6 +385,7 @@ function onJson(error, r) {
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)
       .on("mouseover", mouseover)
+      .on('mouseout', mouseout)
       // .style("visibility", function(d) {
       //   var ref = current_p || root
       //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
