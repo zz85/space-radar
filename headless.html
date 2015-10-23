@@ -84,8 +84,16 @@
   }
 
   function transfer(target) {
-    var args = JSON.stringify(Array.prototype.slice.call(arguments))
-    localStorage.lsipc = args;
+    var args = Array.prototype.slice.call(arguments)
+    try {
+      localStorage.lsipc = JSON.stringify(args);
+    } catch (e) {
+      console.error('fail')
+      console.log(args.length)
+      // fallback
+      args.unshift('call', 'viz')
+      ipc.send.apply(ipc, args)
+    }
   }
 
 
