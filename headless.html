@@ -69,13 +69,20 @@
     target = path.resolve(target)
     console.log('Scanning target', target)
 
+    let buffer = []
+
     // TODO use IPC call for this
     du({
         parent: target,
         node: json,
         onprogress: progress,
         onfile: function(path, name, size) {
-          transfer('file', path, name, size)
+          buffer.push([path, name, size])
+          if (buffer.length == 1000) {
+            transfer('files', buffer)
+            buffer = []
+          }
+
         },
         // onrefresh: refresh
       }, complete)

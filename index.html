@@ -79,8 +79,21 @@ var fs = {
 };
 
 var c = 0;
+
+function files(buff) {
+  console.time('file')
+  buff.forEach(b => {
+    file(b[0], b[1], b[2])
+  })
+  console.timeEnd('file')
+  refresh(clone2(fs))
+}
 function file(dir, name, size) {
-  // console.log('file', dir, name, size)
+    c++;
+  // if (c > 10000) {
+  //   return
+  // }
+
   var node = fs;
   var paths = dir.split('/').slice(1, -1);
 
@@ -91,7 +104,7 @@ function file(dir, name, size) {
       return x.name == path
     })
 
-    if (!x) {
+    if (x.length) {
       node = x[0]
     } else {
       var tmp = { name: path, children: [] }
@@ -104,10 +117,7 @@ function file(dir, name, size) {
     size: size
   })
 
-  c++;
-  if (c % 10000 == 0) {
-    refresh(clone2(fs))
-  }
+
 }
 
 function onProcess(path, b) {
@@ -157,8 +167,8 @@ function handleIPC(cmd, args) {
       return refresh.apply(null, args)
     case 'complete':
       return complete(args[0])
-    case 'file':
-      return file.apply(null, args)
+    case 'files':
+      return files.apply(null, args)
   }
 }
 
