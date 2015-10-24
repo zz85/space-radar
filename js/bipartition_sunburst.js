@@ -144,7 +144,7 @@ function updateCore(d) {
   // core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
 
   core_top.html(d.name)
-  core_center.html(format(d.value).split(' ').join('<br/>'))
+  core_center.html(format(d.sum).split(' ').join('<br/>'))
   core_tag.html(percent + '<br/>')
    // + '<br/>' + format(current_p.value)
   // + ' (' + percent + ')<br/>'
@@ -203,7 +203,7 @@ function zoom(root, p) {
 
   updateBreadcrumbs(getAncestors(root), '');
 
-  core_center.html(format(root.value));
+  core_center.html(format(root.sum));
   core_top.html(root.name)
 
   max_level = 0
