@@ -181,7 +181,7 @@ function mouseover(d) {
 function mouseout(d) {
   lastover = null
 
-  path.style('opacity', .8)
+  if (path) path.style('opacity', .8)
   updateCore(current_p)
 }
 
@@ -275,7 +275,10 @@ function zoom(root, p) {
   });
 }
 
-window.redraw = () => zoom(current_p, current_p);
+function redraw() {
+  if (current_p)
+    zoom(current_p, current_p);
+}
 
 var jsoned = false;
 var realroot;

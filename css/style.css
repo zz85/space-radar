@@ -111,7 +111,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 40px;
+  bottom: 40px;
   z-index: 50;
   background: #ddd;
 }
@@ -121,8 +121,8 @@ body {
   font-style:inherit;
   margin: 0;
   padding: 0;
-  text-transform: uppercase;
-  font-variant:small-caps;
+  /*text-transform: uppercase;
+  font-variant:small-caps;*/
 }
 #legend p {
   font-size:.9em;
@@ -138,7 +138,7 @@ body {
   position: fixed;
   display: inline-block;
   margin: auto;
-  z-index: 10;
+  z-index: 250;
   width: 100px;
   height: 100px;
   display: none;
@@ -233,7 +233,6 @@ button {
   width: 150px;
   height: 40px;
 }
-
 
 /* Toolbar */
 #toolbar {

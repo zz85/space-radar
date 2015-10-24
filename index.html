@@ -52,7 +52,7 @@
 </div>
 
 <div id="explanation">
-  <span id="core_top">Loading...</span><br/>
+  <span id="core_top"><!-- Loading... --></span><br/>
   <span id="core_center"></span><br/>
   <span id="core_tag"></span>
 </div>
@@ -71,6 +71,7 @@ var current_size = 0, start_time
 function start(path) {
   cleanup()
   hidePrompt()
+  legend.style('display', 'block')
   log('start', path)
   start_time = performance.now()
   console.time('scan_job')
@@ -79,9 +80,16 @@ function start(path) {
 
 function progress(dir, name, size) {
   // log('[' + ipc_name + '] progress', name)
-  legend.html("<h2>Scanning... (please be patient) </h2><p>"+dir+"</p>")
+  legend.html("<h2>Scanning... <i>please be patient</i></h2><p>"+dir+"</p><br/>Scanned: " + format(size) )
   current_size = size
   // TODO collect number of files too
+}
+
+function lightbox(show) {
+  loading.style.display = show ? 'block' : 'none'
+  shades.style.display = show ? 'flex' : 'none'
+  promptbox.style.display  = show ? 'none': ''
+  shades.style.opacity = show ? 0.8 : 1
 }
 
 function refresh(json) {
@@ -89,15 +97,20 @@ function refresh(json) {
 
 
   // should disable all inputs here because redraw would probably be intensive
-  // onJson(null, {name: 'moo', children: [ {name: 'foo', size: 1}]})
+  lightbox(true)
 
-  // we have a possibility of running out of memory here, let's force a garbage collection to compact memory a little!
-
-  onJson(null, json)
+  setTimeout( () => {
+    onJson(null, json)
+    lightbox(false)
+  }, 1000 )
 }
 
 function cleanup() {
-    if (path) {
+  // we have a possibility of running out of memory here, we could force a garbage collection to compact memory a little if neede!
+
+  lightbox(true)
+
+  if (path) {
     // do some GC()!!!
     path.remove()
     center.remove()
@@ -119,14 +132,17 @@ function cleanup() {
 }
 
 function complete(json) {
-  loading.style.display = 'none'
+  // loading.style.display = 'none'
   log('[' + ipc_name + '] complete..', json)
   console.timeEnd('scan_job')
+
   onJson(null, json)
   legend.style('display', 'none')
+  lightbox(false)
 
   var time_took = performance.now() - start_time
   log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
+  lightbox(false)
 
   // webview.remove()
   // TODO add growl notification here
@@ -183,19 +199,27 @@ function handleIPC(cmd, args) {
   }
 }
 
+function runNext(f) {
+  setTimeout( f, 1000 )
+}
+
 function fsipc(filename) {
   console.time('fsipc');
   cleanup()
   log(filename)
-  try {
-    var args = fs.readFileSync(filename, {encoding: 'utf-8'})
-    args = JSON.parse(args)
-    var cmd = args.shift()
-    handleIPC(cmd, args)
-  } catch (e) {
-    console.error(e.stack)
-  }
-  console.timeEnd('fsipc');
+
+  runNext( () => {
+    try {
+      var args = fs.readFileSync(filename, {encoding: 'utf-8'})
+      args = JSON.parse(args)
+      var cmd = args.shift()
+      handleIPC(cmd, args)
+    } catch (e) {
+      console.error(e.stack)
+    }
+    console.timeEnd('fsipc');
+
+  })
 }
 
 function setupIPC() {
