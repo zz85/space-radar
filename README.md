@@ -35,14 +35,15 @@ Whats New
 Version 3
 - App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
 - Many Bug fixes
-- Disk scanning is now move to a webview process
-- Investigate various RPC methods now uses LocalStorage - FileSystem IPC message passing
+- Disk scanning is moved to a webview process
+- Investigated various RPC methods. Now uses LocalStorage + FileSystem IPC message passing
 - Reduce memory usage (and Electron crashes) by not caching key paths
 - Tested on > 100GB & 2M files
 - Improvements to user interactivity esp on hover states
-- To prevent renderer process from hitting heap mem limit (1.5GB), all previous data is null, and dom elements removed to reduce memory pressure
+- To prevent renderer process from hitting heap mem limit (1.5GB), all previous data is null, with dom elements removed to reduce memory pressure
 - Allow target selection for disk usage scanning
 - Locate path in Finder
+- Env Debug Flags
 
 Version 2
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
