@@ -17,11 +17,14 @@ function onResize() {
  TODOs
 
 - HDD Scanning
+  - Allow destination scanning (root / drives / folder)
   - Monitoring - eg https://github.com/paulmillr/chokidar
   - Directory caching
-  - add drives
   - Real Disk usage
   - Grab free space!
+
+- Cross platform
+ - test on windows
 
 - UI
    - color by
@@ -31,17 +34,12 @@ function onResize() {
      - number of files
   - Explorer Tree View
   - Responsive resizing (Zooming)
-  - idea: show children only upon mouseover
-  - do computation in webworkers
   - Filter hidden directories / files
   - combine hidden file sizes
   - Labels
   - Pie Magnifier
   - Absolute or relative file size intensity
   - Back / Fwd paths
-
-  - correct hover states for core
-  - change numbers of center to selection
 
 - UI Perf
   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
@@ -50,6 +48,7 @@ function onResize() {
   - Git integration
   - Spotlike style
   - Mac Preview style
+  - Auto update
 
 DONE
  - Custom levels rendering
@@ -60,6 +59,11 @@ DONE
  - Streaming/incremental updates (sort of by recreating partitions & jsons)
  - Hover stats
  - Faster scanning
+ - correct hover states for core
+ - computation done in separate process
+ - change numbers of center to selection
+ - shows children selection on hover
+
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -121,27 +125,17 @@ var core_tag = d3.select("#core_tag")
 
 var current_p, max_level, current_level = 0;
 
-var center = svg.append("g")
-    .attr("id", "core")
-    .on("click", zoomOut);
-
 var circular_meter = svg.append('g');
 // TODO make a tiny border around the rim of center to show the percentage of current space
 
 explanation.on('click', zoomOut)
 
-center
-    .append("circle")
-    .attr("r", CORE_RADIUS)
-
-center.append("title")
-  .text("zoom out");
-
+// Data Bind Elements
 var path;
+var center;
 
-function mouseover(d) {
+function updateCore(d) {
   // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
-
   var percent = (d.sum / (current_p || root).sum * 100).toFixed(2) + '%'
 
   // 1. lengend
@@ -151,10 +145,16 @@ function mouseover(d) {
   // core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
 
   core_top.html(d.name)
-  core_center.html(format(d.value).split(' ').join('<br/>'))
-  core_tag.html(percent + '<br/>' + '<br/>' + format(current_p.value))
+  core_center.html(format(d.sum).split(' ').join('<br/>'))
+  core_tag.html(percent + '<br/>')
+   // + '<br/>' + format(current_p.value)
   // + ' (' + percent + ')<br/>'
+}
 
+function mouseover(d) {
+  lastover = d
+
+  updateCore(d)
 
   svg.selectAll("path")
     .style("opacity", 1 / (1. + d.depth))
@@ -174,16 +174,15 @@ function mouseover(d) {
     })
     .style("opacity", 1);
 
-  // core_tag.html(percent)
-  // core_tag.html(format(d.value))
-  // core_tag.html(d.name)
-
-
   // 3. breadcrumbs
   // updateBreadcrumbs(getAncestors(d), percent);
+}
 
-  // 4. hover over mouse
+function mouseout(d) {
+  lastover = null
 
+  if (path) path.style('opacity', .8)
+  updateCore(current_p)
 }
 
 function zoomIn(p) {
@@ -205,7 +204,7 @@ function zoom(root, p) {
 
   updateBreadcrumbs(getAncestors(root), '');
 
-  core_center.html(format(root.value));
+  core_center.html(format(root.sum));
   core_top.html(root.name)
 
   max_level = 0
@@ -226,8 +225,9 @@ function zoom(root, p) {
       outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI]);
 
   function insideArc(d) {
-    return p.key > d.key
-        ? {depth: d.depth - 1, x: 0, dx: 0} : p.key < d.key
+    var pkey = key(p), dkey = key(d);
+    return pkey > dkey
+        ? {depth: d.depth - 1, x: 0, dx: 0} : pkey < dkey
         ? {depth: d.depth - 1, x: 2 * Math.PI, dx: 0}
         : {depth: 0, x: 0, dx: 2 * Math.PI};
   }
@@ -238,17 +238,14 @@ function zoom(root, p) {
 
   center
     .datum(root)
-    .on('mouseover', function(d) {
-      mouseover(d)
-
-      // path.style('opacity', 1)
-    });
+    .on('mouseover', mouseover)
+    .on('mouseout', mouseout)
 
   // When zooming in, arcs enter from the outside and exit to the inside.
   // Entering outside arcs start from the old layout.
   if (root === p) enterArc = outsideArc, exitArc = insideArc, outsideAngle.range([p.x, p.x + p.dx]);
 
-  path = path.data(partition.nodes(root).slice(1), function(d) { return d.key; });
+  path = path.data(partition.nodes(root).slice(1), function(d) { return key(d); });
 
   // When zooming out, arcs enter from the inside and exit to the outside.
   // Exiting outside arcs transition to the new layout.
@@ -265,11 +262,12 @@ function zoom(root, p) {
 
     path.enter().append("path")
         .style("fill-opacity", function(d) { return d.depth === 2 - (root === p) ? 1 : 0; })
-        .style("fill", function(d) { return d.fill; })
+        .style("fill", function(d) { return fill(d); })
         .on("click", zoomIn)
         .each(function(d) { this._current = enterArc(d); })
         .attr("class", "area")
-        .on("mouseover", mouseover);
+        .on("mouseover", mouseover)
+        .on('mouseout', mouseout)
 
     path.transition()
         .style("fill-opacity", 1)
@@ -277,14 +275,19 @@ function zoom(root, p) {
   });
 }
 
-window.redraw = () => zoom(current_p, current_p);
+function redraw() {
+  if (current_p)
+    zoom(current_p, current_p);
+}
 
 var jsoned = false;
-
 var realroot;
-var root;
+var lastover;
+
 function onJson(error, r) {
-  root = r;
+  var root = r;
+
+  current_p = root;
   realroot = r;
 
   if (error) throw error;
@@ -324,11 +327,10 @@ function onJson(error, r) {
       .forEach(function(d) {
         d._children = d.children;
         d.sum = d.value;
-        d.key = key(d);
-        d.fill = fill(d);
+        // d.key = key(d);
+        // d.fill = fill(d);
       })
 
-      ;
   console.timeEnd('compute2')
 
   console.log('ROOT SIZE', format(root.value))
@@ -337,49 +339,59 @@ function onJson(error, r) {
 
   max_level = 0;
   partition
-      .children(function(d, depth) {
-        // console.log('children');
-        max_level = Math.max(depth, max_level);
-        if (depth >= LEVELS) {
-          return null
-        }
-        if (!d._children) return null;
+    .children(function(d, depth) {
+      // console.log('children');
+      max_level = Math.max(depth, max_level);
+      if (depth >= LEVELS) {
+        return null
+      }
+      if (!d._children) return null;
 
-        var children = [];
-        d._children.forEach(c => {
-          var ref = current_p || root
-          if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
-        })
-
-        return children;
-
-        // return depth < LEVELS ? d._children : null;
+      var children = [];
+      d._children.forEach(c => {
+        var ref = root
+        if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
       })
-      .value(function(d) {
-        // decide count or sum
-        return USE_COUNT ? d.count : d.sum
-      })
+
+      return children;
+
+      // return depth < LEVELS ? d._children : null;
+    })
+    .value(function(d) {
+      // decide count or sum
+      return USE_COUNT ? d.count : d.sum
+    })
 
 
   console.timeEnd('compute3')
 
-
-  current_p = root;
   if (jsoned) {
     return redraw();
     // path.remove()
   }
   jsoned = true;
 
+  center = svg.append("g")
+    .attr("id", "core")
+    .on("click", zoomOut);
+
+  center
+    .append("circle")
+    .attr("r", CORE_RADIUS)
+
+  center.append("title")
+    .text("zoom out");
+
   path = svg.selectAll("path")
       .data(partition.nodes(root).slice(1))
     .enter().append("path")
       .attr("d", arc)
       .attr("class", "area")
-      .style("fill", function(d) { return d.fill; })
+      .style("fill", function(d) { return fill(d); })
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)
       .on("mouseover", mouseover)
+      .on('mouseout', mouseout)
       // .style("visibility", function(d) {
       //   var ref = current_p || root
       //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
@@ -387,14 +399,11 @@ function onJson(error, r) {
       // })
 
   redraw()
-
-  ///
-
 }
 
 function key(d) {
   var k = [], p = d;
-  while (p.depth) k.push(p.name), p = p.parent;
+  while (p) k.push(p.name), p = p.parent;
   return k.reverse().join(PATH_DELIMITER);
 }
 
@@ -422,67 +431,4 @@ function arcTween(b) {
 
 function updateArc(d) {
   return {depth: d.depth, x: d.x, dx: d.dx};
-}
-
-//
-// Breadcrumbs
-//
-
-// Given a node in a partition layout, return an array of all of its ancestor
-// nodes, highest first, but excluding the root.
-function getAncestors(node) {
-  if (!node) return []
-  var path = [];
-  var current = node;
-  while (current.parent) {
-    path.unshift(current);
-    current = current.parent;
-  }
-
-  // path.unshift(realroot);
-
-  path = realroot.name.split(PATH_DELIMITER).slice(1).map(d => {
-    return {
-      name: d,
-      depth: -1,
-      root: true
-    }
-  }).concat(path)
-
-  return path;
-}
-
-// Update the breadcrumb trail to show the current sequence and percentage.
-function updateBreadcrumbs(nodeArray, percentageString) {
-
-  // Data join; key function combines name and depth (= position in sequence).
-  var g = d3
-    .select("#sequence")
-    .select('div')
-      .selectAll("a")
-      .data(nodeArray, function(d) { return d.name + d.depth; });
-
-  // Add breadcrumb and label for entering nodes.
-  var entering = g.enter()
-    .append('a')
-    .attr('href', '#')
-      .style("background", function(d) {
-        var h = hue(d.key);
-        return h;
-        // var c = d3.lab(hue(p.name));
-        // c.l = luminance(d.sum);
-        // return colors[d.name];
-      })
-    .on('click', d => {
-      if (d.root)
-        zoom(realroot, realroot)
-      else
-        zoom(d, d)
-    })
-
-  entering.text(function(d) { return d.name; })
-
-  // Remove exiting nodes.
-  g.exit().remove();
-
 }

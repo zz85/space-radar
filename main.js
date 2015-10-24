@@ -6,8 +6,10 @@ var ipc = require('ipc')
 require('crash-reporter').start()
 
 var mainWindow = null
-var DEBUG = 0
+var DEBUG = process.env.DEBUG
 
+// probably only expose_gc works here
+app.commandLine.appendSwitch('js-flags', '--expose_gc --max-new-space-size=4096 --enable-precise-memory-info');
 
 app.on('window-all-closed', function() {
   console.log('window all closed');
@@ -39,7 +41,8 @@ app.on('ready', function() {
   console.log('app is ready');
   mainWindow = new BrowserWindow({
     width: 880,
-    height: 600
+    height: 600,
+    icon: require('path').join(__dirname, 'Icon.png'),
   })
 
   // var window2 = new BrowserWindow({width: 800, height: 600});

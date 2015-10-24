@@ -24,18 +24,35 @@ Future Enhancements
 - moar!!
 - let me know what you think
 
+Futher Explorations
+==
+- More efficient memory usage
+- More efficient scanning process
+- 3D visualization
+
 Whats New
 ==
+Version 3
+- App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
+- Many Bug fixes
+- Disk scanning is now move to a webview process
+- Investigate various RPC methods now uses LocalStorage - FileSystem IPC message passing
+- Reduce memory usage (and Electron crashes) by not caching key paths
+- Tested on > 100GB & 2M files
+- Improvements to user interactivity esp on hover states
+- To prevent renderer process from hitting heap mem limit (1.5GB), all previous data is null, and dom elements removed to reduce memory pressure
+- Allow target selection for disk usage scanning
+- Locate path in Finder
 
-2.0.0
+Version 2
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
 - Runs disk scanning as a separate headless renderer process
 - Json is passed back via IPC
 - Remove Async npm dependency
 
-Known Issues
+Issues
 ==
-- UI may freeze momentary loading large data sets
+Please raise on [github issue tracker](https://github.com/zz85/space-radar-electron/issues) or contact [@blurspline on twitter](http://twitter.com/blurspline)
 
 Development
 ==
@@ -43,7 +60,7 @@ Development
 Run
 
 ```
-electron .
+DEBUG=true electron .
 ```
 
 or
@@ -58,6 +75,9 @@ Check that you have depdencies installed, otherwise run (this may take awhile fo
 npm install
 ```
 
-Issues
+Thanks
 ==
-Use the [github issue tracker](https://github.com/zz85/space-radar-electron/issues) or contact [@blurspline on twitter](http://twitter.com/blurspline)
+[Jill](http://jilln.com/) for designing the app logo
+Jianwei for his comments on the app
+Chee Aun for helping alpha test the app
+WM for his talk on Electron that got me started

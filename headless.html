@@ -8,29 +8,38 @@
   'use strict';
 
   const path = require('path')
-  const ipc = require('ipc')
   const du = require('./js/du')
 
+  const ipc = require('ipc')
   const ipc_name = 'du'
-  ipc.send('register', ipc_name)
+  const fs = require('fs')
 
-  ipc.on('ready', function() {
-    console.log('all is ready')
-    go();
+  // ipc.send('register', ipc_name)
+
+  // ipc.on('ready', function() {
+  //   console.log('all is ready')
+  //   // go();
+  //   setTimeout(go, 2000)
+  // })
+
+  // ipc.on('broadcast', function(arg) {
+  //   console.log('[' + ipc_name + '] broadcast', arg)
+  // })
+
+  // ipc.on('message', function(arg) {
+  //   console.log('[' + ipc_name + '] message', arg)
+  // })
+
+  ipc.on('scan', function(target) {
+    console.log('got scan')
+    go(target)
   })
 
-  ipc.on('broadcast', function(arg) {
-    console.log('[' + ipc_name + '] broadcast', arg)
-  })
-
-  ipc.on('message', function(arg) {
-    console.log('[' + ipc_name + '] message', arg)
-  })
-
-  function go() {
-
-    let target = '../../..'
-    var INCREMENTAL_INTERVAL = 30000
+  function go(target) {
+    let
+      START_REFRESH_INTERVAL = 5000,
+      REFRESH_INTERVAL = START_REFRESH_INTERVAL,
+      MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
     let checker
     let json = {}
@@ -42,37 +51,37 @@
         clearTimeout(checker)
 
         console.log(json);
+        transfer('complete', json)
+        console.log('ok')
 
-        // cache
+        // cleanup
+        json = {}
+        du.resetCounters()
+        gc()
+
+        // // cache
         // console.time('write')
-        // require('fs').writeFileSync('test.json', JSON.stringify(json))
+        // fs.writeFileSync('test.json', JSON.stringify(json))
         // console.timeEnd('write')
-
-        // ipc.send('call', 'viz', 'complete', json)
-        setTimeout( () =>
-          transfer('complete', json)
-        )
     };
 
     function refresh() {
+      if (!checker) return
       clearTimeout(checker)
-      console.log('scanning...');
-
-      // ipc.send('call', 'viz', 'refresh', json)
+      console.log('refresh...');
       transfer('refresh', json)
-      checker = setTimeout(refresh, INCREMENTAL_INTERVAL)
+      REFRESH_INTERVAL *= 3
+      checker = setTimeout(refresh, Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
     }
 
-    function progress(path, name) {
-      // ipc.send('call', 'viz', 'progress', path, name)
-      transfer('progress', path, name)
+    function progress(path, name, size) {
+      transfer('progress', path, name, size)
     }
-
 
     target = path.resolve(target)
     console.log('Scanning target', target)
 
-    // yay
+    // TODO use IPC call for this
     du({
         parent: target,
         node: json,
@@ -80,47 +89,66 @@
         // onrefresh: refresh
       }, complete)
 
-    setTimeout(refresh, 5000)
+    checker = setTimeout(refresh, REFRESH_INTERVAL)
+
+    // // for testing purposes only
+    // console.log('moew')
+    // json = fs.readFileSync('experiments/root.json', { encoding: 'utf-8'})
+    // console.log(json.length)
+    // transfer('complete', JSON.parse(json))
+
   }
 
   function transfer(target) {
     var args = Array.prototype.slice.call(arguments)
+
+    var jsonstr = JSON.stringify(args)
+
+    // webview IPC
+
+    var err;
     try {
-      localStorage.lsipc = JSON.stringify(args);
+      // localStorage IPC
+      localStorage.lsipc = jsonstr
     } catch (e) {
-      console.error('fail')
-      console.log(args.length)
-      // fallback
-      args.unshift('call', 'viz')
-      ipc.send.apply(ipc, args)
+      console.error('fail: ')
+       console.log('len', jsonstr.length)
+      err = e;
+    }
+
+    if (err) {
+      err = null
+      let p = path.join(__dirname, 'fs-ipc.json')
+      fs.writeFileSync(p, jsonstr, { encoding: 'utf-8' })
+      transfer('fs-ipc', p)
+      return
+    }
+
+    if (err) {
+      err = null
+      try {
+        // web view ipc
+        ipc.sendToHost.apply(ipc, args)
+      } catch (e) {
+        err = e
+        console.error(e)
+      }
+    }
+
+    if (err) {
+      err = null
+      try {
+        // fallback to electron browser IPC
+        args.unshift('call', 'viz')
+        ipc.send.apply(ipc, args)
+      } catch (e) {
+        err = e
+        console.error(e)
+      }
     }
   }
 
 
-  // onJson(null, JSON.parse(json).children[10])
-  // onJson(null, JSON.parse(json))
-
-
-  </script>
-  <script>
-  // // redirect log to stdout
-  // console.log = require('console').log
-  // // redirect errors to stderr
-  // window.addEventListener('error', function (e) {
-  //   e.preventDefault()
-  //   require('console').error(e.error.stack || 'Uncaught ' + e.error)
-  // })
-
-  // ipc.on('args', function (args) {
-  //   console.log('yoz i got something!!!')
-  //   // var app
-  //   // if (path.isAbsolute(args[2])) {
-  //   //   app = require(args[2])
-  //   // } else {
-  //   //   app = require(path.join(process.cwd(), args[2]))
-  //   // }
-  //   // if (typeof app === 'function') app(args.slice(2))
-  // })
   </script>
 </body>
 </html>
