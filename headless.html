@@ -54,13 +54,14 @@
         transfer('complete', json)
         console.log('ok')
 
-        // cache
+        // // cache
         // console.time('write')
         // fs.writeFileSync('test.json', JSON.stringify(json))
         // console.timeEnd('write')
     };
 
     function refresh() {
+      if (!checker) return
       clearTimeout(checker)
       console.log('refresh...');
       transfer('refresh', json)
@@ -83,23 +84,13 @@
         // onrefresh: refresh
       }, complete)
 
+    checker = setTimeout(refresh, REFRESH_INTERVAL)
+
     // // for testing purposes only
     // console.log('moew')
     // json = fs.readFileSync('experiments/root.json', { encoding: 'utf-8'})
     // console.log(json.length)
     // transfer('complete', JSON.parse(json))
-
-    // console.time('parse')
-    // json = JSON.parse(json)
-    // console.timeEnd('parse')
-
-
-    // transfer('complete', JSON.parse(json))
-
-    // console.log('boo')
-
-
-    setTimeout(refresh, REFRESH_INTERVAL)
 
   }
 
