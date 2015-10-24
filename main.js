@@ -6,7 +6,7 @@ var ipc = require('ipc')
 require('crash-reporter').start()
 
 var mainWindow = null
-var DEBUG = 0
+var DEBUG = 1
 
 app.commandLine.appendSwitch('js-flags', '--expose_gc');
 
