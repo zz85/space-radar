@@ -280,15 +280,13 @@ function selectPath(path) {
   }
 
   if (stat.isDirectory()) {
-    var ok = confirm('Scan ' + path + '?')
-    if (ok) {
-      start(path);
-    }
+    // var ok = confirm('Scan ' + path + '?')
+    // if (ok) {
+    start(path);
+    // }
     return
   }
 }
-
-
 
 var promptbox = document.getElementById('promptbox');
 promptbox.ondragover = function () {
