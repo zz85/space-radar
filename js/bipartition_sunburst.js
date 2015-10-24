@@ -48,6 +48,7 @@ function onResize() {
   - Git integration
   - Spotlike style
   - Mac Preview style
+  - Auto update
 
 DONE
  - Custom levels rendering

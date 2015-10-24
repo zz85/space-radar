@@ -12,8 +12,8 @@
 <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview>
 
 <div id="toolbar">
-  <button>Scan Dialog</button>
-  <button onclick="openDirectory()">Open Directory</button>
+  <button onclick="shades.style.display == 'none' ? showPrompt() : hidePrompt()">Scan Dialog</button>
+  <button id="dir_opener" onclick="openDirectory()">Open Directory</button>
 </div>
 
 <div id="shades" class="Aligner">
@@ -244,10 +244,12 @@ function rerunPage() {
 
 function showPrompt() {
   shades.style.display = 'flex'
+  dir_opener.style.display = 'none'
 }
 
 function hidePrompt() {
   shades.style.display = 'none'
+  dir_opener.style.display = 'inline-block'
 }
 
 function scanroot() {
