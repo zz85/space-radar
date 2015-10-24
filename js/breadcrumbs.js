@@ -13,8 +13,6 @@ function getAncestors(node) {
     current = current.parent;
   }
 
-
-
   if (realroot.name == '/') {
     path.unshift(realroot);
   } else {

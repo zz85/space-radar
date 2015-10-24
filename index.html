@@ -61,6 +61,8 @@
 var current_size = 0, start_time
 
 function start(path) {
+  cleanup()
+  hidePrompt()
   log('start', path)
   start_time = performance.now()
   console.time('scan_job')
@@ -94,7 +96,9 @@ function cleanup() {
 
     d3
     .select("#sequence")
-    .select('div').remove()
+    .select('div')
+      .selectAll("a")
+      .remove()
 
     partition = null
     realroot = current_p = null
@@ -221,7 +225,7 @@ setupWebViewIPC()
 
 function ready() {
   // start here
-  shades.style.display = 'flex'
+  showPrompt()
   // fsipc('fs-ipc.json')
 }
 
@@ -230,29 +234,26 @@ function rerunPage() {
   remote.getCurrentWindow().reload();
 }
 
-function scanroot() {
-  shades.style.display = 'none'
-  // start('../..')
+function showPrompt() {
+  shades.style.display = 'flex'
 }
 
-//
+function hidePrompt() {
+  shades.style.display = 'none'
+}
 
-/*
-  var execPath = require('remote').process.execPath;
-  var command = execPath + ' path-to-your-app';
-  document.onclick = function(e) {
-    e.preventDefault();
-    console.log('click', e)
-    // if (e.target.tagName == 'A')
-    //   require('shell').openExternal(e.target.href);
-    return false;
-  };
-  document.ondragover = document.ondrop = function(e) {
-    e.preventDefault();
-    console.log('drag', e.dataTransfer.files[0])
-    return false;
-  };
-  */
+function scanroot() {
+  var ok = confirm('Scan root? This may take awhile...')
+  if (ok) {
+    start('/')
+  }
+}
+
+document.ondragover = document.ondrop = function(e) {
+  e.preventDefault();
+  // prevent anyhow drag
+  return false;
+};
 
 var promptbox = document.getElementById('promptbox');
     promptbox.ondragover = function () {
@@ -268,9 +269,35 @@ var promptbox = document.getElementById('promptbox');
       e.preventDefault();
       var file = e.dataTransfer.files[0];
       console.log('file', file)
-      // require('child_process').execFile(execPath, [file.path], {
-      //   detached: true, stdio: 'ignore'
-      // }).unref();
+
+      var stat = fs.lstatSync(file.path)
+      log('file', stat.isFile(), 'dir', stat.isDirectory())
+
+
+      // require('shell')
+      //   .showItemInFolder(file.path)
+        // .openExternal(file.path)
+
+      // shell.openItem(fullPath)
+
+      // delete file, woah....
+      // shell.moveItemToTrash(fullPath)
+
+      // return
+
+      if (stat.isFile()) {
+        alert('please select a directory!')
+        return
+      }
+
+      if (stat.isDirectory()) {
+        var ok = confirm('Scan ' + file.path + '?')
+        if (ok) {
+          start(file.path);
+        }
+        return
+      }
+
       return false;
     };
 
@@ -279,7 +306,6 @@ var promptbox = document.getElementById('promptbox');
 //   log(x, y)
 //   window.j = y
 //   setTimeout(() => complete(y))
-
 // });
 
 </script>
