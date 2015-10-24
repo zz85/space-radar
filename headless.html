@@ -36,9 +36,10 @@
   })
 
   function go(target) {
-
-    // let target = '../../..'
-    var INCREMENTAL_INTERVAL = 30000
+    let
+      START_REFRESH_INTERVAL = 5000,
+      REFRESH_INTERVAL = START_REFRESH_INTERVAL,
+      MAX_REFRESH_INTERVAL = 10 * 60 * 1000
 
     let checker
     let json = {}
@@ -63,7 +64,8 @@
       clearTimeout(checker)
       console.log('refresh...');
       transfer('refresh', json)
-      checker = setTimeout(refresh, INCREMENTAL_INTERVAL)
+      REFRESH_INTERVAL *= 3
+      checker = setTimeout(refresh, Math.min(INCREMENTAL_INTERVAL, MAX_REFRESH_INTERVAL))
     }
 
     function progress(path, name) {
@@ -96,7 +98,8 @@
 
     // console.log('boo')
 
-    // setTimeout(refresh, 5000)
+
+    setTimeout(refresh, REFRESH_INTERVAL)
 
   }
 

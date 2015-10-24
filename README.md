@@ -27,15 +27,21 @@ Future Enhancements
 Whats New
 ==
 
-2.0.0
+version 3.0.0
+- Disk scanning is now move to a webview process
+- Investigate various RPC methods now uses LocalStorage - FileSystem IPC message passing
+- Reduce memory usage (and Electron crashes) by not caching key paths
+- Tested on > 100GB & 2M files
+
+version 2.0.0
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
 - Runs disk scanning as a separate headless renderer process
 - Json is passed back via IPC
 - Remove Async npm dependency
 
-Known Issues
+Issues
 ==
-- UI may freeze momentary loading large data sets
+Please raise on [github issue tracker](https://github.com/zz85/space-radar-electron/issues) or contact [@blurspline on twitter](http://twitter.com/blurspline)
 
 Development
 ==
@@ -57,7 +63,3 @@ Check that you have depdencies installed, otherwise run (this may take awhile fo
 ```
 npm install
 ```
-
-Issues
-==
-Use the [github issue tracker](https://github.com/zz85/space-radar-electron/issues) or contact [@blurspline on twitter](http://twitter.com/blurspline)

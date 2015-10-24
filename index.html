@@ -119,7 +119,7 @@ function fsipc(filename) {
     var cmd = args.shift()
     handleIPC(cmd, args)
   } catch (e) {
-    console.error(e)
+    console.error(e.stack)
   }
   console.timeEnd('fsipc');
 }
