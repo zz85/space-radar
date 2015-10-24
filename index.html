@@ -31,30 +31,38 @@
 </div>
 
 <script src="js/utils.js"></script>
+<script src="js/breadcrumbs.js"></script>
 <!-- <script src="js/du.js"></script> -->
 <script src="js/bipartition_sunburst.js"></script>
 <!-- <script src="js/treemap.js"></script> -->
 
 <script>
 
+function log() {
+  var args = Array.prototype.slice.call(arguments)
+  args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( new Date() )[ 0 ] + new Array(args.length + 1).join(' %O'), 'background: #222; color: #bada55')
+
+  console.log.apply(console, args);
+
+}
+
 // IPC handling
 
 function progress(dir, name) {
-  // console.log('[' + ipc_name + '] progress', name)
+  // log('[' + ipc_name + '] progress', name)
   legend.html("<h2>scanning: "+name+"</h2><p>"+dir+"</p>")
 }
 
 function refresh(json) {
-  console.log('[' + ipc_name + '] refresh..')
+  log('[' + ipc_name + '] refresh..')
   onJson(null, json)
 }
 
 function complete(json) {
   loading.style.display = 'none'
-  console.log('[' + ipc_name + '] complete..', json)
-  console.timeEnd('moooo')
+  log('[' + ipc_name + '] complete..', json)
+  console.timeEnd('scan_job')
   onJson(null, json)
-
 }
 
 const DEBUG = 1
@@ -91,7 +99,7 @@ function setupWebViewIPC() {
   });
 
   webview.addEventListener('did-finish-load', function() {
-    console.time('moooo')
+    console.time('scan_job')
     webview.send('scan', '/') // ../../..
   })
 }
@@ -112,7 +120,7 @@ function handleIPC(cmd, args) {
 
 function fsipc(filename) {
   console.time('fsipc');
-  console.log(filename)
+  log(filename)
   try {
     var args = fs.readFileSync(filename, {encoding: 'utf-8'})
     args = JSON.parse(args)
@@ -131,11 +139,11 @@ function setupIPC() {
   ipc.send('register', ipc_name)
 
   ipc.on('message', function(arg) {
-    console.log('[' + ipc_name + '] message', arg)
+    log('[' + ipc_name + '] message', arg)
   })
 
   ipc.on('ready', function(arg) {
-    console.log('lets go');
+    log('lets go');
     loading.style.display = 'inline-block'
   })
 
@@ -166,7 +174,7 @@ document.addEventListener('ready', function() {
 // fsipc('fs-ipc.json')
 // testing test.json
 // d3.json("experiments/root.json", function(x, y) {
-//   console.log(x, y)
+//   log(x, y)
 //   window.j = y
 //   setTimeout(() => complete(y))
 
