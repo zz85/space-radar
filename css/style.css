@@ -188,3 +188,48 @@ body {
 #chart path {
   stroke: #fff;
 }
+
+/* Center aligned Flex Box */
+
+.Aligner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Aligner-item {
+  max-width: 50%;
+  background: #ddd;
+  opacity: 1;
+}
+
+.Aligner-item--top {
+  align-self: flex-start;
+}
+
+.Aligner-item--bottom {
+  align-self: flex-end;
+}
+
+#shades {
+  z-index: 200;
+  width: 100%;
+  height: 100%;
+  background: #333;
+  opacity: 0.3;
+  position: absolute;
+  display: none;
+}
+
+#promptbox {
+  width: 100%;
+  height: 400px;
+  text-align: center;
+  padding: 20px;
+  margin: -20px;
+}
+
+button {
+  width: 150px;
+  height: 40px;
+}
