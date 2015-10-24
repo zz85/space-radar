@@ -118,8 +118,9 @@
 
     if (err) {
       err = null
-      fs.writeFileSync('fs-ipc.json', jsonstr, { encoding: 'utf-8' })
-      transfer('fs-ipc', 'fs-ipc.json')
+      let p = path.join(__dirname, 'fs-ipc.json')
+      fs.writeFileSync(p, jsonstr, { encoding: 'utf-8' })
+      transfer('fs-ipc', p)
       return
     }
 
