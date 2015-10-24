@@ -93,6 +93,7 @@ function descendFS(options, done) {
 	})
 }
 
+descendFS.resetCounters = resetCounters
 module.exports = descendFS
 
 }()
