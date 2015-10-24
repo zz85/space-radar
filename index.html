@@ -90,8 +90,6 @@ function cleanup() {
 }
 
 function complete(json) {
-  // webview.remove()
-
   loading.style.display = 'none'
   log('[' + ipc_name + '] complete..', json)
   console.timeEnd('scan_job')
@@ -100,6 +98,8 @@ function complete(json) {
 
   var time_took = performance.now() - start_time
   log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
+
+  webview.remove()
   // TODO add growl notification here
 }
 
@@ -207,6 +207,11 @@ setupWebViewIPC()
 document.addEventListener('ready', function() {
 
 })
+
+function rerunPage() {
+  var remote = require('remote');
+  remote.getCurrentWindow().reload();
+}
 
 // // testing test.json experiments/root.json experiments/mem
 // d3.json("test.json", function(x, y) {
