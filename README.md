@@ -32,6 +32,7 @@ version 3.0.0
 - Investigate various RPC methods now uses LocalStorage - FileSystem IPC message passing
 - Reduce memory usage (and Electron crashes) by not caching key paths
 - Tested on > 100GB & 2M files
+- Improvements to user interactivity esp on hover states
 
 version 2.0.0
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.

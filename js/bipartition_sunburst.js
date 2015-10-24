@@ -17,11 +17,14 @@ function onResize() {
  TODOs
 
 - HDD Scanning
+  - Allow destination scanning (root / drives / folder)
   - Monitoring - eg https://github.com/paulmillr/chokidar
   - Directory caching
-  - add drives
   - Real Disk usage
   - Grab free space!
+
+- Cross platform
+ - test on windows
 
 - UI
    - color by
@@ -31,17 +34,12 @@ function onResize() {
      - number of files
   - Explorer Tree View
   - Responsive resizing (Zooming)
-  - idea: show children only upon mouseover
-  - do computation in webworkers
   - Filter hidden directories / files
   - combine hidden file sizes
   - Labels
   - Pie Magnifier
   - Absolute or relative file size intensity
   - Back / Fwd paths
-
-  - correct hover states for core
-  - change numbers of center to selection
 
 - UI Perf
   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
@@ -60,6 +58,11 @@ DONE
  - Streaming/incremental updates (sort of by recreating partitions & jsons)
  - Hover stats
  - Faster scanning
+ - correct hover states for core
+ - computation done in separate process
+ - change numbers of center to selection
+ - shows children selection on hover
+
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -230,8 +233,9 @@ function zoom(root, p) {
       outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI]);
 
   function insideArc(d) {
-    return p.key > d.key
-        ? {depth: d.depth - 1, x: 0, dx: 0} : p.key < d.key
+    var pkey = key(p), dkey = key(d);
+    return pkey > dkey
+        ? {depth: d.depth - 1, x: 0, dx: 0} : pkey < dkey
         ? {depth: d.depth - 1, x: 2 * Math.PI, dx: 0}
         : {depth: 0, x: 0, dx: 2 * Math.PI};
   }
@@ -249,7 +253,7 @@ function zoom(root, p) {
   // Entering outside arcs start from the old layout.
   if (root === p) enterArc = outsideArc, exitArc = insideArc, outsideAngle.range([p.x, p.x + p.dx]);
 
-  path = path.data(partition.nodes(root).slice(1), function(d) { return d.key; });
+  path = path.data(partition.nodes(root).slice(1), function(d) { return key(d); });
 
   // When zooming out, arcs enter from the inside and exit to the outside.
   // Exiting outside arcs transition to the new layout.
@@ -266,7 +270,7 @@ function zoom(root, p) {
 
     path.enter().append("path")
         .style("fill-opacity", function(d) { return d.depth === 2 - (root === p) ? 1 : 0; })
-        .style("fill", function(d) { return d.fill; })
+        .style("fill", function(d) { return fill(d); })
         .on("click", zoomIn)
         .each(function(d) { this._current = enterArc(d); })
         .attr("class", "area")
@@ -329,11 +333,10 @@ function onJson(error, r) {
       .forEach(function(d) {
         d._children = d.children;
         d.sum = d.value;
-        d.key = key(d);
-        d.fill = fill(d);
+        // d.key = key(d);
+        // d.fill = fill(d);
       })
 
-      ;
   console.timeEnd('compute2')
 
   console.log('ROOT SIZE', format(root.value))
@@ -381,7 +384,7 @@ function onJson(error, r) {
     .enter().append("path")
       .attr("d", arc)
       .attr("class", "area")
-      .style("fill", function(d) { return d.fill; })
+      .style("fill", function(d) { return fill(d); })
       .each(function(d) { this._current = updateArc(d); })
       .on("click", zoomIn)
       .on("mouseover", mouseover)
@@ -473,7 +476,7 @@ function updateBreadcrumbs(nodeArray, percentageString) {
     .append('a')
     .attr('href', '#')
       .style("background", function(d) {
-        var h = hue(d.key);
+        var h = hue(key(d));
         return h;
         // var c = d3.lab(hue(p.name));
         // c.l = luminance(d.sum);
