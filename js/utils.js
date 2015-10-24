@@ -46,5 +46,5 @@ function clone2(source, target) {
 
 if (window) {
 	window.format = format
-	window.clone2 = clone
+	window.clone2 = clone2
 }

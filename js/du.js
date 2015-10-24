@@ -21,6 +21,7 @@ function descendFS(options, done) {
 	}
 
 	counter++
+
 	if (counter % 10000 === 0) {
 		if (options.onprogress) options.onprogress(dir, name);
 		// if (counter % 10000 === 0) console.log('scanning', counter, dir);
@@ -41,6 +42,7 @@ function descendFS(options, done) {
 		if (stat.isFile()) {
 			node.name = name
 			node.size = size
+			if (options.onfile) options.onfile(dir, name, size);
 			return done(dir)
 		}
 
@@ -70,7 +72,8 @@ function descendFS(options, done) {
 						name: file,
 						node: childNode,
 						onprogress: options.onprogress,
-						onrefresh: options.onrefresh
+						onrefresh: options.onrefresh,
+						onfile: options.onfile,
 					}, ok)
 				});
 

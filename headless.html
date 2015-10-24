@@ -57,14 +57,11 @@
     function refresh() {
       clearTimeout(checker)
       console.log('scanning...');
-
-      // ipc.send('call', 'viz', 'refresh', json)
-      transfer('refresh', json)
+      // transfer('refresh', json)
       checker = setTimeout(refresh, INCREMENTAL_INTERVAL)
     }
 
     function progress(path, name) {
-      // ipc.send('call', 'viz', 'progress', path, name)
       transfer('progress', path, name)
     }
 
@@ -77,6 +74,9 @@
         parent: target,
         node: json,
         onprogress: progress,
+        onfile: function(path, name, size) {
+          transfer('file', path, name, size)
+        },
         // onrefresh: refresh
       }, complete)
 

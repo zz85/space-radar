@@ -57,8 +57,8 @@ ipc.on('refresh', refresh)
 ipc.on('complete', complete)
 
 function progress(dir, name) {
-  console.log('[' + ipc_name + '] progress', name)
-  onProcess(dir, name)
+  // console.log('[' + ipc_name + '] progress', name)
+  // onProcess(dir, name)
 }
 
 function refresh(json) {
@@ -70,7 +70,44 @@ function complete(json) {
   loading.style.display = 'none'
   console.log('[' + ipc_name + '] complete..', json)
   onJson(null, json)
-  win.close()
+}
+
+
+var fs = {
+  name: 'root',
+  children: []
+};
+
+var c = 0;
+function file(dir, name, size) {
+  // console.log('file', dir, name, size)
+  var node = fs;
+  var paths = dir.split('/').slice(1, -1);
+
+  for (var i = 0; i < paths.length; i++) {
+    var path = paths[i];
+
+    var x = node.children.filter( x => {
+      return x.name == path
+    })
+
+    if (!x) {
+      node = x[0]
+    } else {
+      var tmp = { name: path, children: [] }
+      node.children.push(tmp)
+      node = tmp
+    }
+  }
+  node.children.push({
+    name: name,
+    size: size
+  })
+
+  c++;
+  if (c % 10000 == 0) {
+    refresh(clone2(fs))
+  }
 }
 
 function onProcess(path, b) {
@@ -120,6 +157,8 @@ function handleIPC(cmd, args) {
       return refresh.apply(null, args)
     case 'complete':
       return complete(args[0])
+    case 'file':
+      return file.apply(null, args)
   }
 }
 
