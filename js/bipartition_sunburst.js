@@ -448,15 +448,19 @@ function getAncestors(node) {
     current = current.parent;
   }
 
-  // path.unshift(realroot);
 
-  path = realroot.name.split(PATH_DELIMITER).slice(1).map(d => {
-    return {
-      name: d,
-      depth: -1,
-      root: true
-    }
-  }).concat(path)
+
+  if (realroot.name == '/') {
+    path.unshift(realroot);
+  } else {
+    path = realroot.name.split(PATH_DELIMITER).slice(1).map(d => {
+      return {
+        name: d,
+        depth: -1,
+        root: true
+      }
+    }).concat(path)
+  }
 
   return path;
 }
