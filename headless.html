@@ -65,7 +65,7 @@
       console.log('refresh...');
       transfer('refresh', json)
       REFRESH_INTERVAL *= 3
-      checker = setTimeout(refresh, Math.min(INCREMENTAL_INTERVAL, MAX_REFRESH_INTERVAL))
+      checker = setTimeout(refresh, Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
     }
 
     function progress(path, name) {

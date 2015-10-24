@@ -113,6 +113,7 @@ body {
   right: 0;
   top: 40px;
   z-index: 50;
+  background: #ddd;
 }
 
 #legend h2 {
@@ -120,13 +121,13 @@ body {
   font-style:inherit;
   margin: 0;
   padding: 0;
+  text-transform: uppercase;
+  font-variant:small-caps;
 }
 #legend p {
   font-size:.9em;
   margin: 0;
   padding: 0;
-  text-transform: uppercase;
-  font-variant:small-caps;
 }
 
 #loading {

@@ -22,7 +22,9 @@
   </div>
 </div>
 
-<div id="legend"></div>
+<div id="legend">
+
+</div>
 
 <div id="explanation">
   <span id="core_top">Loading...</span><br/>
@@ -43,14 +45,14 @@ function log() {
   args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( new Date() )[ 0 ] + new Array(args.length + 1).join(' %O'), 'background: #222; color: #bada55')
 
   console.log.apply(console, args);
-
 }
 
 // IPC handling
 
 function progress(dir, name) {
   // log('[' + ipc_name + '] progress', name)
-  legend.html("<h2>scanning: "+name+"</h2><p>"+dir+"</p>")
+  legend.html("<h2>Scanning... (please be patient) </h2><p>"+dir+"</p>")
+  // +name+
 }
 
 function refresh(json) {
