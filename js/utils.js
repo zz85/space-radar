@@ -44,7 +44,31 @@ function clone2(source, target) {
 	return target;
 }
 
-if (window) {
-	window.format = format
-	window.clone2 = clone
+function log() {
+  var args = Array.prototype.slice.call(arguments)
+  args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( new Date() )[ 0 ] + new Array(args.length + 1).join(' %O'), 'background: #222; color: #bada55')
+
+  console.log.apply(console, args);
 }
+
+function memory() {
+  gc()
+
+  var mem = performance.memory
+
+  log(
+    'limit',
+    (mem.jsHeapSizeLimit / 1024 / 1024).toFixed(2),
+    'heap total',
+    (mem.totalJSHeapSize / 1024 / 1024).toFixed(2),
+    'heap used',
+    (mem.usedJSHeapSize / 1024 / 1024).toFixed(2)
+  )
+}
+
+// if (window) {
+// 	window.format = format
+// 	window.clone2 = clone
+// 	window.log = log
+// 	window.memory = memory
+// }

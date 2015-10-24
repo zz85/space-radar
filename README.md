@@ -33,6 +33,7 @@ version 3.0.0
 - Reduce memory usage (and Electron crashes) by not caching key paths
 - Tested on > 100GB & 2M files
 - Improvements to user interactivity esp on hover states
+- To prevent renderer process from hitting heap mem limit (1.5GB), all previous data is null, and dom elements removed to reduce memory pressure
 
 version 2.0.0
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.

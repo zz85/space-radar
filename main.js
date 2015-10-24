@@ -8,7 +8,8 @@ require('crash-reporter').start()
 var mainWindow = null
 var DEBUG = 1
 
-app.commandLine.appendSwitch('js-flags', '--expose_gc');
+app.commandLine.appendSwitch('js-flags', '--expose_gc --max-new-space-size=4096 --enable-precise-memory-info');
+
 
 app.on('window-all-closed', function() {
   console.log('window all closed');

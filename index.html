@@ -40,32 +40,67 @@
 
 <script>
 
-function log() {
-  var args = Array.prototype.slice.call(arguments)
-  args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( new Date() )[ 0 ] + new Array(args.length + 1).join(' %O'), 'background: #222; color: #bada55')
+// IPC handling
+var current_size = 0, start_time
 
-  console.log.apply(console, args);
+function start(path) {
+  log('start', path)
+  start_time = performance.now()
+  console.time('scan_job')
+  webview.send('scan', path)
 }
 
-// IPC handling
-var current_size = 0
 function progress(dir, name, size) {
   // log('[' + ipc_name + '] progress', name)
   legend.html("<h2>Scanning... (please be patient) </h2><p>"+dir+"</p>")
   current_size = size
-  // +name+
+  // TODO collect number of files too
 }
 
 function refresh(json) {
   log('[' + ipc_name + '] refresh..')
+
+
+  // should disable all inputs here because redraw would probably be intensive
+  // onJson(null, {name: 'moo', children: [ {name: 'foo', size: 1}]})
+
+  // we have a possibility of running out of memory here, let's force a garbage collection to compact memory a little!
+
   onJson(null, json)
 }
 
+function cleanup() {
+    if (path) {
+    // do some GC()!!!
+    path.remove()
+    center.remove()
+
+    d3
+    .select("#sequence")
+    .select('div').remove()
+
+    partition = null
+    realroot = current_p = null
+    path = center = null
+
+    jsoned = false
+  }
+
+  // memory()
+}
+
 function complete(json) {
+  // webview.remove()
+
   loading.style.display = 'none'
   log('[' + ipc_name + '] complete..', json)
   console.timeEnd('scan_job')
   onJson(null, json)
+  legend.style('display', 'none')
+
+  var time_took = performance.now() - start_time
+  log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
+  // TODO add growl notification here
 }
 
 const DEBUG = 1
@@ -102,11 +137,11 @@ function setupWebViewIPC() {
   });
 
   webview.addEventListener('did-finish-load', function() {
-    console.time('scan_job')
-    webview.send('scan', '/') // ../../..
+    // start here
+    start('../..')
+    // fsipc('fs-ipc.json')
   })
 }
-
 
 function handleIPC(cmd, args) {
   switch (cmd) {
@@ -123,6 +158,7 @@ function handleIPC(cmd, args) {
 
 function fsipc(filename) {
   console.time('fsipc');
+  cleanup()
   log(filename)
   try {
     var args = fs.readFileSync(filename, {encoding: 'utf-8'})
@@ -134,7 +170,6 @@ function fsipc(filename) {
   }
   console.timeEnd('fsipc');
 }
-
 
 function setupIPC() {
   var ipc = require('ipc')
@@ -173,17 +208,13 @@ document.addEventListener('ready', function() {
 
 })
 
-
-// fsipc('fs-ipc.json')
-// testing test.json
-// d3.json("experiments/root.json", function(x, y) {
+// // testing test.json experiments/root.json experiments/mem
+// d3.json("test.json", function(x, y) {
 //   log(x, y)
 //   window.j = y
 //   setTimeout(() => complete(y))
 
 // });
-
-
 
 </script>
 

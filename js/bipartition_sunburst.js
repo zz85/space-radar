@@ -124,23 +124,14 @@ var core_tag = d3.select("#core_tag")
 
 var current_p, max_level, current_level = 0;
 
-var center = svg.append("g")
-    .attr("id", "core")
-    .on("click", zoomOut);
-
 var circular_meter = svg.append('g');
 // TODO make a tiny border around the rim of center to show the percentage of current space
 
 explanation.on('click', zoomOut)
 
-center
-    .append("circle")
-    .attr("r", CORE_RADIUS)
-
-center.append("title")
-  .text("zoom out");
-
+// Data Bind Elements
 var path;
+var center;
 
 function updateCore(d) {
   // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
@@ -286,14 +277,13 @@ function zoom(root, p) {
 window.redraw = () => zoom(current_p, current_p);
 
 var jsoned = false;
-
 var realroot;
-var root;
 var lastover;
 
-
 function onJson(error, r) {
-  root = r;
+  var root = r;
+
+  current_p = root;
   realroot = r;
 
   if (error) throw error;
@@ -345,39 +335,48 @@ function onJson(error, r) {
 
   max_level = 0;
   partition
-      .children(function(d, depth) {
-        // console.log('children');
-        max_level = Math.max(depth, max_level);
-        if (depth >= LEVELS) {
-          return null
-        }
-        if (!d._children) return null;
+    .children(function(d, depth) {
+      // console.log('children');
+      max_level = Math.max(depth, max_level);
+      if (depth >= LEVELS) {
+        return null
+      }
+      if (!d._children) return null;
 
-        var children = [];
-        d._children.forEach(c => {
-          var ref = current_p || root
-          if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
-        })
-
-        return children;
-
-        // return depth < LEVELS ? d._children : null;
+      var children = [];
+      d._children.forEach(c => {
+        var ref = root
+        if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
       })
-      .value(function(d) {
-        // decide count or sum
-        return USE_COUNT ? d.count : d.sum
-      })
+
+      return children;
+
+      // return depth < LEVELS ? d._children : null;
+    })
+    .value(function(d) {
+      // decide count or sum
+      return USE_COUNT ? d.count : d.sum
+    })
 
 
   console.timeEnd('compute3')
 
-
-  current_p = root;
   if (jsoned) {
     return redraw();
     // path.remove()
   }
   jsoned = true;
+
+  center = svg.append("g")
+    .attr("id", "core")
+    .on("click", zoomOut);
+
+  center
+    .append("circle")
+    .attr("r", CORE_RADIUS)
+
+  center.append("title")
+    .text("zoom out");
 
   path = svg.selectAll("path")
       .data(partition.nodes(root).slice(1))
@@ -396,9 +395,6 @@ function onJson(error, r) {
       // })
 
   redraw()
-
-  ///
-
 }
 
 function key(d) {
