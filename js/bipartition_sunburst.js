@@ -399,7 +399,7 @@ function onJson(error, r) {
 
 function key(d) {
   var k = [], p = d;
-  while (p && p.depth) k.push(p.name), p = p.parent;
+  while (p) k.push(p.name), p = p.parent;
   return k.reverse().join(PATH_DELIMITER);
 }
 
