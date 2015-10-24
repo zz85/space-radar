@@ -15,14 +15,17 @@
   <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
   <div class="Aligner-item">
     <div id="promptbox">
-    <h3>Pick a destination to scan</h3>
-    <p>
-    You may scan the root of your drive (make take some time), or pick a directory of your choice by dragging a folder here
-    </p>
-    <p>
-      <button onclick="scanroot()">Scan root</button>
-    </p>
+      <h3>Pick a destination to scan</h3>
+      <p>
+      You may scan the root of your drive (make take some time), or pick a directory of your choice by dragging a folder here
+      </p>
+      <p>
+        <button onclick="scanroot()">Scan root</button>
+      </p>
 
+      <p>
+        <button onclick="browseDialog()">Select Directory</button>
+      </p>
     </div>
   </div>
   <!-- <div class="Aligner-item Aligner-item--bottom">…</div> -->
@@ -252,54 +255,72 @@ function scanroot() {
 document.ondragover = document.ondrop = function(e) {
   e.preventDefault();
   // prevent anyhow drag
-  return false;
+  return false
 };
 
+function browseDialog() {
+  var dialog = require('remote').require('dialog')
+  var selection = dialog.showOpenDialog({ properties: [  'openDirectory']})
+
+  if (selection && selection[0]) {
+    selectPath(selection[0])
+  }
+
+  console.log(selection);
+  // 'openFile', 'multiSelections'
+}
+
+function selectPath(path) {
+  var stat = fs.lstatSync(path)
+  log('file', stat.isFile(), 'dir', stat.isDirectory())
+
+  if (stat.isFile()) {
+    alert('please select a directory!')
+    return
+  }
+
+  if (stat.isDirectory()) {
+    var ok = confirm('Scan ' + path + '?')
+    if (ok) {
+      start(path);
+    }
+    return
+  }
+}
+
+
+
 var promptbox = document.getElementById('promptbox');
-    promptbox.ondragover = function () {
-      this.className = 'hover';
-      return false;
-    };
-    promptbox.ondragleave = promptbox.ondragend = function () {
-      this.className = '';
-      return false;
-    };
-    promptbox.ondrop = function (e) {
-      this.className = '';
-      e.preventDefault();
-      var file = e.dataTransfer.files[0];
-      console.log('file', file)
+promptbox.ondragover = function () {
+  this.className = 'hover';
+  return false;
+};
+promptbox.ondragleave = promptbox.ondragend = function () {
+  this.className = '';
+  return false;
+};
+promptbox.ondrop = function (e) {
+  this.className = '';
+  e.preventDefault();
+  var file = e.dataTransfer.files[0];
 
-      var stat = fs.lstatSync(file.path)
-      log('file', stat.isFile(), 'dir', stat.isDirectory())
+  console.log('file', file)
 
 
-      // require('shell')
-      //   .showItemInFolder(file.path)
-        // .openExternal(file.path)
 
-      // shell.openItem(fullPath)
+  // require('shell')
+  //   .showItemInFolder(file.path)
+    // .openExternal(file.path)
 
-      // delete file, woah....
-      // shell.moveItemToTrash(fullPath)
+  // shell.openItem(fullPath)
 
-      // return
+  // delete file, woah....
+  // shell.moveItemToTrash(fullPath)
 
-      if (stat.isFile()) {
-        alert('please select a directory!')
-        return
-      }
-
-      if (stat.isDirectory()) {
-        var ok = confirm('Scan ' + file.path + '?')
-        if (ok) {
-          start(file.path);
-        }
-        return
-      }
-
-      return false;
-    };
+  // return
+  if (file)
+    return selectPath(file.path);
+};
 
 // // testing test.json experiments/root.json experiments/mem
 // d3.json("test.json", function(x, y) {
