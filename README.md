@@ -24,6 +24,12 @@ Future Enhancements
 - moar!!
 - let me know what you think
 
+Futher Explorations
+==
+- More efficient memory usage
+- More efficient scanning process
+- 3D visualization
+
 Whats New
 ==
 
@@ -34,6 +40,8 @@ version 3.0.0
 - Tested on > 100GB & 2M files
 - Improvements to user interactivity esp on hover states
 - To prevent renderer process from hitting heap mem limit (1.5GB), all previous data is null, and dom elements removed to reduce memory pressure
+- Allow target selection for disk usage scanning
+- Locate path in Finder
 
 version 2.0.0
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
@@ -65,3 +73,10 @@ Check that you have depdencies installed, otherwise run (this may take awhile fo
 ```
 npm install
 ```
+
+Thanks
+==
+Jill Ng for designing the app logo
+Jianwei for his comments on the app
+Chee Aun for helping alpha test the app
+WM for his talk on Electron that got me started
