@@ -6,7 +6,7 @@ var ipc = require('ipc')
 require('crash-reporter').start()
 
 var mainWindow = null
-var DEBUG = 1
+var DEBUG = process.env.DEBUG
 
 // probably only expose_gc works here
 app.commandLine.appendSwitch('js-flags', '--expose_gc --max-new-space-size=4096 --enable-precise-memory-info');

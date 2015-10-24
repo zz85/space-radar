@@ -60,7 +60,7 @@ Development
 Run
 
 ```
-electron .
+DEBUG=true electron .
 ```
 
 or
