@@ -12,6 +12,7 @@
 
   const ipc = require('ipc')
   const ipc_name = 'du'
+  const fs = require('fs')
 
   // ipc.send('register', ipc_name)
 
@@ -54,7 +55,7 @@
 
         // cache
         // console.time('write')
-        // require('fs').writeFileSync('test.json', JSON.stringify(json))
+        // fs.writeFileSync('test.json', JSON.stringify(json))
         // console.timeEnd('write')
     };
 
@@ -82,7 +83,7 @@
 
     // // for testing purposes only
     // console.log('moew')
-    // json = require('fs').readFileSync('experiments/root.json', { encoding: 'utf-8'})
+    // json = fs.readFileSync('experiments/root.json', { encoding: 'utf-8'})
     // console.log(json.length)
     // transfer('complete', JSON.parse(json))
 
@@ -103,26 +104,47 @@
     var args = Array.prototype.slice.call(arguments)
 
     var jsonstr = JSON.stringify(args)
-    console.log('len', jsonstr.length)
+
     // webview IPC
+
+    var err;
     try {
       // localStorage IPC
       localStorage.lsipc = jsonstr
     } catch (e) {
       console.error('fail: ')
+       console.log('len', jsonstr.length)
+      err = e;
+    }
 
+    if (err) {
+      err = null
+      fs.writeFileSync('fs-ipc.json', jsonstr, { encoding: 'utf-8' })
+      transfer('fs-ipc', 'fs-ipc.json')
+      return
+    }
 
+    if (err) {
+      err = null
       try {
+        // web view ipc
         ipc.sendToHost.apply(ipc, args)
       } catch (e) {
+        err = e
         console.error(e)
       }
+    }
 
-      return
-
-      // fallback to electron browser IPC
-      args.unshift('call', 'viz')
-      ipc.send.apply(ipc, args)
+    if (err) {
+      err = null
+      try {
+        // fallback to electron browser IPC
+        args.unshift('call', 'viz')
+        ipc.send.apply(ipc, args)
+      } catch (e) {
+        err = e
+        console.error(e)
+      }
     }
   }
 
