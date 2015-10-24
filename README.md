@@ -32,8 +32,9 @@ Futher Explorations
 
 Whats New
 ==
-
-version 3.0.0
+Version 3
+- App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
+- Many Bug fixes
 - Disk scanning is now move to a webview process
 - Investigate various RPC methods now uses LocalStorage - FileSystem IPC message passing
 - Reduce memory usage (and Electron crashes) by not caching key paths
@@ -43,7 +44,7 @@ version 3.0.0
 - Allow target selection for disk usage scanning
 - Locate path in Finder
 
-version 2.0.0
+Version 2
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
 - Runs disk scanning as a separate headless renderer process
 - Json is passed back via IPC
@@ -76,7 +77,7 @@ npm install
 
 Thanks
 ==
-Jill Ng for designing the app logo
+[Jill](http://jilln.com/) for designing the app logo
 Jianwei for his comments on the app
 Chee Aun for helping alpha test the app
 WM for his talk on Electron that got me started

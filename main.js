@@ -41,7 +41,8 @@ app.on('ready', function() {
   console.log('app is ready');
   mainWindow = new BrowserWindow({
     width: 880,
-    height: 600
+    height: 600,
+    icon: require('path').join(__dirname, 'Icon.png'),
   })
 
   // var window2 = new BrowserWindow({width: 800, height: 600});
