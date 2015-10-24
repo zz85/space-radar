@@ -54,6 +54,10 @@
         transfer('complete', json)
         console.log('ok')
 
+        // cleanup
+        json = {}
+        resetCounters()
+
         // // cache
         // console.time('write')
         // fs.writeFileSync('test.json', JSON.stringify(json))
