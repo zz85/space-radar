@@ -11,6 +11,11 @@
 
 <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview>
 
+<div id="toolbar">
+  <button>Scan Dialog</button>
+  <button onclick="openDirectory()">Open Directory</button>
+</div>
+
 <div id="shades" class="Aligner">
   <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
   <div class="Aligner-item">
@@ -303,11 +308,15 @@ promptbox.ondrop = function (e) {
   var file = e.dataTransfer.files[0];
 
   console.log('file', file)
+  // return
+  if (file)
+    return selectPath(file.path);
+};
 
-
-
-  // require('shell')
-  //   .showItemInFolder(file.path)
+function openDirectory() {
+  if (current_p)
+  require('shell')
+    .showItemInFolder(key(current_p))
     // .openExternal(file.path)
 
   // shell.openItem(fullPath)
@@ -315,10 +324,7 @@ promptbox.ondrop = function (e) {
   // delete file, woah....
   // shell.moveItemToTrash(fullPath)
 
-  // return
-  if (file)
-    return selectPath(file.path);
-};
+}
 
 // // testing test.json experiments/root.json experiments/mem
 // d3.json("test.json", function(x, y) {
