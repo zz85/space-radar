@@ -48,16 +48,16 @@
         // require('fs').writeFileSync('test.json', JSON.stringify(json))
         // console.timeEnd('write')
 
-        // ipc.send('call', 'viz', 'complete', json)
         setTimeout( () =>
-          transfer('complete', json)
+          transfer('complete', null)
         )
     };
 
     function refresh() {
       clearTimeout(checker)
       console.log('scanning...');
-      // transfer('refresh', json)
+      transfer('refresh', null) // json
+
       checker = setTimeout(refresh, INCREMENTAL_INTERVAL)
     }
 
@@ -78,7 +78,7 @@
         onprogress: progress,
         onfile: function(path, name, size) {
           buffer.push([path, name, size])
-          if (buffer.length == 1000) {
+          if (buffer.length == 10000) {
             transfer('files', buffer)
             buffer = []
           }
@@ -101,15 +101,21 @@
   function transfer(target) {
     var args = Array.prototype.slice.call(arguments)
 
-    // webview IPC
-    ipc.sendToHost.apply(ipc, args)
-    return
+    var str=  JSON.stringify(args)
 
     try {
       // localStorage IPC
-      localStorage.lsipc = JSON.stringify(args);
+      localStorage.lsipc = str;
     } catch (e) {
-      console.error('fail')
+
+
+      // webview IPC
+      console.error('fail ' + str.length)
+      ipc.sendToHost.apply(ipc, args)
+      return
+
+
+
       console.log(args[1].length)
       // fallback to electron browser IPC
       args.unshift('call', 'viz')

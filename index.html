@@ -66,10 +66,13 @@ function refresh(json) {
   onJson(null, json)
 }
 
+console.time('zzzzz')
 function complete(json) {
+  console.timeEnd('zzzzz')
   loading.style.display = 'none'
   console.log('[' + ipc_name + '] complete..', json)
-  onJson(null, json)
+  // onJson(null, json)
+  onJson(null, clone2(fs))
 }
 
 
@@ -86,20 +89,16 @@ function files(buff) {
     file(b[0], b[1], b[2])
   })
   console.timeEnd('file')
-  refresh(clone2(fs))
+  // refresh(clone2(fs))
 }
 function file(dir, name, size) {
     c++;
-  // if (c > 10000) {
-  //   return
-  // }
+  if (c % 200000 == 0) {
+    refresh(clone2(fs))
+  }
 
   var node = fs;
-  var paths = dir.split('/').slice(1, -1);
-
-  for (var i = 0; i < paths.length; i++) {
-    var path = paths[i];
-
+  var paths = dir.split('/').slice(1, -1).forEach(path => {
     var x = node.children.filter( x => {
       return x.name == path
     })
@@ -111,7 +110,8 @@ function file(dir, name, size) {
       node.children.push(tmp)
       node = tmp
     }
-  }
+  })
+
   node.children.push({
     name: name,
     size: size
@@ -120,8 +120,10 @@ function file(dir, name, size) {
 
 }
 
+legend.innerHTML  = "<h2>MOOOOOOOOO</h2>"
+
 function onProcess(path, b) {
-  legend.html("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
+  legend.innerHTML("<h2>scanning: "+b+"</h2><p>"+path+"</p>")
 }
 
 const DEBUG = 0
