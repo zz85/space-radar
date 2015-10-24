@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="css/style.css" type="text/css">
 <link rel="stylesheet" href="css/throbber.css" type="text/css">
 <link rel="stylesheet" href="css/breadcrumb.css" type="text/css">
+
+<webview id="foo" src="headless.html" style="display:inline-block; width:240px; height:280px" nodeintegration="on"></webview>
+
 <div id="loading">
   <div class="throbber-loader">
     Loading…
@@ -76,24 +79,40 @@ function onProcess(path, b) {
 
 const DEBUG = 0
 
-var remote = require('remote')
-var BrowserWindow = remote.require('browser-window')
-var win = new BrowserWindow(
-  DEBUG ? { width: 800, height: 600 } : { show: false }
-)
-
-win.loadUrl('file://' + __dirname + '/headless.html');
-if (DEBUG) win.openDevTools()
-
-//
-win.webContents.on('did-finish-load', function() {
-  // win.webContents.send('ready')
-})
+// var remote = require('remote')
+// var BrowserWindow = remote.require('browser-window')
+// var win = new BrowserWindow(
+//   DEBUG ? { width: 800, height: 600 } : { show: false }
+// )
+// win.loadUrl('file://' + __dirname + '/headless.html');
+// if (DEBUG) win.openDevTools()
+// //
+// win.webContents.on('did-finish-load', function() {
+//   // win.webContents.send('ready')
+// })
 
 window.addEventListener('storage', function (e) {
  if (e.key == 'lsipc') {
   var args = JSON.parse(e.newValue)
   var cmd = args.shift()
+  handleIPC(cmd, args)
+ }
+});
+
+// dom-ready
+foo.addEventListener("did-finish-load", function() {
+  foo.openDevTools();
+});
+
+foo.addEventListener('ipc-message', function(event) {
+  var args = event.args
+  var cmd = event.channel
+  handleIPC(cmd, args)
+  // console.log(event.channel, event);
+  // Prints "pong"
+});
+
+function handleIPC(cmd, args) {
   switch (cmd) {
     case 'progress':
       return progress.apply(null, args)
@@ -102,8 +121,18 @@ window.addEventListener('storage', function (e) {
     case 'complete':
       return complete(args[0])
   }
- }
-});
+}
+
+// foo.send('ping');
+
+// // testing
+// d3.json("mem.json", function(x, y) {
+//   console.log(x, y)
+//   window.j = y
+//   setTimeout(() => complete(y))
+
+// });
+
 
 
 </script>

@@ -186,7 +186,7 @@ function mouseover(d) {
 function mouseout(d) {
   lastover = null
 
-  path.style('opacity', 1)
+  path.style('opacity', .8)
   updateCore(current_p)
 }
 

@@ -72,7 +72,7 @@
     target = path.resolve(target)
     console.log('Scanning target', target)
 
-    // yay
+    // TODO use IPC call for this
     du({
         parent: target,
         node: json,
@@ -80,17 +80,31 @@
         // onrefresh: refresh
       }, complete)
 
+    // // for testing purposes only
+    // console.log('moew')
+    // json = require('fs').readFileSync('experiments/root.json', { encoding: 'utf-8'})
+    // console.log(json.length)
+    // transfer('complete', JSON.parse(json))
+    // console.log('boo')
+
     setTimeout(refresh, 5000)
+
   }
 
   function transfer(target) {
     var args = Array.prototype.slice.call(arguments)
+
+    // webview IPC
+    ipc.sendToHost.apply(ipc, args)
+    return
+
     try {
+      // localStorage IPC
       localStorage.lsipc = JSON.stringify(args);
     } catch (e) {
       console.error('fail')
-      console.log(args.length)
-      // fallback
+      console.log(args[1].length)
+      // fallback to electron browser IPC
       args.unshift('call', 'viz')
       ipc.send.apply(ipc, args)
     }
@@ -103,13 +117,6 @@
 
   </script>
   <script>
-  // // redirect log to stdout
-  // console.log = require('console').log
-  // // redirect errors to stderr
-  // window.addEventListener('error', function (e) {
-  //   e.preventDefault()
-  //   require('console').error(e.error.stack || 'Uncaught ' + e.error)
-  // })
 
   // ipc.on('args', function (args) {
   //   console.log('yoz i got something!!!')

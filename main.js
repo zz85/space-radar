@@ -8,6 +8,7 @@ require('crash-reporter').start()
 var mainWindow = null
 var DEBUG = 0
 
+app.commandLine.appendSwitch('js-flags', '--expose_gc');
 
 app.on('window-all-closed', function() {
   console.log('window all closed');
