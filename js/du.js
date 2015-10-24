@@ -4,7 +4,15 @@
 const fs = require('fs')
 const path = require('path')
 
-let counter = 0;
+let counter, current_size
+
+function resetCounters() {
+	counter = 0
+	current_size = 0
+}
+
+resetCounters()
+
 
 /* Asynchronous File System descender */
 function descendFS(options, done) {
@@ -22,8 +30,7 @@ function descendFS(options, done) {
 
 	counter++
 	if (counter % 10000 === 0) {
-		if (options.onprogress) options.onprogress(dir, name);
-		// if (counter % 10000 === 0) console.log('scanning', counter, dir);
+		if (options.onprogress) options.onprogress(dir, name, current_size);
 		if (counter % 100000 === 0) if (options.onrefresh) options.onrefresh(dir, name);
 	}
 
@@ -34,7 +41,9 @@ function descendFS(options, done) {
 		}
 
 		let size = stat.size;
-		// console.log(dir, stat.blocks, stat.blocks * 512, stat.size)
+		if (stat.blocks) {
+			current_size += stat.blocks * 512
+		}
 
 		if (stat.isSymbolicLink()) return done(dir)
 

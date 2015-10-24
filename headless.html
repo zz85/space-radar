@@ -39,7 +39,7 @@
     let
       START_REFRESH_INTERVAL = 5000,
       REFRESH_INTERVAL = START_REFRESH_INTERVAL,
-      MAX_REFRESH_INTERVAL = 10 * 60 * 1000
+      MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
     let checker
     let json = {}
@@ -68,8 +68,8 @@
       checker = setTimeout(refresh, Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
     }
 
-    function progress(path, name) {
-      transfer('progress', path, name)
+    function progress(path, name, size) {
+      transfer('progress', path, name, size)
     }
 
     target = path.resolve(target)

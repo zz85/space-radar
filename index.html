@@ -48,10 +48,11 @@ function log() {
 }
 
 // IPC handling
-
-function progress(dir, name) {
+var current_size = 0
+function progress(dir, name, size) {
   // log('[' + ipc_name + '] progress', name)
   legend.html("<h2>Scanning... (please be patient) </h2><p>"+dir+"</p>")
+  current_size = size
   // +name+
 }
 
