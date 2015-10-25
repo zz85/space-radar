@@ -66,15 +66,41 @@ function memory() {
   )
 }
 
-function mempoll() {
+/*
+ * an abstraction that runs a task in the future
+ * if a task is scheduled before it's ran,
+ * the previous task would be cancelled
+ */
+function TimeoutTask(task, time) {
+	this.id = null
+	this.task = task
+	this.time = time
+}
+
+TimeoutTask.prototype.cancel = function() {
+	this.id = clearTimeout(this.id)
+}
+
+TimeoutTask.prototype.schedule = function(t) {
+	this.time = t !== undefined ? t : this.time
+	this.cancel()
+	this.id = setTimeout(this.run.bind(this), this.time)
+}
+
+TimeoutTask.prototype.run = function() {
+	this.cancel()
+	if (this.task) this.task(this.schedule.bind(this))
+}
+
+var mempoller = new TimeoutTask(function(next) {
 	hidePrompt()
 
 	mem(function(ps) {
 		log('mem polled')
 		onJson(null, ps)
-		setTimeout(mempoll, 5000)
+		next()
 	})
-}
+}, 5000)
 
 // if (window) {
 // 	window.format = format
