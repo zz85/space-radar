@@ -275,17 +275,31 @@ function zoom(root, p) {
   });
 }
 
-function redraw() {
-  if (current_p)
-    zoom(current_p, current_p);
+function redraw(node) {
+  node = node || current_p
+  if (node)
+    zoom(node, node);
 }
 
 var jsoned = false;
 var realroot;
 var lastover;
 
+function tracelineage(node) {
+  var keys = [];
+  while (node) {
+    keys.push(node.name)
+    node = node.parent
+  }
+  return keys.reverse()
+}
+
 function onJson(error, r) {
   var root = r;
+
+  var oldLineage;
+  if (current_p)
+    oldLineage = tracelineage(current_p)
 
   current_p = root;
   realroot = r;
@@ -366,8 +380,28 @@ function onJson(error, r) {
   console.timeEnd('compute3')
 
   if (jsoned) {
+    // this attempts to place you in the same view after you refresh the data
+    if (oldLineage) {
+      var n = root
+      var name = oldLineage.shift()
+
+      if (n.name != name) return redraw()
+
+      while (name = oldLineage.shift()) {
+        var children = n.children.filter(function(n) {
+          return n.name == name
+        })
+
+        if (children.length != 1) {
+          return redraw(n)
+        }
+
+        n = children[0]
+      }
+      if (n) return redraw(n)
+    }
+
     return redraw();
-    // path.remove()
   }
   jsoned = true;
 
