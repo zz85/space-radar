@@ -66,6 +66,16 @@ function memory() {
   )
 }
 
+function mempoll() {
+	hidePrompt()
+
+	mem(function(ps) {
+		log('mem polled')
+		onJson(null, ps)
+		setTimeout(mempoll, 5000)
+	})
+}
+
 // if (window) {
 // 	window.format = format
 // 	window.clone2 = clone

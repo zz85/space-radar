@@ -308,7 +308,8 @@ function onJson(error, r) {
 
   partition = d3.layout.partition()
     .value(function(d) { return d.size; })
-    .sort(function(a, b) { return d3.ascending(a.name, b.name); })
+    // .sort(function(a, b) { return d3.ascending(a.name, b.name); })
+    .sort(function(a, b) { return d3.ascending(a.sum, b.sum); })
     .size([2 * Math.PI, radius])
     // .size([2 * Math.PI, radius * radius]) // ROOT
     ;
