@@ -18,21 +18,21 @@
   // ipc.send('register', ipc_name)
 
   // ipc.on('ready', function() {
-  //   console.log('all is ready')
+  //   log('all is ready')
   //   // go();
   //   setTimeout(go, 2000)
   // })
 
   // ipc.on('broadcast', function(arg) {
-  //   console.log('[' + ipc_name + '] broadcast', arg)
+  //   log('[' + ipc_name + '] broadcast', arg)
   // })
 
   // ipc.on('message', function(arg) {
-  //   console.log('[' + ipc_name + '] message', arg)
+  //   log('[' + ipc_name + '] message', arg)
   // })
 
   ipc.on('scan', function(target) {
-    console.log('got scan')
+    log('got scan')
     go(target)
   })
 
@@ -53,13 +53,13 @@
     console.time('async2')
 
     function complete(counter) {
-        // console.log("Scan completed", counter, "files");
+        // log("Scan completed", counter, "files");
         console.timeEnd('async2')
         refreshTask.cancel()
 
-        console.log(json);
+        log(json);
         transfer('complete', json)
-        console.log('ok')
+        log('ok')
 
         // cleanup
         json = {}
@@ -77,7 +77,7 @@
     }
 
     target = path.resolve(target)
-    console.log('Scanning target', target)
+    log('Scanning target', target)
 
     du({
         parent: target,
@@ -89,9 +89,9 @@
     refreshTask.schedule()
 
     // // for testing purposes only
-    // console.log('moew')
+    // log('moew')
     // json = fs.readFileSync('experiments/root.json', { encoding: 'utf-8'})
-    // console.log(json.length)
+    // log(json.length)
     // transfer('complete', JSON.parse(json))
 
   }
@@ -104,13 +104,18 @@
     // webview IPC
 
     var err;
-    try {
-      // localStorage IPC
-      localStorage.lsipc = jsonstr
-    } catch (e) {
-      console.error('fail: ')
-       console.log('len', jsonstr.length)
-      err = e;
+    if (jsonstr.length > 10000000) {
+      err = true
+    } else {
+      try {
+        // localStorage IPC
+        // localStorage.lsipc = jsonstr
+        localStorage.lsipc = localStorage.lsipc === jsonstr ? jsonstr + ' ' : jsonstr
+      } catch (e) {
+        console.error('fail: ')
+        log('len', jsonstr.length)
+        err = e;
+     }
     }
 
     if (err) {
