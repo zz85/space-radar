@@ -3,6 +3,7 @@
   <title>DU headless</title>
 </head>
 <body>
+  <script src="js/utils.js"></script>
   <script>
 
   'use strict';
@@ -41,14 +42,20 @@
       REFRESH_INTERVAL = START_REFRESH_INTERVAL,
       MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
-    let checker
     let json = {}
+    let refreshTask = new TimeoutTask(function(next) {
+      log('refresh...')
+      transfer('refresh', json)
+      REFRESH_INTERVAL *= 3
+      next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
+    }, REFRESH_INTERVAL)
+
     console.time('async2')
 
     function complete(counter) {
         // console.log("Scan completed", counter, "files");
         console.timeEnd('async2')
-        clearTimeout(checker)
+        refreshTask.cancel()
 
         console.log(json);
         transfer('complete', json)
@@ -65,15 +72,6 @@
         // console.timeEnd('write')
     };
 
-    function refresh() {
-      if (!checker) return
-      clearTimeout(checker)
-      console.log('refresh...');
-      transfer('refresh', json)
-      REFRESH_INTERVAL *= 3
-      checker = setTimeout(refresh, Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
-    }
-
     function progress(path, name, size) {
       transfer('progress', path, name, size)
     }
@@ -88,7 +86,7 @@
         // onrefresh: refresh
       }, complete)
 
-    checker = setTimeout(refresh, REFRESH_INTERVAL)
+    refreshTask.schedule()
 
     // // for testing purposes only
     // console.log('moew')
