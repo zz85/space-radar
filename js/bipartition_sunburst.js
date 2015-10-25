@@ -306,10 +306,12 @@ function onJson(error, r) {
 
   if (error) throw error;
 
+  function namesort(a, b) { return d3.ascending(a.name, b.name); }
+  function sizesort(a, b) { return d3.ascending(a.sum, b.sum); }
+
   partition = d3.layout.partition()
     .value(function(d) { return d.size; })
-    // .sort(function(a, b) { return d3.ascending(a.name, b.name); })
-    .sort(function(a, b) { return d3.ascending(a.sum, b.sum); })
+    .sort(namesort)
     .size([2 * Math.PI, radius])
     // .size([2 * Math.PI, radius * radius]) // ROOT
     ;

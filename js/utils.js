@@ -51,8 +51,8 @@ function fmt_time(ms) {
 	let s = ms / 1000
 	let m = s / 60
 
-	if (s < 1) {
-		return ms.toFixed(2) + 'ms'
+	if (s < 10) {
+		return ms + 'ms'
 	}
 	if (m < 1) {
 		return s.toFixed(2) + 's'
@@ -130,12 +130,12 @@ TimeoutTask.prototype.run = function() {
 var mempoller = new TimeoutTask(function(next) {
 	hidePrompt()
 
-	mem(function(ps) {
-		log('mem polled')
+	mem(function(err, ps) {
+		// log('mem polled')
 		onJson(null, ps)
 		next()
 	})
-}, 5000)
+}, 15000)
 
 // if (window) {
 // 	window.format = format

@@ -12,24 +12,30 @@
 <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview>
 
 <div id="toolbar">
-  <button onclick="shades.style.display == 'none' ? showPrompt() : hidePrompt()">Scan Dialog</button>
-  <button id="dir_opener" onclick="openDirectory()">Open Directory</button>
+  <button onclick="shades.style.display == 'none' ? showPrompt() : hidePrompt()">Scan Another</button>
+
+  <button id="dir_opener" onclick="openDirectory()">Locate Directory</button>
 </div>
 
 <div id="shades" class="Aligner">
   <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
   <div class="Aligner-item">
     <div id="promptbox">
-      <h3>Pick a destination to scan</h3>
+      <h3>Scan</h3>
       <p>
-      You may scan the root of your drive (make take some time), or pick a directory of your choice by dragging a folder here
-      </p>
-      <p>
-        <button onclick="scanroot()">Scan root</button>
+      Drag a folder here to scan the size of its contents, otherwise pick a target to scan.
       </p>
 
       <p>
         <button onclick="browseDialog()">Select Directory</button>
+      </p>
+
+      <p>
+        <button onclick="scanroot()">Scan Entire Drive</button>
+      </p>
+
+      <p>
+        <button onclick="scanMemory()">Scan Memory</button>
       </p>
     </div>
   </div>
@@ -270,6 +276,12 @@ function rerunPage() {
 function showPrompt() {
   shades.style.display = 'flex'
   dir_opener.style.display = 'none'
+
+  mempoller.cancel()
+}
+
+function scanMemory() {
+  mempoller.run()
 }
 
 function hidePrompt() {
@@ -278,7 +290,7 @@ function hidePrompt() {
 }
 
 function scanroot() {
-  var ok = confirm('Scan root? This may take awhile...')
+  var ok = confirm('This may take some time, continue?')
   if (ok) {
     start('/')
   }
