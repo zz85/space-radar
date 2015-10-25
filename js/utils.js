@@ -44,11 +44,46 @@ function clone2(source, target) {
 	return target;
 }
 
-function log() {
-  var args = Array.prototype.slice.call(arguments)
-  args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( new Date() )[ 0 ] + new Array(args.length + 1).join(' %O'), 'background: #222; color: #bada55')
+let last_time = new Date()
+log('loaded')
 
-  console.log.apply(console, args);
+function fmt_time(ms) {
+	let s = ms / 1000
+	let m = s / 60
+
+	if (s < 1) {
+		return ms.toFixed(2) + 'ms'
+	}
+	if (m < 1) {
+		return s.toFixed(2) + 's'
+	}
+
+	s = s % 60 | 0
+	s = s == 0 ? '00' : s > 10 ? s : '0' + s
+	return (m | 0) + ':' + s + 'm'
+
+}
+function log() {
+	let now = new Date()
+
+	var args = Array.prototype.slice.call(arguments)
+	var fmt = args.map( a => {
+	switch (typeof(a)) {
+		case 'number':
+			return '%f'
+		case 'string':
+		case 'boolean':
+			return '%s'
+		case 'object':
+		default:
+			return '%o'
+	}
+	})
+	args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( now )[ 0 ]
+	+ '  +' + fmt_time(now - last_time) + '\t' + fmt.join(' '),
+	'background: #222; color: #bada55')
+	last_time = now
+	console.log.apply(console, args);
 }
 
 function memory() {
