@@ -32,6 +32,10 @@ Futher Explorations
 
 Whats New
 ==
+V4
+- Memory monitoring
+
+
 Version 3
 - App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
 - Many Bug fixes

@@ -40,15 +40,22 @@ ipc.on('call', function(event, target, channel, a, b, c, d, e) {
 app.on('ready', function() {
   console.log('app is ready');
   mainWindow = new BrowserWindow({
-    width: 880,
-    height: 600,
+    width: 1600,
+    height: 1300,
+    // width: 880,
+    // height: 600,
+    'min-width': 500,
+    'min-height': 200,
+    'accept-first-mouse': true,
+    'title-bar-style': 'hidden',
     icon: require('path').join(__dirname, 'Icon.png'),
   })
 
   // var window2 = new BrowserWindow({width: 800, height: 600});
 
-  mainWindow.loadUrl('file://' + __dirname + '/index.html');
-  // duWindow.loadUrl('file://' + __dirname + '/headless.html');
+  // mainWindow.loadUrl('file://' + __dirname + '/index.html');
+  mainWindow.loadUrl('file://' + __dirname + '/photon.html');
+
 
   if (DEBUG) {
     mainWindow.openDevTools()
