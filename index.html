@@ -7,7 +7,7 @@
 <body>
 
 <script src="node_modules/d3/d3.js"></script>
-<!-- <link rel="stylesheet" href="css/style.css" type="text/css"> -->
+<link rel="stylesheet" href="css/style.css" type="text/css">
 <link rel="stylesheet" href="css/throbber.css" type="text/css">
 <link rel="stylesheet" href="css/breadcrumb.css" type="text/css">
 <link rel="stylesheet" href="node_modules/photon/dist/css/photon.min.css">
@@ -21,32 +21,44 @@
 
     <div class="toolbar-actions">
       <div class="btn-group">
-        <button class="btn btn-default">
-          <span class="icon icon-home"></span>
+
+        <!-- <button class="btn btn-large">
+          <span class="icon icon-text"></span>
         </button>
-        <button class="btn btn-default active">
-          <span class="icon icon-folder"></span>
+ -->
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-drive icon-text"></span>
+          Scan Drive
         </button>
-        <button class="btn btn-default">
-          <span class="icon icon-cloud"></span>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-folder icon-text"></span>
+          Scan Folder
         </button>
-        <button class="btn btn-default">
-          <span class="icon icon-popup"></span>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-target icon-text"></span>
+          Scan Memory
         </button>
-        <button class="btn btn-default">
-          <span class="icon icon-shuffle"></span>
+        <!--
+        TODO
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-archive icon-text"></span>
+          Root
         </button>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-home icon-text"></span>
+          Home
+        </button>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-picture icon-text"></span>
+          Photos
+        </button>
+        -->
+
       </div>
-
-      <button class="btn btn-default btn-large">
-        <span class="icon icon-archive icon-text"></span>
-        Scan Root Directory
-      </button>
-
-      <button class="btn btn-default btn-large">
-        <span class="icon icon-home icon-text"></span>
-        Scan Home Directory
-      </button>
 
       <button class="btn btn-default btn-dropdown pull-right btn-large">
         <span class="icon icon-cd"></span>
@@ -54,12 +66,12 @@
 
       <!-- Large button group -->
       <div class="btn-group">
-        <button class="btn btn-large btn-default">
-          <span class="icon icon-home"></span>
+        <button class="btn btn-large btn-default active">
+          <span class="icon icon-cd"></span>
         </button>
 
-        <button class="active btn btn-large btn-default">
-          <span class="icon icon-shuffle"></span>
+        <button class="btn btn-large">
+          <span class="icon icon-map"></span>
         </button>
       </div>
 
@@ -81,22 +93,28 @@
   <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
   <div class="Aligner-item">
     <div id="promptbox">
-      <h3>Scan</h3>
+      <h4>Scan</h4>
       <p>
-      Drag a folder here to scan the size of its contents, otherwise pick a target to scan.
+      You may drag a folder here to scan the its contents, or pick one of the following.
       </p>
 
-      <p>
-        <button class="btn btn-default" onclick="browseDialog()">Select Directory</button>
-      </p>
+      <div class="">
+        <button class="btn btn-default btn-large" onclick="scanroot()">
+          <span class="icon icon-drive icon-text"></span>
+          Scan Drive
+        </button>
 
-      <p>
-        <button class="btn btn-default" onclick="scanroot()">Scan Entire Drive</button>
-      </p>
+        <button class="btn btn-default btn-large" onclick="browseDialog()">
+          <span class="icon icon-folder icon-text"></span>
+          Scan Folder
+        </button>
 
-      <p>
-        <button class="btn btn-default" onclick="scanMemory()">Scan Memory</button>
-      </p>
+        <button class="btn btn-default btn-large" onclick="scanMemory()">
+          <span class="icon icon-target icon-text"></span>
+          Scan Memory
+        </button>
+      </div>
+
     </div>
   </div>
   <!-- <div class="Aligner-item Aligner-item--bottom">…</div> -->
