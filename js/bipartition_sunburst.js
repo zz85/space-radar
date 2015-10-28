@@ -1,9 +1,8 @@
 d3.select(window).on('resize', onResize)
 
 function onResize() {
-  console.log('resize')
-  width = innerWidth
-  height = innerHeight
+  log('resize')
+  calcDimensions()
   svg_container.select('svg')
     // .attr("viewBox", "0 0 " + width + " " + height)
     .attr("width", width)
@@ -17,14 +16,13 @@ function onResize() {
  TODOs
 
 - HDD Scanning
-  - Allow destination scanning (root / drives / folder)
   - Monitoring - eg https://github.com/paulmillr/chokidar
   - Directory caching
   - Real Disk usage
   - Grab free space!
+  - Grab drives
 
 - Cross platform
- - test on windows
 
 - UI
    - color by
@@ -51,6 +49,7 @@ function onResize() {
   - Spotlike style
   - Mac Preview style (or integrate Preview)
   - Auto update (or use Electron Builder)
+  - Import Es6 Modules
 
 DONE
  - Custom levels rendering
@@ -65,7 +64,8 @@ DONE
  - computation done in separate process
  - change numbers of center to selection
  - shows children selection on hover
-
+ - Allow destination scanning (root / folder)
+ - tested on windows
 */
 
 var len = Math.min(window.innerWidth, window.innerHeight);
@@ -73,6 +73,15 @@ var len = Math.min(window.innerWidth, window.innerHeight);
 var width = innerWidth,
     height = innerHeight,
     radius = len * 0.45;
+
+function calcDimensions() {
+  width = innerWidth
+  height = innerHeight - document.querySelector('header').getBoundingClientRect().height - document.querySelector('footer').getBoundingClientRect().height
+  radius = len * 0.45
+  log(innerHeight, height)
+}
+
+calcDimensions()
 
 var LEVELS = 11
   , INNER_LEVEL = 7

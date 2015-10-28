@@ -1,3 +1,5 @@
+var remote = require('remote')
+
 // IPC handling
 var current_size = 0, start_time
 
@@ -13,7 +15,8 @@ function start(path) {
 
 function progress(dir, name, size) {
   // log('[' + ipc_name + '] progress', name)
-  legend.html("<h2>Scanning... <i>please be patient</i></h2><p>"+dir+"</p><br/>Scanned: " + format(size) )
+  // may take a little while
+  legend.html("<h2>Scanning... <i>(try grabbing a drink..)</i></h2><p>"+dir+"</p><br/>Scanned: " + format(size) )
   current_size = size
   // TODO collect number of files too
 }
@@ -28,9 +31,9 @@ function lightbox(show) {
 function refresh(json) {
   log('[' + ipc_name + '] refresh..')
 
-
   // should disable all inputs here because redraw would probably be intensive
   lightbox(true)
+  legend.html('Generating preview...')
 
   setTimeout( () => {
     onJson(null, json)
@@ -65,7 +68,6 @@ function cleanup() {
 }
 
 function complete(json) {
-  // loading.style.display = 'none'
   log('[' + ipc_name + '] complete..', json)
   console.timeEnd('scan_job')
 
@@ -75,7 +77,6 @@ function complete(json) {
 
   var time_took = performance.now() - start_time
   log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
-  lightbox(false)
 
   // webview.remove()
   // TODO add growl notification here
@@ -86,7 +87,6 @@ const ipc_name = 'viz'
 const fs = require('fs')
 
 function spawnRenderer() {
-  var remote = require('remote')
   var BrowserWindow = remote.require('browser-window')
   var win = new BrowserWindow(
     DEBUG ? { width: 800, height: 600 } : { show: false }
@@ -165,8 +165,7 @@ function setupIPC() {
   })
 
   ipc.on('ready', function(arg) {
-    log('lets go');
-    loading.style.display = 'inline-block'
+    log('lets go')
   })
 
   // ipc listeners
@@ -195,7 +194,6 @@ function ready() {
 }
 
 function rerunPage() {
-  var remote = require('remote');
   remote.getCurrentWindow().reload();
 }
 
@@ -216,6 +214,20 @@ function scanRoot() {
   if (ok) {
     start('/')
   }
+}
+
+
+function newWindow() {
+  log('new window')
+  var start = require('./js/start')
+  start()
+
+  // var BrowserWindow = remote.require('browser-window')
+  // var win = new BrowserWindow(
+  //   { width: 800, height: 600 }
+  // )
+  // win.loadUrl('file://' + __dirname + '/index.html');
+
 }
 
 function scanFolder() {

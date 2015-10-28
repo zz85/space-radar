@@ -7,7 +7,6 @@ path {
   fill-rule: evenodd;
 }
 
-
 circle,
 path {
 
@@ -106,7 +105,6 @@ body {
   font-size: 2em;
 }
 
-
 #legend {
   text-align:center;
   font-family: Avenir, Arial, Helvetica, sans-serif;
@@ -171,8 +169,8 @@ body {
 .svg-content-responsive {
     display: inline-block;
     position: absolute;
-    top: 10px;
-    left: 0;
+    /*top: 10px;*/
+    /*left: 0;*/
 }
 
 #sequence {

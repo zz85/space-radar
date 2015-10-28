@@ -20,11 +20,11 @@
     <h1 class="title">Space Radar</h1>
 
     <div class="toolbar-actions">
-      <!--   <button class="btn btn-default btn-large" onclick="welcomeDialog()">
-          <span class="icon icon-popup icon-text"></span>
-          Open
-        </button>
- -->
+      <button class="btn btn-default btn-large" onclick="newWindow()">
+        <span class="icon icon-popup icon-text"></span>
+        Open
+      </button>
+
 
       <div class="btn-group">
         <button class="btn btn-default btn-large" onclick="scanRoot()">
@@ -75,7 +75,7 @@
           <span class="icon icon-sweden"></span> <!-- icon-map -->
         </button>
       </div>
-
+      <p></p>
     </div>
   </header>
 
@@ -132,24 +132,25 @@
   <span id="core_tag"></span>
 </div>
 
+
+  <div id="sequence">
+    <div class="breadcrumb flat">
+    </div>
+  </div>
+
+
 </div> <!-- end window-content -->
 <footer class="toolbar toolbar-footer">
   <div class="toolbar-actions">
-    <button class="btn btn-default">
+    <button class="btn btn-default" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
+
+        <button class="btn btn-default">
       Cancel
     </button>
 
     <button class="btn btn-primary pull-right">
       Save
     </button>
-
-    <button class="btn btn-default" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
-
-    <div id="sequence">
-      <div class="breadcrumb flat">
-      </div>
-    </div>
-
 
   </div>
 </footer>
