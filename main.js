@@ -8,8 +8,7 @@ require('crash-reporter').start()
 var mainWindow = null
 var DEBUG = process.env.DEBUG
 
-// probably only expose_gc works here
-app.commandLine.appendSwitch('js-flags', '--expose_gc --max-new-space-size=4096 --enable-precise-memory-info');
+app.commandLine.appendSwitch('js-flags', '--expose_gc');
 
 app.on('window-all-closed', function() {
   console.log('window all closed');
@@ -53,7 +52,6 @@ app.on('ready', function() {
 
   mainWindow.loadUrl('file://' + __dirname + '/index.html');
   // mainWindow.loadUrl('file://' + __dirname + '/photon.html');
-
 
   if (DEBUG) {
     mainWindow.openDevTools()
