@@ -367,8 +367,7 @@ function onJson(error, r) {
         if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
       })
 
-      return children;
-
+      return children
       // return depth < LEVELS ? d._children : null;
     })
     .value(function(d) {
@@ -401,7 +400,8 @@ function onJson(error, r) {
       if (n) return redraw(n)
     }
 
-    return redraw();
+    updateCore(root)
+    return redraw()
   }
   jsoned = true;
 

@@ -29,7 +29,7 @@ function stat(out) {
 function process_out(stdout) {
 	// log(stdout)
 	// var lines = stdout.split("\n");
-	var regex = /^\s+?(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/mg
+	var regex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/mg
 	var m;
 
 	var c = 0, rss_sum = 0
