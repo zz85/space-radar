@@ -1,3 +1,7 @@
+#photon-window {
+  z-index: 400;
+}
+
 path {
   stroke: #fff;
   fill-rule: evenodd;
@@ -201,6 +205,7 @@ body {
   max-width: 50%;
   background: #ddd;
   opacity: 1;
+  border-radius: 4px;
 }
 
 .Aligner-item--top {
@@ -219,6 +224,7 @@ body {
   /*opacity: 0.3;*/
   position: absolute;
   display: none;
+
 }
 
 #promptbox {
@@ -226,12 +232,5 @@ body {
   height: 400px;
   text-align: center;
   padding: 20px;
-}
-
-/* Toolbar */
-#toolbar {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 220;
+  height: 200px;
 }

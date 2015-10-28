@@ -14,7 +14,7 @@
 
 <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview>
 
-<div class="window">
+<div class="window" id="photon-window">
 
   <header class="toolbar toolbar-header">
     <h1 class="title">Space Radar</h1>
@@ -26,6 +26,10 @@
           <span class="icon icon-text"></span>
         </button>
  -->
+
+        <button class="btn btn-default btn-large" onclick="console.log('test')">Scan Another</button>
+
+
         <button class="btn btn-default btn-large">
           <span class="icon icon-drive icon-text"></span>
           Scan Drive
@@ -36,7 +40,7 @@
           Scan Folder
         </button>
 
-        <button class="btn btn-default btn-large">
+        <button class="btn btn-default btn-large" onclick="">
           <span class="icon icon-target icon-text"></span>
           Scan Memory
         </button>
@@ -80,14 +84,6 @@
 
   <!-- Your app's content goes inside .window-content -->
   <div class="window-content">
-
-
-
-<div id="toolbar">
-  <button class="btn btn-default" onclick="shades.style.display == 'none' ? showPrompt() : hidePrompt()">Scan Another</button>
-
-
-</div>
 
 <div id="shades" class="Aligner">
   <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
