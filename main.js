@@ -51,10 +51,8 @@ app.on('ready', function() {
     icon: require('path').join(__dirname, 'Icon.png'),
   })
 
-  // var window2 = new BrowserWindow({width: 800, height: 600});
-
-  // mainWindow.loadUrl('file://' + __dirname + '/index.html');
-  mainWindow.loadUrl('file://' + __dirname + '/photon.html');
+  mainWindow.loadUrl('file://' + __dirname + '/index.html');
+  // mainWindow.loadUrl('file://' + __dirname + '/photon.html');
 
 
   if (DEBUG) {
