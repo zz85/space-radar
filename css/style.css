@@ -118,6 +118,7 @@ body {
   bottom: 40px;
   z-index: 50;
   background: #ddd;
+  display: none;
 }
 
 #legend h2 {

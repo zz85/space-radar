@@ -41,14 +41,16 @@ function onResize() {
   - Absolute or relative file size intensity
   - Back / Fwd paths
 
-- UI Perf
+- Perf
   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
+  - Streaming partition datastructures
+  - Fastest IPC (headless node / electron)
 
 - Others
   - Git integration
   - Spotlike style
-  - Mac Preview style
-  - Auto update
+  - Mac Preview style (or integrate Preview)
+  - Auto update (or use Electron Builder)
 
 DONE
  - Custom levels rendering

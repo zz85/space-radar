@@ -20,30 +20,28 @@
     <h1 class="title">Space Radar</h1>
 
     <div class="toolbar-actions">
-      <div class="btn-group">
-
-        <!-- <button class="btn btn-large">
-          <span class="icon icon-text"></span>
+      <!--   <button class="btn btn-default btn-large" onclick="welcomeDialog()">
+          <span class="icon icon-popup icon-text"></span>
+          Open
         </button>
  -->
 
-        <button class="btn btn-default btn-large" onclick="console.log('test')">Scan Another</button>
-
-
-        <button class="btn btn-default btn-large">
+      <div class="btn-group">
+        <button class="btn btn-default btn-large" onclick="scanRoot()">
           <span class="icon icon-drive icon-text"></span>
           Scan Drive
         </button>
 
-        <button class="btn btn-default btn-large">
+        <button class="btn btn-default btn-large" onclick="scanFolder()">
           <span class="icon icon-folder icon-text"></span>
           Scan Folder
         </button>
 
-        <button class="btn btn-default btn-large" onclick="">
+        <button class="btn btn-default btn-large" onclick="scanMemory()">
           <span class="icon icon-target icon-text"></span>
           Scan Memory
         </button>
+
         <!--
         TODO
         <button class="btn btn-default btn-large">
@@ -61,7 +59,6 @@
           Photos
         </button>
         -->
-
       </div>
 
       <button class="btn btn-default btn-dropdown pull-right btn-large">
@@ -75,7 +72,7 @@
         </button>
 
         <button class="btn btn-large">
-          <span class="icon icon-map"></span>
+          <span class="icon icon-sweden"></span> <!-- icon-map -->
         </button>
       </div>
 
@@ -95,12 +92,12 @@
       </p>
 
       <div class="">
-        <button class="btn btn-default btn-large" onclick="scanroot()">
+        <button class="btn btn-default btn-large" onclick="scanRoot()">
           <span class="icon icon-drive icon-text"></span>
           Scan Drive
         </button>
 
-        <button class="btn btn-default btn-large" onclick="browseDialog()">
+        <button class="btn btn-default btn-large" onclick="scanFolder()">
           <span class="icon icon-folder icon-text"></span>
           Scan Folder
         </button>

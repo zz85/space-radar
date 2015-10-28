@@ -206,31 +206,21 @@ function showPrompt() {
   mempoller.cancel()
 }
 
-function scanMemory() {
-  mempoller.run()
-}
-
 function hidePrompt() {
   shades.style.display = 'none'
   dir_opener.style.display = 'inline-block'
 }
 
-function scanroot() {
+function scanRoot() {
   var ok = confirm('This may take some time, continue?')
   if (ok) {
     start('/')
   }
 }
 
-document.ondragover = document.ondrop = function(e) {
-  e.preventDefault();
-  // prevent anyhow drag
-  return false
-};
-
-function browseDialog() {
+function scanFolder() {
   var dialog = require('remote').require('dialog')
-  var selection = dialog.showOpenDialog({ properties: [  'openDirectory']})
+  var selection = dialog.showOpenDialog({ properties: ['openDirectory']})
 
   if (selection && selection[0]) {
     selectPath(selection[0])
@@ -238,6 +228,21 @@ function browseDialog() {
 
   console.log(selection);
   // 'openFile', 'multiSelections'
+}
+
+function scanMemory() {
+  mempoller.run()
+}
+
+
+document.ondragover = document.ondrop = function(e) {
+  e.preventDefault();
+  // prevent anyhow drag
+  return false
+};
+
+function welcomeDialog() {
+  shades.style.display == 'none' ? showPrompt() : hidePrompt()
 }
 
 function selectPath(path) {
@@ -250,10 +255,7 @@ function selectPath(path) {
   }
 
   if (stat.isDirectory()) {
-    // var ok = confirm('Scan ' + path + '?')
-    // if (ok) {
     start(path);
-    // }
     return
   }
 }
