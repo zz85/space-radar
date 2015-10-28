@@ -87,10 +87,7 @@ var luminance = d3.scale.sqrt()
     .clamp(true)
     .range([90, 20]);
 
-var svg_container = d3.select("body")
-  .append("div")
-   .classed("svg-container", true) //container class to make it responsive
-  ;
+var svg_container = d3.select("body").select('.svg-container')
 
 var svg = svg_container
   .append("svg")
