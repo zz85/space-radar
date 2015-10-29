@@ -191,7 +191,7 @@ function setupChildIPC() {
   console.log(require('path').join(__dirname, 'js/scanner.js'))
   child = child_process.fork('./js/scanner.js', {
     env: process.ENV,
-    // silent: true
+    silent: true
   })
 
   child.on('message', function(args) {
@@ -199,19 +199,19 @@ function setupChildIPC() {
     handleIPC(cmd, args)
   })
 
-  // child.on('error', console.log.bind(console))
+  child.on('error', console.log.bind(console))
 
-  // child.stdout.on('data', function (data) {
-  //   console.log('stdout: ' + data);
-  // });
+  child.stdout.on('data', function (data) {
+    console.log('stdout: ' + data);
+  });
 
-  // child.stderr.on('data', function (data) {
-  //   console.log('stderr: ' + data);
-  // });
+  child.stderr.on('data', function (data) {
+    console.log('stderr: ' + data);
+  });
 
-  // child.on('close', function (code) {
-  //   console.log('child process exited with code ' + code);
-  // });
+  child.on('close', function (code) {
+    console.log('child process exited with code ' + code);
+  });
 
 }
 
