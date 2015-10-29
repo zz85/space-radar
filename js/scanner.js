@@ -5,7 +5,8 @@ const path = require('path')
 const du = require('./du')
 const utils = require('./utils'),
   log = utils.log,
-  TimeoutTask = utils.TimeoutTask
+  TimeoutTask = utils.TimeoutTask,
+  TaskChecker = utils.TaskChecker
 
 // const ipc = require('ipc')
 const ipc_name = 'du'
@@ -32,7 +33,7 @@ function go(target) {
     MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
   let json = {}
-  let refreshTask = new TimeoutTask(function(next) {
+  let refreshTask = new TaskChecker(function(next) {
     log('refresh...')
     transfer('refresh', json)
     REFRESH_INTERVAL *= 3
@@ -61,6 +62,7 @@ function go(target) {
   };
 
   function progress(path, name, size) {
+    refreshTask.check()
     transfer('progress', path, name, size)
   }
 

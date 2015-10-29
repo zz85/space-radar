@@ -132,6 +132,39 @@ TimeoutTask.prototype.run = function() {
 	if (this.task) this.task(this.schedule.bind(this))
 }
 
+function TaskChecker(task, time) {
+	this.running = false
+	this.task = task
+	this.time = time
+	this.scheduled = Date.now() + time
+}
+
+TaskChecker.prototype.cancel = function() {
+	this.running = false
+}
+
+TaskChecker.prototype.schedule = function(t) {
+	this.running = true
+	this.time = t !== undefined ? t : this.time
+	this.scheduled = Date.now() + this.time
+}
+
+TaskChecker.prototype.run = function() {
+	if (this.task) this.task(this.schedule.bind(this))
+}
+
+
+TaskChecker.prototype.check = function() {
+	if (!this.running) return
+
+	var now = Date.now()
+	var diff = now - this.scheduled
+
+	if (diff >= 0) {
+		this.run()
+	}
+}
+
 var mempoller = new TimeoutTask(function(next) {
 	hidePrompt()
 
@@ -148,7 +181,8 @@ if (typeof(module) !== 'undefined') {
 	module.exports = {
 		format: format,
 		log: log,
-		TimeoutTask: TimeoutTask
+		TimeoutTask: TimeoutTask,
+		TaskChecker: TaskChecker
 	}
 }
 
