@@ -174,11 +174,11 @@ body {
 }
 
 #sequence {
-  display: inline-block;
-  /*position: absolute;
+  /*display: inline-block;*/
+  position: absolute;
   bottom: 0;
   left: 0;
-  z-index: 100;*/
+  z-index: 100;
   /*width: 600px;
   height: 70px;*/
 }

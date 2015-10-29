@@ -67,6 +67,7 @@ function log() {
 	let now = new Date()
 
 	var args = Array.prototype.slice.call(arguments)
+
 	var fmt = args.map( a => {
 	switch (typeof(a)) {
 		case 'number':
@@ -82,6 +83,10 @@ function log() {
 	args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( now )[ 0 ]
 	+ '  +' + fmt_time(now - last_time) + '\t' + fmt.join(' '),
 	'background: #222; color: #bada55')
+	if (!CHROME) {
+		args = args.slice(2)
+		args.unshift( fmt_time(now - last_time) + '\t' )
+	}
 	last_time = now
 	console.log.apply(console, args);
 }
@@ -136,6 +141,16 @@ var mempoller = new TimeoutTask(function(next) {
 		next()
 	})
 }, 15000)
+
+var CHROME = typeof(window) !== 'undefined';
+
+if (typeof(module) !== 'undefined') {
+	module.exports = {
+		format: format,
+		log: log,
+		TimeoutTask: TimeoutTask
+	}
+}
 
 // if (window) {
 // 	window.format = format

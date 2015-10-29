@@ -1,16 +1,18 @@
 var remote = require('remote')
+// var child_process = require('child_process')
 
 // IPC handling
 var current_size = 0, start_time
 
-function start(path) {
+function startScan(path) {
   cleanup()
   hidePrompt()
   legend.style('display', 'block')
   log('start', path)
   start_time = performance.now()
   console.time('scan_job')
-  webview.send('scan', path)
+  // webview.send('scan', path)
+  child.send({scan: path})
 }
 
 function progress(dir, name, size) {
@@ -184,8 +186,38 @@ function setupLocalStorageIPC() {
   });
 }
 
-setupLocalStorageIPC()
-setupWebViewIPC()
+var child
+function setupChildIPC() {
+  console.log(require('path').join(__dirname, 'js/scanner.js'))
+  child = child_process.fork('./js/scanner.js', {
+    env: process.ENV,
+    // silent: true
+  })
+
+  child.on('message', function(args) {
+    var cmd = args.shift()
+    handleIPC(cmd, args)
+  })
+
+  // child.on('error', console.log.bind(console))
+
+  // child.stdout.on('data', function (data) {
+  //   console.log('stdout: ' + data);
+  // });
+
+  // child.stderr.on('data', function (data) {
+  //   console.log('stderr: ' + data);
+  // });
+
+  // child.on('close', function (code) {
+  //   console.log('child process exited with code ' + code);
+  // });
+
+}
+
+// setupLocalStorageIPC()
+// setupWebViewIPC()
+setupChildIPC()
 
 function ready() {
   // start here
@@ -212,10 +244,9 @@ function hidePrompt() {
 function scanRoot() {
   var ok = confirm('This may take some time, continue?')
   if (ok) {
-    start('/')
+    startScan('/')
   }
 }
-
 
 function newWindow() {
   log('new window')
@@ -267,7 +298,7 @@ function selectPath(path) {
   }
 
   if (stat.isDirectory()) {
-    start(path);
+    startScan(path);
     return
   }
 }
