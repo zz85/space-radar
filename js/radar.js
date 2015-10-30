@@ -4,6 +4,16 @@ var remote = require('remote')
 // IPC handling
 var current_size = 0, start_time
 
+var path
+
+var legend = d3.select("#legend")
+var explanation = d3.select("#explanation")
+var core_top = d3.select("#core_top")
+var core_center = d3.select("#core_center")
+var core_tag = d3.select("#core_tag")
+
+
+
 function startScan(path) {
   cleanup()
   hidePrompt()
@@ -73,9 +83,13 @@ function complete(json) {
   log('[' + ipc_name + '] complete..', json)
   console.timeEnd('scan_job')
 
+  console.time('a')
   onJson(null, json)
   legend.style('display', 'none')
   lightbox(false)
+  requestAnimationFrame(function() {
+    console.timeEnd('a')
+  })
 
   var time_took = performance.now() - start_time
   log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
@@ -84,7 +98,7 @@ function complete(json) {
   // TODO add growl notification here
 }
 
-const DEBUG = 1
+const DEBUG = 0 // process.ENV.DEBUG
 const ipc_name = 'viz'
 const fs = require('fs')
   var win
@@ -261,6 +275,8 @@ function ready() {
   // start here
   showPrompt()
   // fsipc('fs-ipc.json')
+
+
 }
 
 function rerunPage() {

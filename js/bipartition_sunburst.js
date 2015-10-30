@@ -126,11 +126,6 @@ var arc = d3.svg.arc()
       return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1;
     });
 
-var legend = d3.select("#legend")
-var explanation = d3.select("#explanation")
-var core_top = d3.select("#core_top")
-var core_center = d3.select("#core_center")
-var core_tag = d3.select("#core_tag")
 
 var current_p, max_level, current_level = 0;
 

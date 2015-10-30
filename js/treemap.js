@@ -11,6 +11,12 @@ var margin = {
     .domain([0, height])
     .range([0, height])
 
+/* TODO
+text labels
+- align top left
+- align center
+- appear on hover
+*/
 
 var color = d3.scale.category20c();
 
@@ -26,10 +32,18 @@ var treemap = d3.layout.treemap()
     .value(function(d) { return d.size; });
 
 
-var div = d3.select("body").append("div")
-  .attr("class", "chart")
+var div = d3.select("body").select(".chart")
     .style("width", width + "px")
     .style("height", height + "px")
+
+var canvas = document.getElementById('canvas')
+canvas.style.width = width + "px"
+canvas.style.height = height + "px"
+
+canvas.width = width
+canvas.height = height
+
+var ctx = canvas.getContext('2d')
 
 var svg = div
   .append("svg")
@@ -102,11 +116,15 @@ function display(data) {
 
   console.time('treemap')
   var nodes = treemap.nodes(root)
+
+  nnn = nodes
+    // .filter( (d) => { return d.depth < 3 })
     // .filter( d => { return !d.children } )
   console.timeEnd('treemap')
 
   var cell = svg.selectAll('g')
-    .data( nodes )
+    .data( nnn )
+
     .enter().append('g')
       .attr("class", "cell")
       .call(rect)
@@ -121,11 +139,10 @@ function display(data) {
     .call(rect)
 
   cell.append("text")
-    .attr("x", function(d) { return d.dx / 2; })
-    .attr("y", function(d) { return d.dy / 2; })
     .call(text)
     .attr("text-anchor", "middle")
     .text(function(d) { return d.name; })
+    .style('font-size', '8px')
     .style("opacity", function(d) { d.w = this.getComputedTextLength(); return d.dx > d.w ? 1 : 0; });
 
     var d = data
@@ -152,19 +169,22 @@ function rect(rect) {
 }
 
 function text(text) {
-  text.attr("x", function(d) { return x(d.x) + 6; })
-      .attr("y", function(d) { return y(d.y) + 6; });
+  text
+    .attr("x", function(d) {
+      return x(d.x + d.dx /2 ) + this.getComputedTextLength() * 2; })
+    .attr("y", function(d) {
+      return y(d.y + d.dy / 2)
+      return y(d.y) + 6 * 2; })
+    // .attr("x", function(d) { return d.dx / 2; })
+    // .attr("y", function(d) { return d.dy / 2; })
+
+
 }
-
-
-
 
 function onJson(error, data) {
   if (error) throw error;
   node = root = data
   console.log('display root', root)
-
-
   // initialize(root)
   // accumulate(root)
   // layout(root)
