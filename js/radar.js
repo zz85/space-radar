@@ -222,22 +222,10 @@ function setupChildIPC() {
     console.log('stdout: ' + data);
   });
 
-
   child.stderr.setEncoding('utf8')
 
-  var split = require('split')
-  //
-
-  child.stderr.pipe(split()).on('data', function (data) {
-    console.log('.' + data.length)
-    try {
-      var j = JSON.parse(data)
-      console.log('.... data')
-      refresh(j)
-    } catch (e) {
-      console.log('.... fail')
-    }
-    // console.log('stderr: ' + data);
+  child.stderr.on('data', function (data) {
+    console.log('stdout: ' + data);
   });
 
   child.on('close', function (code) {

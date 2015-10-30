@@ -67,8 +67,7 @@ function go(target) {
   let json = {}
   let refreshTask = new TaskChecker(function(next) {
     log('refresh...')
-    // transfer('refresh', json)
-    console.error('\n'+JSON.stringify(json)+'\n')
+    transfer('refresh', json)
     REFRESH_INTERVAL *= 3
     next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
   }, REFRESH_INTERVAL)
