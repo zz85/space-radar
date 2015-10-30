@@ -118,6 +118,17 @@ function go(target) {
 
 }
 
+function webviewTransfer() {
+  try {
+    // webview IPC
+    args.unshift('call')
+    ipc.sendToHost.apply(ipc, args)
+  } catch (e) {
+    err = e
+    console.error(e)
+  }
+}
+
 function transfer(target) {
   var args = Array.prototype.slice.call(arguments)
 
@@ -126,19 +137,37 @@ function transfer(target) {
 
   err = null
 
-  if (browser) {
+  if (jsonstr.length > 10000000) {
+    err = true
+  } else {
     try {
-      // electron browser IPC
-      args.unshift('call')
-      ipc.send.apply(ipc, args)
+      // localStorage IPC
+      // localStorage.lsipc = jsonstr
+      localStorage.lsipc = localStorage.lsipc === jsonstr ? jsonstr + ' ' : jsonstr
     } catch (e) {
-      err = e
-      console.error(e)
-    }
+      console.error('fail: ')
+      log('len', jsonstr.length)
+      err = e;
+   }
 
-
-    if (!err) return
+   if (!err) return
   }
+
+
+
+  // if (browser) {
+  //   try {
+  //     // electron browser IPC
+  //     args.unshift('call')
+  //     ipc.sendToHost.apply(ipc, args)
+  //   } catch (e) {
+  //     err = e
+  //     console.error(e)
+  //   }
+
+
+  //   if (!err) return
+  // }
 
   /* process */
 
@@ -159,6 +188,7 @@ function transfer(target) {
   }
 
   err = null
+  // fs ipc
   let p = path.join(__dirname, 'fs-ipc.json')
   fs.writeFileSync(p, jsonstr, { encoding: 'utf-8' })
   transfer('fs-ipc', p)

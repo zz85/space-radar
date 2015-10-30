@@ -122,8 +122,10 @@ function setupWebViewIPC() {
   })
 
   webview.addEventListener('ipc-message', function(event) {
+
     var args = event.args
-    var cmd = event.channel
+    // var cmd = event.channel
+    var cmd = args.shift()
     handleIPC(cmd, args)
   });
 
@@ -234,16 +236,16 @@ function setupChildIPC() {
 
 }
 
-//
-// LocalStorageIPC()
-// setupWebViewIPC()
-setupChildIPC()
+setupLocalStorageIPC()
+setupWebViewIPC()
+// setupChildIPC()
 // setupRemoteIPC()
 // setupIPC()
+// ready() // run this
 
 function sendIpcMsg(cmd, msg) {
-  // webview.send('scan', path)
-  child.send({cmd: cmd, msg: msg})
+  webview.send('scan', msg)
+  // child.send({cmd: cmd, msg: msg})
   // win.webContents.send('scan', path)
 }
 
