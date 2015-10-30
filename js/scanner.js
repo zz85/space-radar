@@ -1,30 +1,59 @@
 'use strict';
 
+let browser = typeof(window) !== 'undefined'
+let node = typeof(module) !== 'undefined'
+
+if (browser) {
+  module.exports = scanner
+} else {
+  scanner()
+}
+
+function scanner() {
 
 const path = require('path')
 const du = require('./du')
+const fs = require('fs')
 const utils = require('./utils'),
   log = utils.log,
   TimeoutTask = utils.TimeoutTask,
   TaskChecker = utils.TaskChecker
 
-// const ipc = require('ipc')
-const ipc_name = 'du'
-const fs = require('fs')
+log('browser', browser, 'node', node)
 
-process.on('disconnect', function() {
-  // exit when parent disconnects (killed / exit)
-  console.log('parent exited')
-  process.exit();
-})
+let ipc
 
-process.on('message', function(m) {
-  console.log('got', m)
-  if (m.scan) {
-    log('scan')
-    go(m.scan)
-  }
-})
+if (browser) {
+  ipc = require('ipc')
+  const ipc_name = 'du'
+
+  ipc.on('scan', function(target) {
+    log('got scan')
+    go(target)
+  })
+
+  // var i = 0
+  // setInterval( function() {
+  //   ipc.send('call', 'moo', i++)
+  // }, 2000 )
+
+  // require('ipc').send('call', 12345)
+
+} else {
+  process.on('disconnect', function() {
+    // exit when parent disconnects (killed / exit)
+    console.log('parent exited')
+    process.exit();
+  })
+
+  process.on('message', function(m) {
+    console.log('got', m)
+    if (m.scan) {
+      log('scan')
+      go(m.scan)
+    }
+  })
+}
 
 function go(target) {
   let
@@ -91,37 +120,41 @@ function transfer(target) {
 
   var jsonstr = JSON.stringify(args)
   var err;
-  if (jsonstr.length > 10000000) {
-    err = true
-  } else {
-    try {
-      process.send(args)
-    } catch (e) {
-      console.error('fail: ')
-      log('len', jsonstr.length)
-      err = e;
-   }
+
+  err = null
+  try {
+    // electron browser IPC
+    args.unshift('call')
+    ipc.send.apply(ipc, args)
+  } catch (e) {
+    err = e
+    console.error(e)
   }
 
-  if (err) {
-    err = null
-    let p = path.join(__dirname, 'fs-ipc.json')
-    fs.writeFileSync(p, jsonstr, { encoding: 'utf-8' })
-    transfer('fs-ipc', p)
-    return
-  }
+  if (!err) return
+
+  /* process */
+
+  // if (jsonstr.length > 10000000) {
+  //   err = true
+  // } else {
+  //   try {
+  //     process.send(args)
+  //   } catch (e) {
+  //     console.error('fail: ')
+  //     log('len', jsonstr.length)
+  //     err = e;
+  //  }
+  // }
+
+  if (!err) return
+
+  err = null
+  let p = path.join(__dirname, 'fs-ipc.json')
+  fs.writeFileSync(p, jsonstr, { encoding: 'utf-8' })
+  transfer('fs-ipc', p)
+  return
+}
 
 
-
-  if (err) {
-    err = null
-    try {
-      // fallback to electron browser IPC
-      args.unshift('call', 'viz')
-      ipc.send.apply(ipc, args)
-    } catch (e) {
-      err = e
-      console.error(e)
-    }
-  }
 }

@@ -12,7 +12,8 @@ function startScan(path) {
   start_time = performance.now()
   console.time('scan_job')
   // webview.send('scan', path)
-  child.send({scan: path})
+  // child.send({scan: path})
+  win.webContents.send('scan', path)
 }
 
 function progress(dir, name, size) {
@@ -84,13 +85,21 @@ function complete(json) {
   // TODO add growl notification here
 }
 
-const DEBUG = 0
+const DEBUG = 1
 const ipc_name = 'viz'
 const fs = require('fs')
+  var win
 
-function spawnRenderer() {
+  var main_ipc = remote.require('ipc')
+
+  main_ipc.on('call', function(event, cmd) {
+    var args = Array.prototype.slice.call(arguments, 2)
+    handleIPC(cmd, args)
+  })
+
+function setupRemoteIPC() {
   var BrowserWindow = remote.require('browser-window')
-  var win = new BrowserWindow(
+  win = new BrowserWindow(
     DEBUG ? { width: 800, height: 600 } : { show: false }
   )
   win.loadUrl('file://' + __dirname + '/headless.html');
@@ -99,6 +108,8 @@ function spawnRenderer() {
   win.webContents.on('did-finish-load', function() {
     win.webContents.send('ready')
   })
+
+
 }
 
 function setupWebViewIPC() {
@@ -217,7 +228,9 @@ function setupChildIPC() {
 
 // setupLocalStorageIPC()
 // setupWebViewIPC()
-setupChildIPC()
+// setupChildIPC()
+setupRemoteIPC()
+// setupIPC()
 
 function ready() {
   // start here
