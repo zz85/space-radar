@@ -1,5 +1,8 @@
 'use strict';
 
+console.error('testing.....')
+// console.error('{}')
+
 let browser = typeof(window) !== 'undefined'
 let node = typeof(module) !== 'undefined'
 
@@ -48,9 +51,9 @@ if (browser) {
 
   process.on('message', function(m) {
     console.log('got', m)
-    if (m.scan) {
+    if (m.cmd == 'go') {
       log('scan')
-      go(m.scan)
+      go(m.msg)
     }
   })
 }
@@ -64,7 +67,8 @@ function go(target) {
   let json = {}
   let refreshTask = new TaskChecker(function(next) {
     log('refresh...')
-    transfer('refresh', json)
+    // transfer('refresh', json)
+    console.error('\n'+JSON.stringify(json)+'\n')
     REFRESH_INTERVAL *= 3
     next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
   }, REFRESH_INTERVAL)
@@ -122,32 +126,38 @@ function transfer(target) {
   var err;
 
   err = null
-  try {
-    // electron browser IPC
-    args.unshift('call')
-    ipc.send.apply(ipc, args)
-  } catch (e) {
-    err = e
-    console.error(e)
-  }
 
-  if (!err) return
+  if (browser) {
+    try {
+      // electron browser IPC
+      args.unshift('call')
+      ipc.send.apply(ipc, args)
+    } catch (e) {
+      err = e
+      console.error(e)
+    }
+
+
+    if (!err) return
+  }
 
   /* process */
 
-  // if (jsonstr.length > 10000000) {
-  //   err = true
-  // } else {
-  //   try {
-  //     process.send(args)
-  //   } catch (e) {
-  //     console.error('fail: ')
-  //     log('len', jsonstr.length)
-  //     err = e;
-  //  }
-  // }
+  if (!browser) {
+    if (jsonstr.length > 10000000) {
+      err = true
+    } else {
+      try {
+        process.send(args)
+      } catch (e) {
+        console.error('fail: ')
+        log('len', jsonstr.length)
+        err = e;
+     }
+    }
 
-  if (!err) return
+    if (!err) return
+  }
 
   err = null
   let p = path.join(__dirname, 'fs-ipc.json')

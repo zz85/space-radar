@@ -11,9 +11,8 @@ function startScan(path) {
   log('start', path)
   start_time = performance.now()
   console.time('scan_job')
-  // webview.send('scan', path)
-  // child.send({scan: path})
-  win.webContents.send('scan', path)
+
+  sendIpcMsg('go', path)
 }
 
 function progress(dir, name, size) {
@@ -200,24 +199,45 @@ function setupLocalStorageIPC() {
 var child
 function setupChildIPC() {
   console.log(require('path').join(__dirname, 'js/scanner.js'))
+  log('process.execArgv', process.execArgv, 'execPath', process.execPath)
   child = child_process.fork('./js/scanner.js', {
     env: process.ENV,
     silent: true
   })
+
+  // child = child_process.spawn(process.execPath, ['./js/scanner.js'], {
+  //   env: process.ENV,
+  //   stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+  // })
 
   child.on('message', function(args) {
     var cmd = args.shift()
     handleIPC(cmd, args)
   })
 
-  child.on('error', console.log.bind(console))
+  // child.on('error', console.log.bind(console))
+
 
   child.stdout.on('data', function (data) {
     console.log('stdout: ' + data);
   });
 
-  child.stderr.on('data', function (data) {
-    console.log('stderr: ' + data);
+
+  child.stderr.setEncoding('utf8')
+
+  var split = require('split')
+  //
+
+  child.stderr.pipe(split()).on('data', function (data) {
+    console.log('.' + data.length)
+    try {
+      var j = JSON.parse(data)
+      console.log('.... data')
+      refresh(j)
+    } catch (e) {
+      console.log('.... fail')
+    }
+    // console.log('stderr: ' + data);
   });
 
   child.on('close', function (code) {
@@ -226,11 +246,18 @@ function setupChildIPC() {
 
 }
 
-// setupLocalStorageIPC()
+//
+// LocalStorageIPC()
 // setupWebViewIPC()
-// setupChildIPC()
-setupRemoteIPC()
+setupChildIPC()
+// setupRemoteIPC()
 // setupIPC()
+
+function sendIpcMsg(cmd, msg) {
+  // webview.send('scan', path)
+  child.send({cmd: cmd, msg: msg})
+  // win.webContents.send('scan', path)
+}
 
 function ready() {
   // start here
