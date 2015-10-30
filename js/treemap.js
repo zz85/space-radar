@@ -11,6 +11,16 @@ var margin = {
     .domain([0, height])
     .range([0, height])
 
+var hue = d3.scale.category10();
+
+var luminance = d3.scale.sqrt()
+    .domain([0, 12])
+    .clamp(true)
+    .range([90, 20]);
+
+//
+
+
 /* TODO
 text labels
 - align top left
@@ -175,10 +185,6 @@ function text(text) {
     .attr("y", function(d) {
       return y(d.y + d.dy / 2)
       return y(d.y) + 6 * 2; })
-    // .attr("x", function(d) { return d.dx / 2; })
-    // .attr("y", function(d) { return d.dy / 2; })
-
-
 }
 
 function onJson(error, data) {
@@ -206,6 +212,32 @@ function onJson(error, data) {
 
 var zooming = false;
 var current;
+
+(function draw() {
+  console.time('canvas draw');
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  d3.selectAll('.cell')[0].forEach((f)=> {
+    g = f
+    d = d3.select(g).datum()
+
+    // d.value
+    var c = d3.lab(hue('haha'));
+    c.l = luminance(d.depth);
+
+    ctx.fillStyle = c;
+    ctx.fillRect(d.x, d.y, d.dx, d.dy)
+
+    ctx.font = "8px serif"
+    ctx.fillStyle = '#333'
+    // TODO add a clip
+    ctx.fillText(d.name + '\n' + format(d.value), d.x, d.y)
+    // TODO hide if too small (w > dx)
+  });
+
+  console.timeEnd('canvas draw');
+})()
+
+
 function zoom(d) {
   if (zooming || !d) return;
   zooming = true;
@@ -223,6 +255,7 @@ function zoom(d) {
   y.domain([d.y, d.y + d.dy]);
 
   display(d)
+  draw()
 
   // Enable anti-aliasing during the transition.
   svg.style("shape-rendering", null);

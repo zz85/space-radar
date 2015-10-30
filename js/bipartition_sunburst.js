@@ -92,6 +92,7 @@ var LEVELS = 11
   , CORE_RADIUS = radius * 0.4 // radius / LEVELS
   , OUTER_RADIUS = radius - CORE_RADIUS
   , FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL)
+
 var hue = d3.scale.category10();
 
 var luminance = d3.scale.sqrt()
