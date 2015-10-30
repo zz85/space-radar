@@ -129,6 +129,21 @@ function webviewTransfer() {
   }
 }
 
+function lsipc(jsonstr) {
+  let err
+  try {
+    // localStorage IPC
+    // localStorage.lsipc = jsonstr
+    localStorage.lsipc = localStorage.lsipc === jsonstr ? jsonstr + ' ' : jsonstr
+  } catch (e) {
+    console.error('fail: ')
+    log('len', jsonstr.length)
+    err = e;
+  }
+
+  return err
+}
+
 function transfer(target) {
   var args = Array.prototype.slice.call(arguments)
 
@@ -137,55 +152,42 @@ function transfer(target) {
 
   err = null
 
-  if (jsonstr.length > 10000000) {
-    err = true
-  } else {
-    try {
-      // localStorage IPC
-      // localStorage.lsipc = jsonstr
-      localStorage.lsipc = localStorage.lsipc === jsonstr ? jsonstr + ' ' : jsonstr
-    } catch (e) {
-      console.error('fail: ')
-      log('len', jsonstr.length)
-      err = e;
-   }
+  if (browser) {
+    // jsonstr.length > 8192 &&
+    if (jsonstr.length < 10000000) {
+      err = lsipc(jsonstr)
+      if (!err) return
+    }
 
-   if (!err) return
+    // try {
+    //   // electron browser IPC
+    //   args.unshift('call')
+    //   ipc.send.apply(ipc, args)
+    // } catch (e) {
+    //   err = e
+    //   console.error(e)
+    // }
+
+    // if (!err) return
   }
-
-
-
-  // if (browser) {
-  //   try {
-  //     // electron browser IPC
-  //     args.unshift('call')
-  //     ipc.sendToHost.apply(ipc, args)
-  //   } catch (e) {
-  //     err = e
-  //     console.error(e)
-  //   }
-
-
-  //   if (!err) return
-  // }
 
   /* process */
 
-  if (!browser) {
-    if (jsonstr.length > 10000000) {
-      err = true
-    } else {
-      try {
-        process.send(args)
-      } catch (e) {
-        console.error('fail: ')
-        log('len', jsonstr.length)
-        err = e;
-     }
-    }
+  // if (!browser) {
+  //   if (jsonstr.length > 20000000) {
+  //     err = true
+  //   } else {
+  //     try {
+  //       process.send(args)
+  //     } catch (e) {
+  //       console.error('fail: ')
+  //       log('len', jsonstr.length)
+  //       err = e;
+  //    }
+  //   }
 
-    if (!err) return
-  }
+  //   if (!err) return
+  // }
 
   err = null
   // fs ipc

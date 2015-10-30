@@ -105,7 +105,8 @@ function setupRemoteIPC() {
   if (DEBUG) win.openDevTools()
 
   win.webContents.on('did-finish-load', function() {
-    win.webContents.send('ready')
+    // win.webContents.send('ready')
+    ready()
   })
 
 
@@ -198,6 +199,13 @@ function setupLocalStorageIPC() {
   });
 }
 
+window.onbeforeunload = function(e) {
+  console.log('Closing time!!!!')
+  if (win) win.close()
+  // the better method would be to track client from
+  // browser.on('closed')
+};
+
 var child
 function setupChildIPC() {
   console.log(require('path').join(__dirname, 'js/scanner.js'))
@@ -237,9 +245,9 @@ function setupChildIPC() {
 }
 
 setupLocalStorageIPC()
-setupWebViewIPC()
+// setupWebViewIPC()
 // setupChildIPC()
-// setupRemoteIPC()
+setupRemoteIPC()
 // setupIPC()
 // ready() // run this
 

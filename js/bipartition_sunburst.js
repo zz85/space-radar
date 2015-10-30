@@ -43,6 +43,7 @@ function onResize() {
   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
   - Streaming partition datastructures
   - Fastest IPC (headless node / electron)
+  - Named Pipes
 
 - Others
   - Git integration
