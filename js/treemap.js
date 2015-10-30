@@ -13,10 +13,11 @@ var margin = {
 
 var hue = d3.scale.category10();
 
-var luminance = d3.scale.sqrt()
-    .domain([0, 12])
+var luminance = d3.scale
+    .linear() // .sqrt()
+    .domain([0, 11])
     .clamp(true)
-    .range([90, 20]);
+    .range([90, 10]);
 
 //
 
@@ -213,10 +214,11 @@ function onJson(error, data) {
 var zooming = false;
 var current;
 
-(function draw() {
+function draw() {
   console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   d3.selectAll('.cell')[0].forEach((f)=> {
+    ctx.save()
     g = f
     d = d3.select(g).datum()
 
@@ -227,15 +229,26 @@ var current;
     ctx.fillStyle = c;
     ctx.fillRect(d.x, d.y, d.dx, d.dy)
 
-    ctx.font = "8px serif"
+    ctx.strokeStyle = '#eee'
+    ctx.strokeRect(d.x, d.y, d.dx, d.dy)
+
+    ctx.font = '8px Tahoma' // Tahoma Arial serif
     ctx.fillStyle = '#333'
-    // TODO add a clip
+    ctx.textBaseline = 'top'
+    ctx.textAlign = 'left'
+
+    ctx.beginPath()
+    ctx.rect(d.x, d.y, d.dx, d.dy);
+    ctx.clip();
     ctx.fillText(d.name + '\n' + format(d.value), d.x, d.y)
     // TODO hide if too small (w > dx)
+    ctx.restore()
   });
 
   console.timeEnd('canvas draw');
-})()
+}
+
+draw()
 
 
 function zoom(d) {
@@ -255,7 +268,7 @@ function zoom(d) {
   y.domain([d.y, d.y + d.dy]);
 
   display(d)
-  draw()
+  setTimeout (draw, 100)
 
   // Enable anti-aliasing during the transition.
   svg.style("shape-rendering", null);
