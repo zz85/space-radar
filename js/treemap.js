@@ -1,8 +1,8 @@
 var margin = {
     top: 40, right: 10, bottom: 10, left: 10
   },
-  width = 760 - margin.left - margin.right,
-  height = 500 - margin.top - margin.bottom,
+  width = window.innerWidth - margin.left - margin.right, // 760
+  height = window.innerHeight - margin.top - margin.bottom, // 500
 
   x = d3.scale.linear()
     .domain([0, width])
@@ -51,11 +51,6 @@ var treemap = d3.layout.treemap()
     .sort(function(a, b) { return a.value - b.value; })
     .value(function(d) { return d.size; });
 
-
-var div = d3.select("body").select(".chart")
-    .style("width", width + "px")
-    .style("height", height + "px")
-
 var canvas = document.getElementById('canvas')
 canvas.style.width = width + "px"
 canvas.style.height = height + "px"
@@ -65,7 +60,11 @@ canvas.height = height
 
 var ctx = canvas.getContext('2d')
 
-var svg = div
+var detachedContainer = document.createElement("custom");
+var dataContainer = d3.select(detachedContainer);
+
+var svg =
+  dataContainer
   .append("svg")
     .attr("width", width)
     .attr("height", height)
@@ -208,16 +207,14 @@ function onJson(error, data) {
 
   display(root)
 
+  /*
   d3.select(window).on("click", function() {
     console.log('click root')
     // zoom(root);
     zoom(current.parent)
   });
+  */
 
-  // d3.select("select").on("change", function() {
-  //   treemap.value(this.value == "size" ? size : count).nodes(root);
-  //   zoom(node);
-  // });
 }
 
 var zooming = false;
@@ -238,19 +235,24 @@ function showLess() {
   drawer.run()
 }
 
-drawer = new TimeoutTask(function draw(next) {
+function draw(next) {
   console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  var metrics = ctx.measureText('M');
+  var height = metrics.width;
+
   console.time('dom')
-  var dom = d3.selectAll('.cell')[0]
+  var dom = dataContainer
+      .selectAll('.cell')[0]
   console.timeEnd('dom')
   dom.forEach((f)=> {
     ctx.save()
     g = f
     d = d3.select(g).datum()
 
-    if (d.depth > TREEMAP_LEVELS) return
-    // if (d.children) return // show all children only
+    // if (d.depth > TREEMAP_LEVELS) return
+    if (d.children) return // show all children only
 
     // hue('haha')
     var c = d3.lab(o(d.value))
@@ -293,7 +295,9 @@ drawer = new TimeoutTask(function draw(next) {
       ctx.beginPath()
       ctx.rect(x, y, w, h);
       ctx.clip();
-      ctx.fillText(d.name + '\n' + format(d.value), x, y)
+      ctx.fillText(d.name, x, y)
+      ctx.fillText(format(d.value), x, y + height)
+
     }
 
     ctx.restore()
@@ -301,11 +305,13 @@ drawer = new TimeoutTask(function draw(next) {
 
   console.timeEnd('canvas draw');
 
-  next(5000)
-})
+  next()
+}
+
+drawer = new TimeoutTask(draw, 5000)
 
 
-drawer.run()
+// drawer.run()
 
 
 function zoom(d) {
