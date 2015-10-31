@@ -18,7 +18,7 @@ var
     .linear() // .sqrt()
     .domain([0, 11])
     .clamp(true)
-    .range([75, 100]);
+    .range([75, 96]);
 
 var o = d3.scale.linear()
     .range(["purple", "orange"]) // steelblue", "brown pink orange green", "blue
@@ -227,17 +227,24 @@ var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5
 
 function showMore() {
   TREEMAP_LEVELS++
+  console.log('TREEMAP_LEVELS', TREEMAP_LEVELS)
+  drawer.run()
 }
 
 function showLess() {
   if (TREEMAP_LEVELS > 0)
   TREEMAP_LEVELS--
+  console.log('TREEMAP_LEVELS', TREEMAP_LEVELS)
+  drawer.run()
 }
 
-function draw() {
+drawer = new TimeoutTask(function draw(next) {
   console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  d3.selectAll('.cell')[0].forEach((f)=> {
+  console.time('dom')
+  var dom = d3.selectAll('.cell')[0]
+  console.timeEnd('dom')
+  dom.forEach((f)=> {
     ctx.save()
     g = f
     d = d3.select(g).datum()
@@ -294,11 +301,11 @@ function draw() {
 
   console.timeEnd('canvas draw');
 
-  setTimeout(draw, 5000)
-}
+  next(5000)
+})
 
 
-// draw()
+drawer.run()
 
 
 function zoom(d) {
