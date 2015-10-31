@@ -4,10 +4,10 @@ var margin = {
   width = window.innerWidth - margin.left - margin.right, // 760
   height = window.innerHeight - margin.top - margin.bottom, // 500
 
-  x = d3.scale.linear()
+  xd = x = d3.scale.linear()
     .domain([0, width])
     .range([0, width]),
-  y = d3.scale.linear()
+  yd = y = d3.scale.linear()
     .domain([0, height])
     .range([0, height])
 
@@ -147,7 +147,7 @@ function display(data) {
       .attr("class", "cell")
       .call(rect)
       // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-      .on("click", function(d) { return zoom(node == d.parent ? root : d.parent); });
+      .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
 
   // cell.append("rect")
   //   .style("fill", function(d) {
@@ -167,8 +167,6 @@ function display(data) {
 
   x.domain([d.x, d.x + d.dx]);
   y.domain([d.y, d.y + d.dy]);
-
-
   //   .on('mousedown', function(d) {
   //     var path = getPath(d).map(d => {return d.name }).join('/')
   //     console.log(path, d);
@@ -213,13 +211,14 @@ function onJson(error, data) {
     zoom(current.parent)
   });
   */
-
 }
 
 var zooming = false;
 var current;
 
-var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5
+var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5, BENCH = 0
+var mouseclicked, mousex, mousey;
+
 
 function showMore() {
   TREEMAP_LEVELS++
@@ -234,28 +233,35 @@ function showLess() {
   drawer.run()
 }
 
-var mouseon, mousex, mousey;
-
 d3.select(canvas).on("mousemove", function() {
   mousex = d3.event.offsetX
   mousey = d3.event.offsetY
-  drawer.run()
+  drawer.schedule(10)
   // console.log(d3.event.offsetX, d3.event.offsetY)
   // console.log(d3.event.clientX, d3.event.clientY)
 })
 
+d3.select(canvas).on("click", function() {
+  // console.log('click')
+  mouseclicked = true
+  drawer.schedule(10)
+})
+
 function draw(next) {
-  console.time('canvas draw');
+  if (BENCH) console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   var metrics = ctx.measureText('M');
   var height = metrics.width;
 
-  console.time('dom')
+  if (BENCH) console.time('dom')
   var dom = dataContainer
       .selectAll('.cell')[0]
-  console.timeEnd('dom')
-  dom.forEach(f => {
+  if (BENCH) console.timeEnd('dom')
+
+  var navigate = 0
+
+  var found = dom.some(f => {
     ctx.save()
     g = f
     d = d3.select(g).datum()
@@ -268,10 +274,10 @@ function draw(next) {
     c.l = luminance(d.depth)
 
     var x, y, w, h
-    x = d.x
-    y = d.y
-    w = d.dx
-    h = d.dy
+    x = xd(d.x)
+    y = yd(d.y)
+    w = xd(d.x + d.dx) - xd(d.x)
+    h = yd(d.y + d.dy) - yd(d.y)
 
     if (USE_GAP) {
       var gap = 0.5 * d.depth
@@ -290,8 +296,16 @@ function draw(next) {
       ctx.fillStyle = c;
 
       if (ctx.isPointInPath(mousex, mousey)) {
-        // console.log(d)
+
         ctx.fillStyle = 'yellow';
+
+        if (mouseclicked) {
+          navigate++
+          if (navigate == 2) {
+            navigate = d
+            return true
+          }
+        }
       }
       ctx.fill()
     }
@@ -321,14 +335,20 @@ function draw(next) {
     ctx.restore()
   });
 
-  console.timeEnd('canvas draw');
+  if (BENCH) console.timeEnd('canvas draw');
+  mouseclicked = false
+  next(5000)
 
-  next()
+  if (navigate) {
+    console.log(navigate)
+    d = navigate
+    xd.domain([d.x, d.x + d.dx]);
+    yd.domain([d.y, d.y + d.dy]);
+    next(0)
+  }
 }
 
 drawer = new TimeoutTask(draw, 5000)
-
-
 // drawer.run()
 
 
