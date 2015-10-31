@@ -22,14 +22,9 @@ var luminance = d3.scale
     .clamp(true)
     .range([98, 10]);
 
-// ordinal
 var o = d3.scale.linear()
-    .domain([0, 1e10])
-    .range(colorbrewer.Spectral[11]);
-
-    // ["#deebf7","#9ecae1","#3182bd"]
-
-//
+    .domain([1e7, 1e5])
+    .range(colorbrewer.Spectral[3]);
 
 
 /* TODO
