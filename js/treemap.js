@@ -195,6 +195,7 @@ function text(text) {
 
 function onJson(error, data) {
   if (error) throw error;
+  currentNode = root
   node = root = data
   console.log('display root', root)
   // initialize(root)
@@ -204,13 +205,12 @@ function onJson(error, data) {
 
   display(root)
 
-  /*
   d3.select(window).on("click", function() {
     console.log('click root')
     // zoom(root);
-    zoom(current.parent)
+    // zoom(current.parent)
+    // navigateTo(currentNode.parent)
   });
-  */
 }
 
 var zooming = false;
@@ -218,6 +218,9 @@ var current;
 
 var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5, BENCH = 0
 var mouseclicked, mousex, mousey;
+
+var currentDepth = 0
+var currentNode
 
 
 function showMore() {
@@ -259,14 +262,14 @@ function draw(next) {
       .selectAll('.cell')[0]
   if (BENCH) console.timeEnd('dom')
 
-  var navigate = 0
-
-  var found = dom.some(f => {
+  var found = []
+  dom.some(f => {
     ctx.save()
     g = f
     d = d3.select(g).datum()
 
-    if (d.depth > TREEMAP_LEVELS) return
+    if (d.depth < currentDepth) return
+    if (d.depth > TREEMAP_LEVELS + currentDepth) return
     // if (d.children) return // show all children only
 
     // hue('haha')
@@ -300,11 +303,7 @@ function draw(next) {
         ctx.fillStyle = 'yellow';
 
         if (mouseclicked) {
-          navigate++
-          if (navigate == 2) {
-            navigate = d
-            return true
-          }
+          found.push(d)
         }
       }
       ctx.fill()
@@ -327,9 +326,7 @@ function draw(next) {
       ctx.rect(x, y, w, h);
       ctx.clip();
       ctx.fillText(d.name, x + 3, y)
-      ctx.fillText(format(d.value), x + 3, y + height * 1.4
-        )
-
+      ctx.fillText(format(d.value), x + 3, y + height * 1.4)
     }
 
     ctx.restore()
@@ -339,13 +336,27 @@ function draw(next) {
   mouseclicked = false
   next(5000)
 
-  if (navigate) {
-    console.log(navigate)
-    d = navigate
-    xd.domain([d.x, d.x + d.dx]);
-    yd.domain([d.y, d.y + d.dy]);
-    next(0)
+  if (found.length) {
+    console.log(found)
+    d = found[1]
+    navigateTo(d)
   }
+}
+
+function navigateTo(d) {
+  if (!d) return
+  if (!d.children) return
+
+  console.log('navigate to', d)
+  xd.domain([d.x, d.x + d.dx])
+  yd.domain([d.y, d.y + d.dy])
+  currentDepth = d.depth
+  currentNode = d
+  drawer.schedule(10)
+}
+
+function navigateUp() {
+  navigateTo(currentNode.parent)
 }
 
 drawer = new TimeoutTask(draw, 5000)
