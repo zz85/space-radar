@@ -219,6 +219,15 @@ var current;
 
 var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5
 
+function showMore() {
+  TREEMAP_LEVELS++
+}
+
+function showLess() {
+  if (TREEMAP_LEVELS > 0)
+  TREEMAP_LEVELS--
+}
+
 function draw() {
   console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
