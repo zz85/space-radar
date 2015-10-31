@@ -20,12 +20,15 @@ var luminance = d3.scale
     .linear() // .sqrt()
     .domain([0, 11])
     .clamp(true)
-    .range([98, 10]);
+    .range([100, 80]);
 
+// var o = d3.scale.linear()
+//     .domain([1e2, 1e11])
+//     .range([colorbrewer.Spectral[3][0], colorbrewer.Spectral[3][2]]);
 var o = d3.scale.linear()
-    .domain([1e7, 1e5])
-    .range(colorbrewer.Spectral[3]);
-
+    .range(["steelblue", "brown"])
+    .domain([1e2, 1e9])
+    .interpolate(d3.interpolateHcl);
 
 /* TODO
 text labels
@@ -228,8 +231,10 @@ function draw() {
     d = d3.select(g).datum()
 
     // hue('haha')
-    var c = d3.lab(o(d.value));
-    c.l = luminance(d.depth);
+    var c = d3.lab(o(d.value))
+    c.l = luminance(d.depth)
+
+    c = o(d.value)
 
     var x, y, w, h
     x = d.x
