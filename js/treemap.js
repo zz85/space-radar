@@ -21,15 +21,21 @@ var
     .range([75, 100]);
 
 var o = d3.scale.linear()
-    .range(["pink", "orange"]) // steelblue", "brown
+    .range(["purple", "orange"]) // steelblue", "brown pink orange green", "blue
     .domain([1e2, 1e9])
     .interpolate(d3.interpolateLab) // interpolateHcl
 
 /* TODO
 text labels
-- align top left
-- align center
-- appear on hover
+- [x] align top left
+- [ ] prevent overlapping
+- [ ] align center
+- [ ] appear on hover
+
+interactions
+- [ ] go into directory
+- [ ] animations entering directory
+- [ ] update tree
 */
 
 var color = d3.scale.category20c();
@@ -271,7 +277,7 @@ function draw() {
       ctx.strokeRect(x, y, w, h)
     }
 
-    if (w > 20) {
+    if (w > 20 && h > 20) {
       ctx.font = '8px Tahoma' // Tahoma Arial serif
       ctx.fillStyle = '#333'
       ctx.textBaseline = 'top'
