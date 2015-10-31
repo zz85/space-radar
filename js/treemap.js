@@ -17,7 +17,13 @@ var luminance = d3.scale
     .linear() // .sqrt()
     .domain([0, 11])
     .clamp(true)
-    .range([90, 10]);
+    .range([98, 10]);
+
+var o = d3.scale.ordinal()
+    .domain(["foo", "bar", "baz"])
+    .range(["#f7fbff","#deebf7","#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b"]);
+
+    // ["#deebf7","#9ecae1","#3182bd"]
 
 //
 
@@ -226,29 +232,50 @@ function draw() {
     var c = d3.lab(hue('haha'));
     c.l = luminance(d.depth);
 
-    ctx.fillStyle = c;
-    ctx.fillRect(d.x, d.y, d.dx, d.dy)
+    var x, y, w, h
+    x = d.x
+    y = d.y
+    w = d.dx
+    h = d.dy
 
-    ctx.strokeStyle = '#eee'
-    ctx.strokeRect(d.x, d.y, d.dx, d.dy)
+    var gap = 0.5 * d.depth
+    x += gap
+    y += gap
+    w -= gap * 2
+    h -= gap * 2
 
-    ctx.font = '8px Tahoma' // Tahoma Arial serif
-    ctx.fillStyle = '#333'
-    ctx.textBaseline = 'top'
-    ctx.textAlign = 'left'
+    if (w > 0 && h > 0) {
+      // hide when too small (could use percentages too)
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, w, h)
+    }
 
-    ctx.beginPath()
-    ctx.rect(d.x, d.y, d.dx, d.dy);
-    ctx.clip();
-    ctx.fillText(d.name + '\n' + format(d.value), d.x, d.y)
-    // TODO hide if too small (w > dx)
+    // border
+    // ctx.strokeStyle = '#eee'
+    // ctx.strokeRect(x, y, w, h)
+
+    if (w > 20) {
+      ctx.font = '8px Tahoma' // Tahoma Arial serif
+      ctx.fillStyle = '#333'
+      ctx.textBaseline = 'top'
+      ctx.textAlign = 'left'
+
+      ctx.beginPath()
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.fillText(d.name + '\n' + format(d.value), x, y)
+
+    }
+
     ctx.restore()
   });
 
   console.timeEnd('canvas draw');
+
+  setTimeout(draw, 5000)
 }
 
-draw()
+// draw()
 
 
 function zoom(d) {
