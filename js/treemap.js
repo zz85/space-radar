@@ -130,7 +130,6 @@ function layout(d) {
 }
 
 function display(data) {
-
   var total_size = root.value
 
   console.time('treemap')
@@ -150,24 +149,24 @@ function display(data) {
       // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
       .on("click", function(d) { return zoom(node == d.parent ? root : d.parent); });
 
-  cell.append("rect")
-    .style("fill", function(d) {
-      // return color(d.parent.name);\
-        return color(d.name);
-    })
-    .call(rect)
+  // cell.append("rect")
+  //   .style("fill", function(d) {
+  //     // return color(d.parent.name);\
+  //     return color(d.name);
+  //   })
+  //   .call(rect)
 
-  cell.append("text")
-    .call(text)
-    .attr("text-anchor", "middle")
-    .text(function(d) { return d.name; })
-    .style('font-size', '8px')
-    .style("opacity", function(d) { d.w = this.getComputedTextLength(); return d.dx > d.w ? 1 : 0; });
+  // cell.append("text")
+  //   .call(text)
+  //   .attr("text-anchor", "middle")
+  //   .text(function(d) { return d.name })
+  //   .style('font-size', '8px')
+  //   .style("opacity", function(d) { d.w = this.getComputedTextLength(); return d.dx > d.w ? 1 : 0; });
 
-    var d = data
+  var d = data
 
-    x.domain([d.x, d.x + d.dx]);
-    y.domain([d.y, d.y + d.dy]);
+  x.domain([d.x, d.x + d.dx]);
+  y.domain([d.y, d.y + d.dy]);
 
 
   //   .on('mousedown', function(d) {
@@ -235,6 +234,16 @@ function showLess() {
   drawer.run()
 }
 
+var mouseon, mousex, mousey;
+
+d3.select(canvas).on("mousemove", function() {
+  mousex = d3.event.offsetX
+  mousey = d3.event.offsetY
+  drawer.run()
+  // console.log(d3.event.offsetX, d3.event.offsetY)
+  // console.log(d3.event.clientX, d3.event.clientY)
+})
+
 function draw(next) {
   console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -246,13 +255,13 @@ function draw(next) {
   var dom = dataContainer
       .selectAll('.cell')[0]
   console.timeEnd('dom')
-  dom.forEach((f)=> {
+  dom.forEach(f => {
     ctx.save()
     g = f
     d = d3.select(g).datum()
 
-    // if (d.depth > TREEMAP_LEVELS) return
-    if (d.children) return // show all children only
+    if (d.depth > TREEMAP_LEVELS) return
+    // if (d.children) return // show all children only
 
     // hue('haha')
     var c = d3.lab(o(d.value))
@@ -275,8 +284,16 @@ function draw(next) {
 
     if (w > 0.5 && h > 0.5) {
       // hide when too small (could use percentages too)
+      ctx.beginPath()
+      ctx.rect(x, y, w, h)
+
       ctx.fillStyle = c;
-      ctx.fillRect(x, y, w, h)
+
+      if (ctx.isPointInPath(mousex, mousey)) {
+        // console.log(d)
+        ctx.fillStyle = 'yellow';
+      }
+      ctx.fill()
     }
 
     // border
@@ -295,8 +312,9 @@ function draw(next) {
       ctx.beginPath()
       ctx.rect(x, y, w, h);
       ctx.clip();
-      ctx.fillText(d.name, x, y)
-      ctx.fillText(format(d.value), x, y + height)
+      ctx.fillText(d.name, x + 3, y)
+      ctx.fillText(format(d.value), x + 3, y + height * 1.4
+        )
 
     }
 
