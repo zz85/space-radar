@@ -148,15 +148,18 @@ function display(data) {
     .data( nnn )
 
   cell.exit()
-    .transition()
+    .transition(500)
     .style("fill-opacity", 0)
     .remove()
 
-  cell.enter().append('g')
-      .attr('class', 'cell')
-      .call(rect)
-      // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-      // .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
+  cell.enter()
+    .append('g')
+    .attr('class', 'cell')
+    .call(rect)
+    .transition(500)
+    .style("fill-opacity", 1)
+    // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+    // .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
 
 
   // cell.append("rect")
@@ -231,9 +234,9 @@ var current;
 var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5, BENCH = 0
 var mouseclicked, mousex, mousey, mouseovered = null;
 
-var currentDepth = 0
-var currentNode
-
+var currentDepth = 0,
+  currentNode,
+  height = 10
 
 function showMore() {
   TREEMAP_LEVELS++
@@ -269,7 +272,7 @@ function draw(next) {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   var metrics = ctx.measureText('M');
-  var height = metrics.width;
+  height = metrics.width;
 
   if (BENCH) console.time('dom')
   var dom = dataContainer
@@ -297,24 +300,30 @@ function draw(next) {
     c.l = luminance(d.depth)
 
     var x, y, w, h
-    x = xd(d.x)
-    y = yd(d.y)
-    w = xd(d.x + d.dx) - xd(d.x)
-    h = yd(d.y + d.dy) - yd(d.y)
+    // x = xd(d.x)
+    // y = yd(d.y)
+    // w = xd(d.x + d.dx) - xd(d.x)
+    // h = yd(d.y + d.dy) - yd(d.y)
+
+    var depthDiff = d.depth - currentDepth
+
     x = g.attr('x')
-    y = g.attr('y')
+    y = g.attr('y') + depthDiff * height * 1.4
     w = g.attr('width')
     h = g.attr('height')
-    // var opactiy = g.style('fill-opacity')
+    var opacity = g.style('fill-opacity')
 
     if (USE_GAP) {
-      var gap = 0.5 * d.depth
+      var gap = 0.5 * depthDiff
 
       x += gap
       y += gap
       w -= gap * 2
       h -= gap * 2
     }
+
+    ctx.globalAlpha = 0.8
+    ctx.globalAlpha = opacity
 
     if (w > 0.5 && h > 0.5) {
       // hide when too small (could use percentages too)
@@ -324,7 +333,9 @@ function draw(next) {
       ctx.fillStyle = c;
 
       if (ctx.isPointInPath(mousex, mousey)) {
-        ctx.fillStyle = 'yellow';
+        // ctx.fillStyle = 'yellow';
+        ctx.globalAlpha = 1
+
 
         if (d !== currentNode && d.depth <= currentDepth + TREEMAP_LEVELS) {
           hover.push(d)
@@ -353,8 +364,8 @@ function draw(next) {
       ctx.beginPath()
       ctx.rect(x, y, w, h);
       ctx.clip();
-      ctx.fillText(d.name, x + 3, y)
-      ctx.fillText(format(d.value), x + 3, y + height * 1.4)
+      ctx.fillText(d.name + ' ' + format(d.value), x + 3, y)
+      // ctx.fillText(format(d.value), x + 3, y + height * 1.4)
     }
 
     ctx.restore()
