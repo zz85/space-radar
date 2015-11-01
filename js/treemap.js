@@ -34,7 +34,7 @@ text labels
 
 interactions
 - [ ] go into directory
-- [ ] animations entering directory
+- [x] animations entering directory
 - [ ] update tree
 */
 
@@ -44,6 +44,7 @@ var treemap = d3.layout.treemap()
     .size([width, height])
     .sticky(true)
     .round(false)
+    .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
     // .children(function(d, depth) {
     //   return (depth > 2) ? null : d.children
     //   // return depth ? null : d._children;
@@ -136,18 +137,21 @@ function display(data) {
   var nodes = treemap.nodes(root)
 
   nnn = nodes
-    // .filter( (d) => { return d.depth < 3 })
+    .filter( (d) => { return d.depth < TREEMAP_LEVELS })
     // .filter( d => { return !d.children } )
   console.timeEnd('treemap')
 
   var cell = svg.selectAll('g')
     .data( nnn )
 
-    .enter().append('g')
-      .attr("class", "cell")
+  cell.exit().remove()
+
+  cell.enter().append('g')
+      .attr('class', 'cell')
       .call(rect)
       // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-      .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
+      // .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
+
 
   // cell.append("rect")
   //   .style("fill", function(d) {
@@ -167,6 +171,7 @@ function display(data) {
 
   x.domain([d.x, d.x + d.dx]);
   y.domain([d.y, d.y + d.dy]);
+
   //   .on('mousedown', function(d) {
   //     var path = getPath(d).map(d => {return d.name }).join('/')
   //     console.log(path, d);
@@ -270,12 +275,12 @@ function draw(next) {
     g = d3.select(this)
     // d = d3.select(g).datum()
 
-    if (d.depth < currentDepth) return
+    // if (d.depth < currentDepth) return
 
-    var l = d.parent == mouseovered ? 1 : 0
-    if (d.depth > (TREEMAP_LEVELS + currentDepth + l)) {
-       return
-    }
+    // var l = d.parent == mouseovered ? 1 : 0
+    // if (d.depth > (TREEMAP_LEVELS + currentDepth + l)) {
+    //    return
+    // }
 
     // if (d.children) return // show all children only
 
@@ -284,10 +289,10 @@ function draw(next) {
     c.l = luminance(d.depth)
 
     var x, y, w, h
-    // x = xd(d.x)
-    // y = yd(d.y)
-    // w = xd(d.x + d.dx) - xd(d.x)
-    // h = yd(d.y + d.dy) - yd(d.y)
+    x = xd(d.x)
+    y = yd(d.y)
+    w = xd(d.x + d.dx) - xd(d.x)
+    h = yd(d.y + d.dy) - yd(d.y)
     x = g.attr('x')
     y = g.attr('y')
     w = g.attr('width')
@@ -358,7 +363,7 @@ function draw(next) {
   }
 
   // if (zooming)
-    next(30)
+    next(100)
 }
 
 function navigateTo(d) {
@@ -381,14 +386,12 @@ function navigateUp() {
 drawer = new TimeoutTask(draw, 5000)
 // drawer.run()
 
-
 function zoom(d) {
   if (zooming || !d) return;
   zooming = true;
   current = d;
 
-  console.log('hee')
-
+  console.log('zoom')
 
   // var g2 = display(d),
   // t1 = g1.transition().duration(750),
@@ -409,20 +412,15 @@ function zoom(d) {
 
   var t = svg.selectAll("g.cell").transition()
       .duration(750)
-      // .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
       .call(rect)
 
   // t.select("rect")
-  //     .call(rect)
-
+  //  .call(rect)
   // t.select("text")
-      // .call(text)
-      // .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
+    // .call(text)
+    // .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
 
   node = d;
   // d3.event.stopPropagation();
   zooming = false;
-
-  drawer.time = 40
-  drawer.run()
 }
