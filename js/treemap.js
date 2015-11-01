@@ -134,17 +134,23 @@ function display(data) {
   var total_size = root.value
 
   console.time('treemap')
-  var nodes = treemap.nodes(root)
-
-  nnn = nodes
-    .filter( (d) => { return d.depth < TREEMAP_LEVELS })
-    // .filter( d => { return !d.children } )
+  var nodes = treemap.nodes(data)
   console.timeEnd('treemap')
+
+  console.time('filter')
+  nnn = nodes
+    // .filter( (d) => { return d.depth < TREEMAP_LEVELS })
+    .filter( (d) => { return d.depth >= currentDepth && d.depth < TREEMAP_LEVELS })
+    // .filter( d => { return !d.children } ) // leave nodes only
+  console.timeEnd('filter')
 
   var cell = svg.selectAll('g')
     .data( nnn )
 
-  cell.exit().remove()
+  cell.exit()
+    .transition()
+    .style("fill-opacity", 0)
+    .remove()
 
   cell.enter().append('g')
       .attr('class', 'cell')
@@ -232,6 +238,7 @@ var currentNode
 function showMore() {
   TREEMAP_LEVELS++
   console.log('TREEMAP_LEVELS', TREEMAP_LEVELS)
+  zoom(currentNode)
   drawer.run()
 }
 
@@ -239,6 +246,7 @@ function showLess() {
   if (TREEMAP_LEVELS > 0)
   TREEMAP_LEVELS--
   console.log('TREEMAP_LEVELS', TREEMAP_LEVELS)
+  zoom(currentNode)
   drawer.run()
 }
 
@@ -297,6 +305,7 @@ function draw(next) {
     y = g.attr('y')
     w = g.attr('width')
     h = g.attr('height')
+    // var opactiy = g.style('fill-opacity')
 
     if (USE_GAP) {
       var gap = 0.5 * d.depth
