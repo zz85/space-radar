@@ -277,7 +277,6 @@ function draw(next) {
        return
     }
 
-    // if () console.log(d)
     // if (d.children) return // show all children only
 
     // hue('haha')
@@ -285,14 +284,14 @@ function draw(next) {
     c.l = luminance(d.depth)
 
     var x, y, w, h
-    x = xd(d.x)
-    y = yd(d.y)
-    w = xd(d.x + d.dx) - xd(d.x)
-    h = yd(d.y + d.dy) - yd(d.y)
-    // x = g.attr('x')
-    // y = g.attr('y')
-    // w = g.attr('width')
-    // h = g.attr('height')
+    // x = xd(d.x)
+    // y = yd(d.y)
+    // w = xd(d.x + d.dx) - xd(d.x)
+    // h = yd(d.y + d.dy) - yd(d.y)
+    x = g.attr('x')
+    y = g.attr('y')
+    w = g.attr('width')
+    h = g.attr('height')
 
     if (USE_GAP) {
       var gap = 0.5 * d.depth
@@ -311,7 +310,6 @@ function draw(next) {
       ctx.fillStyle = c;
 
       if (ctx.isPointInPath(mousex, mousey)) {
-
         ctx.fillStyle = 'yellow';
 
         if (d !== currentNode && d.depth <= currentDepth + TREEMAP_LEVELS) {
@@ -352,13 +350,15 @@ function draw(next) {
   if (hover.length)
     mouseovered = hover[hover.length - 1]
   mouseclicked = false
-  next(5000)
 
   if (found.length) {
     d = found[0]
-    console.log(found, d.name)
-    // navigateTo(d)
+    // console.log(found, d.name)
+    navigateTo(d)
   }
+
+  // if (zooming)
+    next(30)
 }
 
 function navigateTo(d) {
@@ -415,14 +415,14 @@ function zoom(d) {
   // t.select("rect")
   //     .call(rect)
 
-  t.select("text")
-      .call(text)
+  // t.select("text")
+      // .call(text)
       // .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
 
   node = d;
   // d3.event.stopPropagation();
   zooming = false;
 
-
   drawer.time = 40
+  drawer.run()
 }
