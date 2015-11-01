@@ -195,7 +195,6 @@ function text(text) {
 
 function onJson(error, data) {
   if (error) throw error;
-  currentNode = root
   node = root = data
   console.log('display root', root)
   // initialize(root)
@@ -205,19 +204,21 @@ function onJson(error, data) {
 
   display(root)
 
-  d3.select(window).on("click", function() {
-    console.log('click root')
-    // zoom(root);
-    // zoom(current.parent)
-    // navigateTo(currentNode.parent)
-  });
+  currentNode = root
+
+  // d3.select(window).on("click", function() {
+  //   console.log('click root')
+  //   // zoom(root);
+  //   // zoom(current.parent)
+  //   navigateTo(root)
+  // });
 }
 
 var zooming = false;
 var current;
 
 var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5, BENCH = 0
-var mouseclicked, mousex, mousey;
+var mouseclicked, mousex, mousey, mouseovered = null;
 
 var currentDepth = 0
 var currentNode
@@ -259,17 +260,24 @@ function draw(next) {
 
   if (BENCH) console.time('dom')
   var dom = dataContainer
-      .selectAll('.cell')[0]
+      .selectAll('.cell')
   if (BENCH) console.timeEnd('dom')
 
-  var found = []
-  dom.some(f => {
+  var found = [], hover = []
+
+  dom.each(function(d) {
     ctx.save()
-    g = f
-    d = d3.select(g).datum()
+    g = d3.select(this)
+    // d = d3.select(g).datum()
 
     if (d.depth < currentDepth) return
-    if (d.depth > TREEMAP_LEVELS + currentDepth) return
+
+    var l = d.parent == mouseovered ? 1 : 0
+    if (d.depth > (TREEMAP_LEVELS + currentDepth + l)) {
+       return
+    }
+
+    // if () console.log(d)
     // if (d.children) return // show all children only
 
     // hue('haha')
@@ -281,6 +289,10 @@ function draw(next) {
     y = yd(d.y)
     w = xd(d.x + d.dx) - xd(d.x)
     h = yd(d.y + d.dy) - yd(d.y)
+    // x = g.attr('x')
+    // y = g.attr('y')
+    // w = g.attr('width')
+    // h = g.attr('height')
 
     if (USE_GAP) {
       var gap = 0.5 * d.depth
@@ -302,7 +314,11 @@ function draw(next) {
 
         ctx.fillStyle = 'yellow';
 
-        if (mouseclicked) {
+        if (d !== currentNode && d.depth <= currentDepth + TREEMAP_LEVELS) {
+          hover.push(d)
+        }
+
+        if (mouseclicked && d !== currentNode) {
           found.push(d)
         }
       }
@@ -333,13 +349,15 @@ function draw(next) {
   });
 
   if (BENCH) console.timeEnd('canvas draw');
+  if (hover.length)
+    mouseovered = hover[hover.length - 1]
   mouseclicked = false
   next(5000)
 
   if (found.length) {
-    console.log(found)
-    d = found[1]
-    navigateTo(d)
+    d = found[0]
+    console.log(found, d.name)
+    // navigateTo(d)
   }
 }
 
@@ -352,6 +370,7 @@ function navigateTo(d) {
   yd.domain([d.y, d.y + d.dy])
   currentDepth = d.depth
   currentNode = d
+  zoom(d)
   drawer.schedule(10)
 }
 
@@ -382,23 +401,28 @@ function zoom(d) {
   display(d)
 
   // Enable anti-aliasing during the transition.
-  svg.style("shape-rendering", null);
+  // svg.style("shape-rendering", null);
 
   // var kx = width / d.dx, ky = height / d.dy;
 
+  // d3.event.altKey ? 7500 :
+
   var t = svg.selectAll("g.cell").transition()
-      .duration(d3.event.altKey ? 7500 : 750)
+      .duration(750)
       // .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
       .call(rect)
 
-  t.select("rect")
-      .call(rect)
+  // t.select("rect")
+  //     .call(rect)
 
   t.select("text")
       .call(text)
       // .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
 
   node = d;
-  d3.event.stopPropagation();
+  // d3.event.stopPropagation();
   zooming = false;
+
+
+  drawer.time = 40
 }
