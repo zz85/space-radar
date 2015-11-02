@@ -204,7 +204,8 @@ function text(text) {
       return x(d.x + d.dx /2 ) + this.getComputedTextLength() * 2; })
     .attr("y", function(d) {
       return y(d.y + d.dy / 2)
-      return y(d.y) + 6 * 2; })
+      return y(d.y) + 6 * 2;
+    })
 }
 
 function onJson(error, data) {
@@ -324,15 +325,36 @@ function draw(next) {
 
     var labelAdjustment = height * 1.4
 
-    oldy = y
     var total_height = currentNode.dy
-    y = y * (total_height - labelAdjustment * depthDiff)  / total_height
+    y = y * (total_height - labelAdjustment * depthDiff) / total_height
     + labelAdjustment * depthDiff // scale
 
-    // ;(Math.random() < 0.01) &&
-    // console.log('y', oldy, y, total_height)
+    var chain = [d]
+    var ry = []
+    for (var i = 0, n = d; i < depthDiff; i++, n = p) {
+      var p = n.parent
+      chain.push(p)
+      ry.push(n.y - p.y)
+    }
 
-    h = (total_height - labelAdjustment * depthDiff) / total_height * h
+    var p = chain.pop()
+    h = p.dy
+    var ny = p.y / height * (height - labelAdjustment)
+    for (i = chain.length; i--; ) {
+      var n = chain[i]
+      ny += ry[i] / p.dy * (h - labelAdjustment)
+      h = n.dy / p.dy * (h - labelAdjustment)
+      p = n
+    }
+
+    y = ny + labelAdjustment * depthDiff
+    // y = ny
+
+    // h2 = (total_height - labelAdjustment * depthDiff) / total_height * h
+    // ;(Math.random() < 0.01) &&
+    // console.log('h', h2, h)
+
+
     ctx.globalAlpha = 0.8
 
     // var opacity = g.attr('opacity')
