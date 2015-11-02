@@ -311,32 +311,30 @@ function draw(next) {
     // w = g.attr('width')
     // h = g.attr('height')
 
-    if (USE_GAP) {
-      var gap = 0.5 * depthDiff
+    // if (USE_GAP) {
+    //   var gap = 0.5 * depthDiff
 
-      x += gap
-      y += gap
-      w -= gap * 2
-      h -= gap * 2
-    }
+    //   x += gap
+    //   y += gap
+    //   w -= gap * 2
+    //   h -= gap * 2
+    // }
 
     var depthDiff = d.depth - currentDepth
 
     var labelAdjustment = height * 1.4
-    y += labelAdjustment * depthDiff // shifted because of parent's labels
 
-    var reduction = 1
+    oldy = y
+    var total_height = currentNode.dy
+    y = y * (total_height - labelAdjustment * depthDiff)  / total_height
+    + labelAdjustment * depthDiff // scale
 
+    // ;(Math.random() < 0.01) &&
+    // console.log('y', oldy, y, total_height)
 
-    for (var i = 0, n = d; (i < depthDiff); i++) {
-      n = n.parent
-      var ph = n.dy // yd(n.y + n.dy) - yd(n.y)
-      reduction *= (ph - labelAdjustment) / ph
-    }
-
-    h *= reduction
-
+    h = (total_height - labelAdjustment * depthDiff) / total_height * h
     ctx.globalAlpha = 0.8
+
     // var opacity = g.attr('opacity')
     // ctx.globalAlpha = opacity
 
