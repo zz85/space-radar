@@ -443,12 +443,6 @@ function onJson(error, r) {
   redraw()
 }
 
-function key(d) {
-  var k = [], p = d;
-  while (p) k.push(p.name), p = p.parent;
-  return k.reverse().join(PATH_DELIMITER);
-}
-
 function fill(d) {
   var p = d;
   while (p.depth > 1) p = p.parent;

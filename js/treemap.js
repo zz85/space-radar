@@ -140,7 +140,7 @@ function display(data) {
   console.time('filter')
   nnn = nodes
     // .filter( (d) => { return d.depth < TREEMAP_LEVELS })
-    .filter( (d) => { return d.depth >= currentDepth && d.depth < TREEMAP_LEVELS })
+    // .filter( (d) => { return d.depth >= currentDepth && d.depth < TREEMAP_LEVELS })
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
 
@@ -149,15 +149,15 @@ function display(data) {
 
   cell.exit()
     .transition(500)
-    .style("fill-opacity", 0)
+    .attr("attr", 0)
     .remove()
 
   cell.enter()
     .append('g')
     .attr('class', 'cell')
     .call(rect)
-    .transition(500)
-    .style("fill-opacity", 1)
+    // .transition(500)
+    .style("attr", 1)
     // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
     // .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
 
@@ -231,7 +231,7 @@ function onJson(error, data) {
 var zooming = false;
 var current;
 
-var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 5, BENCH = 0
+var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 2, BENCH = 0
 var mouseclicked, mousex, mousey, mouseovered = null;
 
 var currentDepth = 0,
@@ -286,12 +286,12 @@ function draw(next) {
     g = d3.select(this)
     // d = d3.select(g).datum()
 
-    // if (d.depth < currentDepth) return
+    if (d.depth < currentDepth) return
 
-    // var l = d.parent == mouseovered ? 1 : 0
-    // if (d.depth > (TREEMAP_LEVELS + currentDepth + l)) {
-    //    return
-    // }
+    var l = d.parent == mouseovered ? 1 : 0
+    if (d.depth > (TREEMAP_LEVELS + currentDepth + l)) {
+       return
+    }
 
     // if (d.children) return // show all children only
 
@@ -300,18 +300,16 @@ function draw(next) {
     c.l = luminance(d.depth)
 
     var x, y, w, h
-    // x = xd(d.x)
-    // y = yd(d.y)
-    // w = xd(d.x + d.dx) - xd(d.x)
-    // h = yd(d.y + d.dy) - yd(d.y)
+    x = xd(d.x)
+    y = yd(d.y)
+    w = xd(d.x + d.dx) - xd(d.x)
+    h = yd(d.y + d.dy) - yd(d.y)
 
-    var depthDiff = d.depth - currentDepth
 
-    x = g.attr('x')
-    y = g.attr('y') + depthDiff * height * 1.4
-    w = g.attr('width')
-    h = g.attr('height')
-    var opacity = g.style('fill-opacity')
+    // x = g.attr('x')
+    // y = g.attr('y')
+    // w = g.attr('width')
+    // h = g.attr('height')
 
     if (USE_GAP) {
       var gap = 0.5 * depthDiff
@@ -322,20 +320,39 @@ function draw(next) {
       h -= gap * 2
     }
 
+    var depthDiff = d.depth - currentDepth
+
+    var labelAdjustment = height * 1.4
+    y += labelAdjustment * depthDiff // shifted because of parent's labels
+
+    var reduction = 1
+
+
+    for (var i = 0, n = d; (i < depthDiff); i++) {
+      n = n.parent
+      var ph = n.dy // yd(n.y + n.dy) - yd(n.y)
+      reduction *= (ph - labelAdjustment) / ph
+    }
+
+    h *= reduction
+
     ctx.globalAlpha = 0.8
-    ctx.globalAlpha = opacity
+    // var opacity = g.attr('opacity')
+    // ctx.globalAlpha = opacity
+
 
     if (w > 0.5 && h > 0.5) {
       // hide when too small (could use percentages too)
       ctx.beginPath()
       ctx.rect(x, y, w, h)
 
-      ctx.fillStyle = c;
+      ctx.fillStyle = c
 
       if (ctx.isPointInPath(mousex, mousey)) {
-        // ctx.fillStyle = 'yellow';
-        ctx.globalAlpha = 1
-
+        if (mouseovered == d) {
+          ctx.fillStyle = 'yellow';
+          ctx.globalAlpha = 1
+        }
 
         if (d !== currentNode && d.depth <= currentDepth + TREEMAP_LEVELS) {
           hover.push(d)
@@ -351,11 +368,12 @@ function draw(next) {
     // border
     if (USE_BORDERS) {
       c.l = luminance(d.depth) + 4
-      ctx.strokeStyle = c // '#eee'
+      ctx.strokeStyle = c
+      ctx.strokeStyle = '#eee'
       ctx.strokeRect(x, y, w, h)
     }
 
-    if (w > 20 && h > 20) {
+    if (w > 10 && h > 10) {
       ctx.font = '8px Tahoma' // Tahoma Arial serif
       ctx.fillStyle = '#333'
       ctx.textBaseline = 'top'
@@ -374,7 +392,8 @@ function draw(next) {
   if (BENCH) console.timeEnd('canvas draw');
   if (hover.length)
     mouseovered = hover[hover.length - 1]
-  mouseclicked = false
+    bottom_status.innerHTML = breadcrumbs(mouseovered)
+    mouseclicked = false
 
   if (found.length) {
     d = found[0]
