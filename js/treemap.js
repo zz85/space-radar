@@ -29,13 +29,16 @@ var o = d3.scale.linear()
 text labels
 - [x] align top left
 - [ ] prevent overlapping
-- [ ] align center
+- [ ] align center (for files)
 - [ ] appear on hover
+- [x] visible labels for each directory
+
 
 interactions
 - [ ] go into directory
 - [x] animations entering directory
 - [ ] update tree
+- [x] show more children
 */
 
 var color = d3.scale.category20c();
@@ -70,7 +73,7 @@ var svg =
     .attr("width", width)
     .attr("height", height)
     .style("margin-left", -margin.left + "px")
-    .style("margin.right", -margin.right + "px")
+    .style("margin-right", -margin.right + "px")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
     .style("shape-rendering", "crispEdges")
@@ -140,24 +143,25 @@ function display(data) {
   console.time('filter')
   nnn = nodes
     // .filter( (d) => { return d.depth < TREEMAP_LEVELS })
-    // .filter( (d) => { return d.depth >= currentDepth && d.depth < TREEMAP_LEVELS })
+    .filter( (d) => { return d.depth >= currentDepth && d.depth < TREEMAP_LEVELS })
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
 
   var cell = svg.selectAll('g')
-    .data( nnn )
+    .data( nnn, key )
 
   cell.exit()
     .transition(500)
-    .attr("attr", 0)
+    .attr("opacity", 0)
     .remove()
 
   cell.enter()
     .append('g')
     .attr('class', 'cell')
     .call(rect)
-    // .transition(500)
-    .style("attr", 1)
+    .attr("opacity", 0)
+      .transition(500)
+      .attr("opacity", 0.8)
     // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
     // .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
 
@@ -232,7 +236,8 @@ function onJson(error, data) {
 var zooming = false;
 var current;
 
-var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 2, BENCH = 0
+var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 2, BENCH = 0,
+  USE_LABEL_GAP = 1
 var mouseclicked, mousex, mousey, mouseovered = null;
 
 var currentDepth = 0,
@@ -277,7 +282,7 @@ function draw(next) {
 
   if (BENCH) console.time('dom')
   var dom = dataContainer
-      .selectAll('.cell')
+    .selectAll('.cell')
   if (BENCH) console.timeEnd('dom')
 
   var found = [], hover = []
@@ -301,16 +306,15 @@ function draw(next) {
     c.l = luminance(d.depth)
 
     var x, y, w, h
-    x = xd(d.x)
-    y = yd(d.y)
-    w = xd(d.x + d.dx) - xd(d.x)
-    h = yd(d.y + d.dy) - yd(d.y)
+    // x = xd(d.x)
+    // y = yd(d.y)
+    // w = xd(d.x + d.dx) - xd(d.x)
+    // h = yd(d.y + d.dy) - yd(d.y)
 
-
-    // x = g.attr('x')
-    // y = g.attr('y')
-    // w = g.attr('width')
-    // h = g.attr('height')
+    x = g.attr('x')
+    y = g.attr('y')
+    w = g.attr('width')
+    h = g.attr('height')
 
     // if (USE_GAP) {
     //   var gap = 0.5 * depthDiff
@@ -325,40 +329,34 @@ function draw(next) {
 
     var labelAdjustment = height * 1.4
 
-    var total_height = currentNode.dy
-    y = y * (total_height - labelAdjustment * depthDiff) / total_height
-    + labelAdjustment * depthDiff // scale
+    if (USE_LABEL_GAP) {
 
-    var chain = [d]
-    var ry = []
-    for (var i = 0, n = d; i < depthDiff; i++, n = p) {
-      var p = n.parent
-      chain.push(p)
-      ry.push(n.y - p.y)
+      var chain = [d]
+      var ry = []
+      for (var i = 0, n = d; i < depthDiff; i++, n = p) {
+        var p = n.parent
+        chain.push(p)
+        ry.push(n.y - p.y)
+      }
+
+      var p = chain.pop()
+      h = p.dy
+      var parentHeight = p.parent ? p.parent.dy : height
+      var ny = p.y / parentHeight * (parentHeight - labelAdjustment)
+      for (i = chain.length; i--; ) {
+        var n = chain[i]
+        ny += ry[i] / p.dy * (h - labelAdjustment)
+        h = n.dy / p.dy * (h - labelAdjustment)
+        p = n
+      }
+
+      y = ny + labelAdjustment * depthDiff
     }
-
-    var p = chain.pop()
-    h = p.dy
-    var ny = p.y / height * (height - labelAdjustment)
-    for (i = chain.length; i--; ) {
-      var n = chain[i]
-      ny += ry[i] / p.dy * (h - labelAdjustment)
-      h = n.dy / p.dy * (h - labelAdjustment)
-      p = n
-    }
-
-    y = ny + labelAdjustment * depthDiff
-    // y = ny
-
-    // h2 = (total_height - labelAdjustment * depthDiff) / total_height * h
-    // ;(Math.random() < 0.01) &&
-    // console.log('h', h2, h)
-
 
     ctx.globalAlpha = 0.8
 
-    // var opacity = g.attr('opacity')
-    // ctx.globalAlpha = opacity
+    var opacity = g.attr('opacity')
+    ctx.globalAlpha = opacity
 
 
     if (w > 0.5 && h > 0.5) {
@@ -374,11 +372,11 @@ function draw(next) {
           ctx.globalAlpha = 1
         }
 
-        if (d !== currentNode && d.depth <= currentDepth + TREEMAP_LEVELS) {
+        if (d.depth <= currentDepth + TREEMAP_LEVELS) {
           hover.push(d)
         }
 
-        if (mouseclicked && d !== currentNode) {
+        if (mouseclicked) {
           found.push(d)
         }
       }
@@ -389,7 +387,7 @@ function draw(next) {
     if (USE_BORDERS) {
       c.l = luminance(d.depth) + 4
       ctx.strokeStyle = c
-      ctx.strokeStyle = '#eee'
+      // ctx.strokeStyle = '#eee'
       ctx.strokeRect(x, y, w, h)
     }
 
@@ -416,9 +414,10 @@ function draw(next) {
     mouseclicked = false
 
   if (found.length) {
-    d = found[0]
+    // d = found[1]
+    d = found[hover.length - 1]
     // console.log(found, d.name)
-    navigateTo(d)
+    navigateTo( d.children ? d : d.parent )
   }
 
   // if (zooming)
