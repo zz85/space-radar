@@ -48,7 +48,7 @@ function refresh(json) {
   legend.html('Generating preview...')
 
   setTimeout( () => {
-    onJson(null, json)
+    // onJson(null, json)
     lightbox(false)
   }, 1000 )
 }

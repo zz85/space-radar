@@ -142,8 +142,8 @@ function display(data) {
 
   console.time('filter')
   nnn = nodes
-    // .filter( (d) => { return d.depth < TREEMAP_LEVELS })
-    .filter( (d) => { return d.depth >= currentDepth && d.depth < TREEMAP_LEVELS })
+    // .filter( d => { return d.depth < TREEMAP_LEVELS } )
+    .filter( d => { return d.depth >= currentDepth && d.depth < currentDepth + TREEMAP_LEVELS } )
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
 
@@ -263,6 +263,7 @@ d3.select(canvas).on("mousemove", function() {
   mousex = d3.event.offsetX
   mousey = d3.event.offsetY
   drawer.schedule(10)
+  canceller.schedule()
   // console.log(d3.event.offsetX, d3.event.offsetY)
   // console.log(d3.event.clientX, d3.event.clientY)
 })
@@ -272,6 +273,22 @@ d3.select(canvas).on("click", function() {
   mouseclicked = true
   drawer.schedule(10)
 })
+
+function gx(d) {
+  return xd(d.x)
+}
+
+function gy(d) {
+  return yd(d.y)
+}
+
+function gw(d) {
+  return xd(d.x + d.dx) - xd(d.x)
+}
+
+function gh(d) {
+  return yd(d.y + d.dy) - yd(d.y)
+}
 
 function draw(next) {
   if (BENCH) console.time('canvas draw');
@@ -283,11 +300,19 @@ function draw(next) {
   if (BENCH) console.time('dom')
   var dom = dataContainer
     .selectAll('.cell')
+    log('cells', dom[0].length)
   if (BENCH) console.timeEnd('dom')
 
   var found = [], hover = []
 
-  dom.each(function(d) {
+  console.time('sort')
+  dom.sort(function sort(a, b) {
+    return a.depth - b.depth
+  })
+  console.timeEnd('sort')
+
+  console.time('each')
+  dom.each(function each(d) {
     ctx.save()
     g = d3.select(this)
     // d = d3.select(g).datum()
@@ -336,17 +361,17 @@ function draw(next) {
       for (var i = 0, n = d; i < depthDiff; i++, n = p) {
         var p = n.parent
         chain.push(p)
-        ry.push(n.y - p.y)
+        ry.push(gy(n) - gy(p))
       }
 
       var p = chain.pop()
-      h = p.dy
-      var parentHeight = p.parent ? p.parent.dy : height
-      var ny = p.y / parentHeight * (parentHeight - labelAdjustment)
+      h = gh(p)
+      var parentHeight = p.parent ? gh(p.parent) : height
+      var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
       for (i = chain.length; i--; ) {
         var n = chain[i]
-        ny += ry[i] / p.dy * (h - labelAdjustment)
-        h = n.dy / p.dy * (h - labelAdjustment)
+        ny += ry[i] / gh(p) * (h - labelAdjustment)
+        h = gh(n) / gh(p) * (h - labelAdjustment)
         p = n
       }
 
@@ -355,8 +380,8 @@ function draw(next) {
 
     ctx.globalAlpha = 0.8
 
-    var opacity = g.attr('opacity')
-    ctx.globalAlpha = opacity
+    // var opacity = g.attr('opacity')
+    // ctx.globalAlpha = opacity
 
 
     if (w > 0.5 && h > 0.5) {
@@ -407,6 +432,8 @@ function draw(next) {
     ctx.restore()
   });
 
+  console.timeEnd('each')
+
   if (BENCH) console.timeEnd('canvas draw');
   if (hover.length)
     mouseovered = hover[hover.length - 1]
@@ -441,7 +468,10 @@ function navigateUp() {
   navigateTo(currentNode.parent)
 }
 
-drawer = new TimeoutTask(draw, 5000)
+drawer = new TimeoutTask(draw, 50)
+canceller = new TimeoutTask(function() {
+  drawer.cancel()
+}, 1000)
 // drawer.run()
 
 function zoom(d) {
