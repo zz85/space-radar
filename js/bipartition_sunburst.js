@@ -299,7 +299,7 @@ function tracelineage(node) {
   return keys.reverse()
 }
 
-function onJson(error, r) {
+function generateSunburst(r) {
   var root = r;
 
   var oldLineage;
@@ -308,8 +308,6 @@ function onJson(error, r) {
 
   current_p = root;
   realroot = r;
-
-  if (error) throw error;
 
   function namesort(a, b) { return d3.ascending(a.name, b.name); }
   function sizesort(a, b) { return d3.ascending(a.sum, b.sum); }

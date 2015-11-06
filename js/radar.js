@@ -390,6 +390,14 @@ function openDirectory() {
 
 }
 
+var generateGraph = generateTreemap;
+
+function onJson(error, data) {
+  if (error) throw error;
+  fs.writeFileSync('lastload.json', JSON.stringify(data));
+  generateGraph(data);
+}
+
 // // testing test.json experiments/root.json experiments/mem
 // d3.json("test.json", function(x, y) {
 //   log(x, y)

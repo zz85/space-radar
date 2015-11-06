@@ -212,9 +212,9 @@ function text(text) {
     })
 }
 
-function onJson(error, data) {
-  if (error) throw error;
-  node = root = data
+function generateTreemap(data) {
+
+  node = root = data // TODO cleanup
   console.log('display root', root)
   // initialize(root)
   // accumulate(root)
@@ -222,7 +222,6 @@ function onJson(error, data) {
   // console.log(root)
 
   display(root)
-
   currentNode = root
 
   // d3.select(window).on("click", function() {
