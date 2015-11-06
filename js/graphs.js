@@ -7,10 +7,18 @@ function keys(d) {
 }
 
 function key(d) {
- return keys(d).join(PATH_DELIMITER);
+  return keys(d).join(PATH_DELIMITER);
 }
 
-
 function breadcrumbs(d) {
- return keys(d).join(' > ');
+  return keys(d).join(' > ');
+}
+
+function tracelineage(node) {
+  var keys = [];
+  while (node) {
+    keys.push(node.name)
+    node = node.parent
+  }
+  return keys.reverse()
 }
