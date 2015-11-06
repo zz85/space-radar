@@ -134,7 +134,8 @@ function layout(d) {
 }
 
 function display(data) {
-  var total_size = root.value
+  var total_size = data.value
+  console.log('total size', total_size)
 
   console.time('treemap')
   var nodes = treemap.nodes(data)
@@ -143,7 +144,11 @@ function display(data) {
   console.time('filter')
   nnn = nodes
     // .filter( d => { return d.depth < TREEMAP_LEVELS } )
-    .filter( d => { return d.depth >= currentDepth && d.depth < currentDepth + TREEMAP_LEVELS } )
+    .filter( d => {
+      return d.depth >= currentDepth &&
+        d.depth < currentDepth + TREEMAP_LEVELS &&
+        d.value / total_size > 0.001
+    } )
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
 
@@ -289,6 +294,8 @@ function gh(d) {
   return yd(d.y + d.dy) - yd(d.y)
 }
 
+var full_repaint = true
+
 function draw(next) {
   if (BENCH) console.time('canvas draw');
   ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -398,6 +405,9 @@ function draw(next) {
 
         if (d.depth <= currentDepth + TREEMAP_LEVELS) {
           hover.push(d)
+        } else if (!full_repaint) {
+          ctx.restore();
+          return;
         }
 
         if (mouseclicked) {
@@ -446,6 +456,8 @@ function draw(next) {
     navigateTo( d.children ? d : d.parent )
   }
 
+  full_repaint = false;
+
   // if (zooming)
     next(100)
 }
@@ -454,6 +466,7 @@ function navigateTo(d) {
   if (!d) return
   if (!d.children) return
 
+  full_repaint = true
   console.log('navigate to', d)
   xd.domain([d.x, d.x + d.dx])
   yd.domain([d.y, d.y + d.dy])
