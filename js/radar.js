@@ -48,14 +48,14 @@ function refresh(json) {
   legend.html('Generating preview...')
 
   setTimeout( () => {
-    // onJson(null, json)
+    onJson(null, json)
     lightbox(false)
   }, 1000 )
 }
 
 function cleanup() {
   // we have a possibility of running out of memory here, we could force a garbage collection to compact memory a little if neede!
-
+  mempoller.cancel()
   lightbox(true)
 
   if (path) {
@@ -286,8 +286,6 @@ function rerunPage() {
 function showPrompt() {
   shades.style.display = 'flex'
   dir_opener.style.display = 'none'
-
-  mempoller.cancel()
 }
 
 function hidePrompt() {
