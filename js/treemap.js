@@ -27,7 +27,7 @@ var o = d3.scale.linear()
 
 
 o = d3.scale.linear()
-    .range(["black", "white"]) // steelblue", "brown pink orange green", "blue
+    .range(["white", "black"]) // steelblue", "brown pink orange green", "blue
     .domain([0, 12])
     .interpolate(d3.interpolateLab)
 
@@ -55,6 +55,7 @@ var treemap = d3.layout.treemap()
     .size([width, height])
     .sticky(true)
     .round(false)
+    .padding(5)
     .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
     // .children(function(d, depth) {
     //   return (depth > 2) ? null : d.children
