@@ -1,8 +1,6 @@
-var margin = {
-    top: 40, right: 10, bottom: 10, left: 10
-  },
-  width = window.innerWidth - margin.left - margin.right, // 760
-  height = window.innerHeight - margin.top - margin.bottom, // 500
+var
+  width = window.innerWidth,
+  height = window.innerHeight - document.querySelector('header').getBoundingClientRect().height - document.querySelector('footer').getBoundingClientRect().height,
 
   xd = x = d3.scale.linear()
     .domain([0, width])
@@ -49,13 +47,24 @@ interactions
 
 */
 
+function isPointInRect(mousex, mousey, x, y, w, h) {
+  return mousex >= x &&
+    mousex <= x + w &&
+    mousey >= y &&
+    mousey <= y + h
+}
+
 var color = d3.scale.category20c();
 
-var treemap = d3.layout.treemap()
+var treemap
+
+function mktreemap() {
+
+ treemap = d3.layout.treemap()
     .size([width, height])
     .sticky(true) // revalues when you call treemap()
     .round(false)
-    .padding([10, 4, 4, 4])
+    // .padding([10, 4, 4, 4])
     .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
     // .children(function(d, depth) {
     //   return (depth > 2) ? null : d.children
@@ -63,6 +72,11 @@ var treemap = d3.layout.treemap()
     // })
     .sort(function(a, b) { return a.value - b.value; })
     .value(function(d) { return d.size; });
+}
+
+mktreemap()
+
+// Canvas
 
 var canvas = document.getElementById('canvas')
 canvas.style.width = width + "px"
@@ -72,85 +86,82 @@ canvas.width = width
 canvas.height = height
 
 var ctx = canvas.getContext('2d')
-
-var detachedContainer = document.createElement("custom");
-var dataContainer = d3.select(detachedContainer);
-
-var svg =
-  dataContainer
-  .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("margin-left", -margin.left + "px")
-    .style("margin-right", -margin.right + "px")
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-    .style("shape-rendering", "crispEdges")
+var svg = new FakeSVG(key)
 
 
-function getPath(d) {
-  var path = [d]
-  d = d.parent
-  while (d) {
-    path.unshift(d)
-    d = d.parent
+function FakeSVG(key) {
+  // fake d3 svg grahpical intermediate representation
+  // emulates the d3 join pattern
+  this.objects = []
+  this.map = {}
+  this.key = key
+}
+
+FakeSVG.prototype.data = function(data) {
+  var d;
+
+  var map = this.map
+
+  var enter = [], exit = []
+
+  this.objects.forEach(function(o) {
+    o.__data__ = null
+  })
+  for (var i = 0, il = data.length; i < il; i++) {
+    d = data[i]
+    var key = this.key(d)
+    if (!map[key]) {
+      var o = {}
+      enter.push(o)
+      map[key] = o
+    }
+    map[key].__data__ = d
   }
 
-  return path
+  var objects = []
+  // new Array(data.length)
+
+  var z = 0, zx = 0, zy = 0;
+  Object.keys(map).forEach(function(k) {
+    z++;
+    var o = map[k]
+    if (!o.__data__) {
+      exit.push(o)
+      delete map[k]
+      zx ++
+    } else {
+      objects.push(o)
+      zy ++
+    }
+  })
+
+  console.log('total keys', z, 'removed', exit.length, 'still in', zy)
+
+  this.objects = objects
+
+  return [enter, exit]
 }
 
-function initialize(root) {
-  root.x = root.y = 0;
-  root.dx = width;
-  root.dy = height;
-  root.depth = 0;
+
+
+function object_values(o) {
+  return Object.keys(o).map(function(k) { return o[k] });
 }
 
-// Aggregate the values for internal nodes. This is normally done by the
-// treemap layout, but not here because of our custom implementation.
-// We also take a snapshot of the original children (_children) to avoid
-// the children being overwritten when when layout is computed.
-function accumulate(d) {
-  return (d._children = d.children)
-    // recursion step, note that p and v are defined by reduce
-      ? d.value = d.children.reduce(function(p, v) {return p + accumulate(v); }, 0)
-      : d.value;
-}
-
-
-
-// Compute the treemap layout recursively such that each group of siblings
-// uses the same size (1×1) rather than the dimensions of the parent cell.
-// This optimizes the layout for the current zoom state. Note that a wrapper
-// object is created for the parent node for each group of siblings so that
-// the parent’s dimensions are not discarded as we recurse. Since each group
-// of sibling was laid out in 1×1, we must rescale to fit using absolute
-// coordinates. This lets us use a viewport to zoom.
-function layout(d) {
-  if (d._children) {
-    // treemap nodes comes from the treemap set of functions as part of d3
-    treemap.nodes({_children: d._children});
-    d._children.forEach(function(c) {
-      c.x = d.x + c.x * d.dx;
-      c.y = d.y + c.y * d.dy;
-      c.dx *= d.dx;
-      c.dy *= d.dy;
-      c.parent = d;
-      // recursion
-      layout(c);
-    });
-  }
-}
+var fake_svg = new FakeSVG();
 
 function display(data) {
+  log('display', data)
   var total_size = data.value
   console.log('total size', total_size)
 
+  // mktreemap()
   console.time('treemap')
   var nodes = treemap.nodes(data)
   console.timeEnd('treemap')
 
   console.time('filter')
+  console.log('before', nodes.length)
   nnn = nodes
     // .filter( d => { return d.depth < TREEMAP_LEVELS } )
     .filter( d => {
@@ -160,90 +171,40 @@ function display(data) {
     } )
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
-
-  var cell = svg.selectAll('g')
-    .data( nnn, key )
-
-  cell.exit()
-    .transition(500)
-    .attr("opacity", 0)
-    .remove()
-
-  cell.enter()
-    .append('g')
-    .attr('class', 'cell')
-    .call(rect)
-    .attr("opacity", 0)
-      .transition(500)
-      .attr("opacity", 0.8)
-    // .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-    // .on("click", function(d) { return zoom(node == d.parent ? root : d.parent) });
-
-
-  // cell.append("rect")
-  //   .style("fill", function(d) {
-  //     // return color(d.parent.name);\
-  //     return color(d.name);
-  //   })
-  //   .call(rect)
-
-  // cell.append("text")
-  //   .call(text)
-  //   .attr("text-anchor", "middle")
-  //   .text(function(d) { return d.name })
-  //   .style('font-size', '8px')
-  //   .style("opacity", function(d) { d.w = this.getComputedTextLength(); return d.dx > d.w ? 1 : 0; });
+  console.log('after', nnn.length)
 
   var d = data
+  x.domain([d.x, d.x + d.dx])
+  y.domain([d.y, d.y + d.dy])
 
-  x.domain([d.x, d.x + d.dx]);
-  y.domain([d.y, d.y + d.dy]);
+  console.time('svg')
+  var updates = svg.data( nnn )
+  console.timeEnd('svg')
 
-  //   .on('mousedown', function(d) {
-  //     var path = getPath(d).map(d => {return d.name }).join('/')
-  //     console.log(path, d);
-  //     d3.select('#legend').html(path)
+  // var exit = updates[1]
+  // var enter = updates[0]
+  console.time('forEach')
+  svg.objects.forEach(rect)
+  console.timeEnd('forEach')
 
-  //     display(d)
-  //   })
-  //   .text(function(d) { return d.children ? null : d.size / total_size < 0.01 ? null: d.name });
+  // TODO - exit update enter
+
 }
 
-function rect(rect) {
-  rect.attr("x", function(d) { return x(d.x); })
-      .attr("y", function(d) { return y(d.y); })
-      .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
-      .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
-}
-
-function text(text) {
-  text
-    .attr("x", function(d) {
-      return x(d.x + d.dx /2 ) + this.getComputedTextLength() * 2; })
-    .attr("y", function(d) {
-      return y(d.y + d.dy / 2)
-      return y(d.y) + 6 * 2;
-    })
+function rect(g) {
+  var d = g.__data__
+  g.x = x(d.x)
+  g.y = y(d.y)
+  g.w = x(d.x + d.dx) - x(d.x)
+  g.h = y(d.y + d.dy) - y(d.y)
 }
 
 function generateTreemap(data) {
-
   node = root = data // TODO cleanup
   console.log('display root', root)
-  // initialize(root)
-  // accumulate(root)
-  // layout(root)
-  // console.log(root)
 
   display(root)
   currentNode = root
-
-  // d3.select(window).on("click", function() {
-  //   console.log('click root')
-  //   // zoom(root);
-  //   // zoom(current.parent)
-  //   navigateTo(root)
-  // });
 }
 
 var zooming = false;
@@ -307,22 +268,22 @@ var full_repaint = true
 
 function draw(next) {
   if (BENCH) console.time('canvas draw');
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  if (full_repaint) ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   var metrics = ctx.measureText('M');
   height = metrics.width;
 
   if (BENCH) console.time('dom')
-  var dom = dataContainer
-    .selectAll('.cell')
-    log('cells', dom[0].length)
+  var dom = svg.objects
+
+  log('cells', dom.length)
   if (BENCH) console.timeEnd('dom')
 
   var found = [], hover = []
 
   console.time('sort')
   dom.sort(function sort(a, b) {
-    return a.depth - b.depth
+    return a.__data__.depth - b.__data__.depth
   })
   console.timeEnd('sort')
 
@@ -331,7 +292,8 @@ function draw(next) {
   ctx.textAlign = 'left'
 
   console.time('each')
-  dom.each(function each(d) {
+  dom.forEach(function each(g) {
+    var d = g.__data__
     if (d.depth < currentDepth) return
 
     var l = d.parent == mouseovered ? 1 : 0
@@ -346,15 +308,15 @@ function draw(next) {
     // hue('haha')
     var x, y, w, h, c
 
-    x = xd(d.x)
-    y = yd(d.y)
-    w = xd(d.x + d.dx) - xd(d.x)
-    h = yd(d.y + d.dy) - yd(d.y)
-    // g = d3.select(this)
-    // x = g.attr('x')
-    // y = g.attr('y')
-    // w = g.attr('width')
-    // h = g.attr('height')
+    // x = xd(d.x)
+    // y = yd(d.y)
+    // w = xd(d.x + d.dx) - xd(d.x)
+    // h = yd(d.y + d.dy) - yd(d.y)
+
+    x = g.x
+    y = g.y
+    w = g.w
+    h = g.h
 
     var depthDiff = d.depth - currentDepth
 
@@ -394,16 +356,12 @@ function draw(next) {
     }
 
     // ctx.globalAlpha = 0.8
-
-    // var opacity = g.attr('opacity')
     // ctx.globalAlpha = opacity
-
 
     if (w < 0.5 || h < 0.5) {
       // hide when too small (could use percentages too)
       return ctx.restore()
     }
-
 
     ctx.beginPath()
     ctx.rect(x, y, w, h)
@@ -411,7 +369,8 @@ function draw(next) {
     c = o(d.depth)
     ctx.fillStyle = c
 
-    if (ctx.isPointInPath(mousex, mousey)) {
+    if (isPointInRect(mousex, mousey, x, y, w, h)) {
+    // if (ctx.isPointInPath(mousex, mousey)) {
       if (mouseovered == d) {
         ctx.fillStyle = 'yellow';
         ctx.globalAlpha = 1
@@ -441,7 +400,8 @@ function draw(next) {
       ctx.stroke()
     }
 
-    if (w * h > 100) { // draw text only on areas > 100 units squared
+    // * h
+    if (w > 100) { // draw text only on areas > 100 units squared
       // ctx.beginPath()
       // ctx.rect(x, y, w, h);
       ctx.clip();
@@ -495,7 +455,7 @@ function navigateUp() {
 drawer = new TimeoutTask(draw, 50)
 canceller = new TimeoutTask(function() {
   drawer.cancel()
-}, 1000)
+}, 100)
 // drawer.run()
 
 function zoom(d) {
@@ -505,34 +465,16 @@ function zoom(d) {
 
   console.log('zoom')
 
-  // var g2 = display(d),
-  // t1 = g1.transition().duration(750),
-  // t2 = g2.transition().duration(750);
-
   // Update the domain only after entering new elements.
   x.domain([d.x, d.x + d.dx]);
   y.domain([d.y, d.y + d.dy]);
 
   display(d)
 
-  // Enable anti-aliasing during the transition.
-  // svg.style("shape-rendering", null);
-
-  // var kx = width / d.dx, ky = height / d.dy;
-
-  // d3.event.altKey ? 7500 :
-
-  var t = svg.selectAll("g.cell").transition()
-      .duration(750)
-      .call(rect)
-
-  // t.select("rect")
-  //  .call(rect)
-  // t.select("text")
-    // .call(text)
-    // .style("opacity", function(d) { return kx * d.dx > d.w ? 1 : 0; });
+  // TODO transition of 500-750ms
 
   node = d;
-  // d3.event.stopPropagation();
   zooming = false;
+
+  // d3.event.stopPropagation();
 }
