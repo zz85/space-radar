@@ -12,8 +12,6 @@ var core_top = d3.select("#core_top")
 var core_center = d3.select("#core_center")
 var core_tag = d3.select("#core_tag")
 
-
-
 function startScan(path) {
   cleanup()
   hidePrompt()
@@ -400,3 +398,22 @@ function loadLast() {
   var json = JSON.parse(fs.readFileSync('lastload.json'));
   complete(json);
 }
+
+function showSunburst() {
+  treemap_button.classList.remove('active')
+  sunburst_button.classList.add('active')
+  generateGraph = generateSunburst
+  d3.select('.svg-container').style('display', 'inline-block')
+  d3.select('canvas').style('display', 'none')
+}
+
+function showTreemap() {
+  sunburst_button.classList.remove('active')
+  treemap_button.classList.add('active')
+  generateGraph = generateTreemap
+  d3.select('.svg-container').style('display', 'none')
+  d3.select('canvas').style('display', 'inline-block')
+}
+
+showSunburst()
+// showTreemap()

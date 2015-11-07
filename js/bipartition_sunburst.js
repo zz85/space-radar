@@ -133,7 +133,10 @@ var current_p, max_level, current_level = 0;
 var circular_meter = svg.append('g');
 // TODO make a tiny border around the rim of center to show the percentage of current space
 
-explanation.on('click', zoomOut)
+
+document.addEventListener('ready', function() {
+  explanation.on('click', zoomOut)
+})
 
 // Data Bind Elements
 var path;

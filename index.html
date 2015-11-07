@@ -84,11 +84,11 @@
 
       <!-- Large button group -->
       <div class="btn-group pull-right">
-        <button class="btn btn-large   btn-default active">
+        <button class="btn btn-large btn-default active" id="sunburst_button" onclick="showSunburst()">
           <span class="icon icon-cd"></span> <!-- icon-cd  icon-chart-pie icon-database icon-rss"-->
         </button>
 
-        <button class="btn btn-default btn-large">
+        <button class="btn btn-default btn-large" id="treemap_button" onclick="showTreemap()">
           <span class="icon icon-layout"></span> <!-- icon-map  icon-layout icon-sweden -->
         </button>
       </div>
@@ -162,7 +162,7 @@
 <footer class="toolbar toolbar-footer">
 
   <div class="toolbar-actions">
-    <span id="bottom_status" style="font-size:11px; padding-left: 8px">Status</span>
+    <span id="bottom_status" style="font-size:11px; padding-left: 8px">Welcome to Space Radar</span>
     <button class="btn btn-default pull-right" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
 
     <!-- <button class="btn btn-default">
@@ -181,7 +181,7 @@
 <script src="js/mem.js"></script>
 <script src="js/graphs.js"></script>
 <script src="js/breadcrumbs.js"></script>
-<!-- <script src="js/bipartition_sunburst.js"></script> -->
+<script src="js/bipartition_sunburst.js"></script>
 <script src="js/treemap.js"></script>
 <script src="js/radar.js"></script>
 
