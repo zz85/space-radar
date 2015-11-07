@@ -53,9 +53,9 @@ var color = d3.scale.category20c();
 
 var treemap = d3.layout.treemap()
     .size([width, height])
-    .sticky(true)
+    .sticky(true) // revalues when you call treemap()
     .round(false)
-    .padding(5)
+    .padding([10, 4, 4, 4])
     .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
     // .children(function(d, depth) {
     //   return (depth > 2) ? null : d.children
@@ -356,16 +356,16 @@ function draw(next) {
     // w = g.attr('width')
     // h = g.attr('height')
 
-    // if (USE_GAP) {
-    //   var gap = 0.5 * depthDiff
-
-    //   x += gap
-    //   y += gap
-    //   w -= gap * 2
-    //   h -= gap * 2
-    // }
-
     var depthDiff = d.depth - currentDepth
+
+    if (USE_GAP) {
+      var gap = 0.5 * depthDiff
+
+      x += gap
+      y += gap
+      w -= gap * 2
+      h -= gap * 2
+    }
 
     var labelAdjustment = height * 1.4
 
