@@ -1,11 +1,13 @@
+'use strict'
+
 var
   width = window.innerWidth,
   height = window.innerHeight - document.querySelector('header').getBoundingClientRect().height - document.querySelector('footer').getBoundingClientRect().height,
 
-  xd = x = d3.scale.linear()
+  xd = d3.scale.linear()
     .domain([0, width])
     .range([0, width]),
-  yd = y = d3.scale.linear()
+  yd = d3.scale.linear()
     .domain([0, height])
     .range([0, height])
 
@@ -23,28 +25,41 @@ var o = d3.scale.linear()
     .domain([1e2, 1e9])
     .interpolate(d3.interpolateLab) // interpolateHcl
 
-
 o = d3.scale.linear()
     .range(["white", "black"]) // steelblue", "brown pink orange green", "blue
     .domain([0, 12])
     .interpolate(d3.interpolateLab)
 
+var
+  drawer = new TimeoutTask(draw, 50),
+  canceller = new TimeoutTask(function() {
+    drawer.cancel()
+  }, 500)
+
+function drawThenCancel() {
+  drawer.run()
+  canceller.schedule()
+}
+
 /* TODO
 text labels
 - [x] align top left
-- [ ] prevent overlapping
+- [x] visible labels for each directory
+- [x] prevent overlapping (clipped now)
 - [ ] align center (for files)
 - [ ] appear on hover
-- [x] visible labels for each directory
-
 
 interactions
-- [ ] go into directory
-- [x] animations entering directory
-- [ ] update tree
+- [x] go into directory
 - [x] show more children
-- [ ] color gradients
+- [x] color gradients
+- [ ] animations entering directory
+- [ ] update tree
+- [ ] show number of files / subdirectories
 
+optimizations
+- [ ] full repaint
+- [ ] calculate children per level basics
 */
 
 function isPointInRect(mousex, mousey, x, y, w, h) {
@@ -87,7 +102,7 @@ canvas.height = height
 
 var ctx = canvas.getContext('2d')
 var svg = new FakeSVG(key)
-
+var nnn
 
 function FakeSVG(key) {
   // fake d3 svg grahpical intermediate representation
@@ -142,28 +157,21 @@ FakeSVG.prototype.data = function(data) {
   return [enter, exit]
 }
 
-
-
-function object_values(o) {
-  return Object.keys(o).map(function(k) { return o[k] });
-}
-
-var fake_svg = new FakeSVG();
-var nnn;
-
-function display(data) {
+function display(data, relayout) {
   log('display', data)
-  var total_size = data.value
-  console.log('total size', total_size)
 
   // mktreemap()
   console.time('treemap')
   var nodes;
-  if (!nnn) {
+  if (!nnn || relayout) {
     nodes = treemap.nodes(data)
-  } else {
-    nodes = walk(data)
   }
+
+  var total_size = data.value
+  console.log('total size', total_size)
+
+  nodes = walk(data)
+
   console.timeEnd('treemap')
 
   console.time('filter')
@@ -172,19 +180,27 @@ function display(data) {
     // .filter( d => { return d.depth < TREEMAP_LEVELS } )
     .filter( d => {
       return d.depth >= currentDepth &&
-        d.depth < currentDepth + TREEMAP_LEVELS &&
+        d.depth <= currentDepth + TREEMAP_LEVELS + 1 &&
         d.value / total_size > 0.000001
     } )
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
   console.log('after', nnn.length)
 
+  // Update the domain only after entering new elements.
   var d = data
-  x.domain([d.x, d.x + d.dx])
-  y.domain([d.y, d.y + d.dy])
+  xd.domain([d.x, d.x + d.dx])
+  yd.domain([d.y, d.y + d.dy])
 
   console.time('svg')
   var updates = svg.data( nnn )
+
+  console.time('sort')
+  svg.objects.sort(function sort(a, b) {
+    return a.__data__.depth - b.__data__.depth
+  })
+  console.timeEnd('sort')
+
   console.timeEnd('svg')
 
   // var exit = updates[1]
@@ -193,50 +209,48 @@ function display(data) {
   svg.objects.forEach(rect)
   console.timeEnd('forEach')
 
+  drawThenCancel()
+
   // TODO - exit update enter
 
 }
 
 function rect(g) {
   var d = g.__data__
-  g.x = x(d.x)
-  g.y = y(d.y)
-  g.w = x(d.x + d.dx) - x(d.x)
-  g.h = y(d.y + d.dy) - y(d.y)
+  g.x = xd(d.x)
+  g.y = yd(d.y)
+  g.w = xd(d.x + d.dx) - xd(d.x)
+  g.h = yd(d.y + d.dy) - yd(d.y)
 }
-
-function generateTreemap(data) {
-  node = root = data // TODO cleanup
-  console.log('display root', root)
-
-  display(root)
-  currentNode = root
-}
-
-var zooming = false;
-var current;
-
-var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 2, BENCH = 0,
-  USE_LABEL_GAP = 1
-var mouseclicked, mousex, mousey, mouseovered = null;
 
 var currentDepth = 0,
   currentNode,
-  height = 10
+  root
+
+function generateTreemap(data) {
+  root = data // TODO cleanup
+  log('generateTreemap', root)
+  currentNode = root
+  display(root, true)
+}
+
+var zooming = false;
+
+var USE_GAP = 0, USE_BORDERS = 0, TREEMAP_LEVELS = 2, BENCH = 0,
+  USE_LABEL_GAP = 1
+var mouseclicked, mousex, mousey, mouseovered = null;
 
 function showMore() {
   TREEMAP_LEVELS++
   console.log('TREEMAP_LEVELS', TREEMAP_LEVELS)
   zoom(currentNode)
-  drawer.run()
 }
 
 function showLess() {
-  if (TREEMAP_LEVELS > 0)
+  if (TREEMAP_LEVELS > 1)
   TREEMAP_LEVELS--
   console.log('TREEMAP_LEVELS', TREEMAP_LEVELS)
   zoom(currentNode)
-  drawer.run()
 }
 
 d3.select(canvas).on("mousemove", function() {
@@ -276,26 +290,20 @@ function draw(next) {
   if (BENCH) console.time('canvas draw');
   if (full_repaint) ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  var metrics = ctx.measureText('M');
-  height = metrics.width;
-
   if (BENCH) console.time('dom')
-  var dom = svg.objects
 
+  var dom = svg.objects
   log('cells', dom.length)
+
   if (BENCH) console.timeEnd('dom')
 
   var found = [], hover = []
 
-  console.time('sort')
-  dom.sort(function sort(a, b) {
-    return a.__data__.depth - b.__data__.depth
-  })
-  console.timeEnd('sort')
-
   ctx.font = '8px Tahoma' // Tahoma Arial serif
   ctx.textBaseline = 'top'
   ctx.textAlign = 'left'
+  var metrics = ctx.measureText('M');
+  height = metrics.width;
 
   console.time('each')
   dom.forEach(function each(g) {
@@ -311,14 +319,7 @@ function draw(next) {
 
     // if (d.children) return // show all children only
 
-    // hue('haha')
     var x, y, w, h, c
-
-    // x = xd(d.x)
-    // y = yd(d.y)
-    // w = xd(d.x + d.dx) - xd(d.x)
-    // h = yd(d.y + d.dy) - yd(d.y)
-
     x = g.x
     y = g.y
     w = g.w
@@ -327,7 +328,8 @@ function draw(next) {
     var depthDiff = d.depth - currentDepth
 
     if (USE_GAP) {
-      var gap = 0.5 * depthDiff
+      // this is buggy
+      var gap = 0.5 * depthDiff * 2
 
       x += gap
       y += gap
@@ -338,7 +340,7 @@ function draw(next) {
     var labelAdjustment = height * 1.4
 
     if (USE_LABEL_GAP) {
-
+      // TODO move this block into display()
       var chain = [d]
       var ry = []
       for (var i = 0, n = d; i < depthDiff; i++, n = p) {
@@ -384,7 +386,6 @@ function draw(next) {
 
       if (d.depth <= currentDepth + TREEMAP_LEVELS) {
         hover.push(d)
-        console.log(d.value)
       }
 
       if (mouseclicked) {
@@ -397,23 +398,21 @@ function draw(next) {
     // }
 
     ctx.fill()
-    // border
+
     if (USE_BORDERS) {
       // c.l = luminance(d.depth) + 4
       // ctx.strokeStyle = c
       ctx.strokeStyle = '#eee'
-      // ctx.strokeRect(x, y, w, h)
       ctx.stroke()
     }
 
     // * h
-    if (w > 100) { // draw text only on areas > 100 units squared
-      // ctx.beginPath()
-      // ctx.rect(x, y, w, h);
+    if (w > 70) { // draw text only on areas > 100 units squared
       ctx.clip();
       ctx.fillStyle = '#333'
       ctx.fillText(d.name + ' ' + format(d.value), x + 3, y)
-      // ctx.fillText(format(d.value), x + 3, y + height * 1.4)
+
+      // TODO center on box if not directory
     }
 
     ctx.restore()
@@ -424,20 +423,20 @@ function draw(next) {
   if (BENCH) console.timeEnd('canvas draw');
   if (hover.length)
     mouseovered = hover[hover.length - 1]
-    bottom_status.innerHTML = breadcrumbs(mouseovered)
+    if (mouseovered) {
+      bottom_status.innerHTML = breadcrumbs(mouseovered) + ' (' + format(mouseovered.value) + ')'
+    }
     mouseclicked = false
 
   if (found.length) {
-    // d = found[1]
-    d = found[hover.length - 1]
-    // console.log(found, d.name)
+    let d = found[hover.length - 1]
     navigateTo( d.children ? d : d.parent )
   }
 
   full_repaint = false;
 
   // if (zooming)
-    next(100)
+  next(100)
 }
 
 function navigateTo(d) {
@@ -446,23 +445,17 @@ function navigateTo(d) {
 
   full_repaint = true
   console.log('navigate to', d)
-  xd.domain([d.x, d.x + d.dx])
-  yd.domain([d.y, d.y + d.dy])
   currentDepth = d.depth
   currentNode = d
+
   zoom(d)
+
   drawer.schedule(10)
 }
 
 function navigateUp() {
   navigateTo(currentNode.parent)
 }
-
-drawer = new TimeoutTask(draw, 50)
-canceller = new TimeoutTask(function() {
-  drawer.cancel()
-}, 100)
-// drawer.run()
 
 // breath first expansion
 function walk(node, a) {
@@ -482,19 +475,13 @@ function walk(node, a) {
 function zoom(d) {
   if (zooming || !d) return;
   zooming = true;
-  current = d;
 
-  console.log('zoom')
-
-  // Update the domain only after entering new elements.
-  x.domain([d.x, d.x + d.dx]);
-  y.domain([d.y, d.y + d.dy]);
+  log('zoom')
 
   display(d)
 
   // TODO transition of 500-750ms
 
-  node = d;
   zooming = false;
 
   // d3.event.stopPropagation();
