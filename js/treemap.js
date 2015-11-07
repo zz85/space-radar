@@ -76,11 +76,11 @@ var treemap
 function mktreemap() {
 
  treemap = d3.layout.treemap()
-    .size([width, height])
-    .sticky(true) // revalues when you call treemap()
+    // .size([width, height])
+    // .sticky(true) // revalues when you call treemap(), also prevents shifting of boxes
     .round(false)
     // .padding([10, 4, 4, 4])
-    .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
+    // .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
     // .children(function(d, depth) {
     //   return (depth > 2) ? null : d.children
     //   // return depth ? null : d._children;
@@ -160,7 +160,6 @@ FakeSVG.prototype.data = function(data) {
 function display(data, relayout) {
   log('display', data)
 
-  // mktreemap()
   console.time('treemap')
   var nodes;
   if (!nnn || relayout) {
@@ -231,6 +230,8 @@ function generateTreemap(data) {
   root = data // TODO cleanup
   log('generateTreemap', root)
   currentNode = root
+  currentDepth = 0
+  // mktreemap()
   display(root, true)
 }
 
@@ -363,7 +364,7 @@ function draw(next) {
       y = ny + labelAdjustment * depthDiff
     }
 
-    // ctx.globalAlpha = 0.8
+    ctx.globalAlpha = 0.8
     // ctx.globalAlpha = opacity
 
     if (w < 0.5 || h < 0.5) {
