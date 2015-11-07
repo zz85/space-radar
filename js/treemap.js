@@ -149,6 +149,7 @@ function object_values(o) {
 }
 
 var fake_svg = new FakeSVG();
+var nnn;
 
 function display(data) {
   log('display', data)
@@ -157,7 +158,12 @@ function display(data) {
 
   // mktreemap()
   console.time('treemap')
-  var nodes = treemap.nodes(data)
+  var nodes;
+  if (!nnn) {
+    nodes = treemap.nodes(data)
+  } else {
+    nodes = walk(data)
+  }
   console.timeEnd('treemap')
 
   console.time('filter')
@@ -457,6 +463,21 @@ canceller = new TimeoutTask(function() {
   drawer.cancel()
 }, 100)
 // drawer.run()
+
+// breath first expansion
+function walk(node, a) {
+  a = a ? a : [node]
+
+  if (node.children) {
+    for (var i = 0, len = node.children.length; i < len; i++) {
+      var n = node.children[i]
+      a.push(n)
+      walk(n, a)
+    }
+  }
+
+  return a
+}
 
 function zoom(d) {
   if (zooming || !d) return;
