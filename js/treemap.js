@@ -11,7 +11,7 @@ var margin = {
     .domain([0, height])
     .range([0, height])
 
-var hue = d3.scale.category10();
+var hue = d3.scale.category10(); // colour hash
 
 var
   luminance = d3.scale
@@ -24,6 +24,12 @@ var o = d3.scale.linear()
     .range(["purple", "orange"]) // steelblue", "brown pink orange green", "blue
     .domain([1e2, 1e9])
     .interpolate(d3.interpolateLab) // interpolateHcl
+
+
+o = d3.scale.linear()
+    .range(["black", "white"]) // steelblue", "brown pink orange green", "blue
+    .domain([0, 12])
+    .interpolate(d3.interpolateLab)
 
 /* TODO
 text labels
@@ -39,6 +45,8 @@ interactions
 - [x] animations entering directory
 - [ ] update tree
 - [x] show more children
+- [ ] color gradients
+
 */
 
 var color = d3.scale.category20c();
@@ -147,7 +155,7 @@ function display(data) {
     .filter( d => {
       return d.depth >= currentDepth &&
         d.depth < currentDepth + TREEMAP_LEVELS &&
-        d.value / total_size > 0.001
+        d.value / total_size > 0.000001
     } )
     // .filter( d => { return !d.children } ) // leave nodes only
   console.timeEnd('filter')
@@ -317,12 +325,12 @@ function draw(next) {
   })
   console.timeEnd('sort')
 
+  ctx.font = '8px Tahoma' // Tahoma Arial serif
+  ctx.textBaseline = 'top'
+  ctx.textAlign = 'left'
+
   console.time('each')
   dom.each(function each(d) {
-    ctx.save()
-    g = d3.select(this)
-    // d = d3.select(g).datum()
-
     if (d.depth < currentDepth) return
 
     var l = d.parent == mouseovered ? 1 : 0
@@ -330,22 +338,22 @@ function draw(next) {
        return
     }
 
+    ctx.save()
+
     // if (d.children) return // show all children only
 
     // hue('haha')
-    var c = d3.lab(o(d.value))
-    c.l = luminance(d.depth)
+    var x, y, w, h, c
 
-    var x, y, w, h
-    // x = xd(d.x)
-    // y = yd(d.y)
-    // w = xd(d.x + d.dx) - xd(d.x)
-    // h = yd(d.y + d.dy) - yd(d.y)
-
-    x = g.attr('x')
-    y = g.attr('y')
-    w = g.attr('width')
-    h = g.attr('height')
+    x = xd(d.x)
+    y = yd(d.y)
+    w = xd(d.x + d.dx) - xd(d.x)
+    h = yd(d.y + d.dy) - yd(d.y)
+    // g = d3.select(this)
+    // x = g.attr('x')
+    // y = g.attr('y')
+    // w = g.attr('width')
+    // h = g.attr('height')
 
     // if (USE_GAP) {
     //   var gap = 0.5 * depthDiff
@@ -384,56 +392,59 @@ function draw(next) {
       y = ny + labelAdjustment * depthDiff
     }
 
-    ctx.globalAlpha = 0.8
+    // ctx.globalAlpha = 0.8
 
     // var opacity = g.attr('opacity')
     // ctx.globalAlpha = opacity
 
 
-    if (w > 0.5 && h > 0.5) {
+    if (w < 0.5 || h < 0.5) {
       // hide when too small (could use percentages too)
-      ctx.beginPath()
-      ctx.rect(x, y, w, h)
-
-      ctx.fillStyle = c
-
-      if (ctx.isPointInPath(mousex, mousey)) {
-        if (mouseovered == d) {
-          ctx.fillStyle = 'yellow';
-          ctx.globalAlpha = 1
-        }
-
-        if (d.depth <= currentDepth + TREEMAP_LEVELS) {
-          hover.push(d)
-        } else if (!full_repaint) {
-          ctx.restore();
-          return;
-        }
-
-        if (mouseclicked) {
-          found.push(d)
-        }
-      }
-      ctx.fill()
+      return ctx.restore()
     }
 
+
+    ctx.beginPath()
+    ctx.rect(x, y, w, h)
+
+    c = o(d.depth)
+    ctx.fillStyle = c
+
+    if (ctx.isPointInPath(mousex, mousey)) {
+      if (mouseovered == d) {
+        ctx.fillStyle = 'yellow';
+        ctx.globalAlpha = 1
+      }
+
+      if (d.depth <= currentDepth + TREEMAP_LEVELS) {
+        hover.push(d)
+        console.log(d.value)
+      }
+
+      if (mouseclicked) {
+        found.push(d)
+      }
+    }
+    // else if (!full_repaint) {
+    //   ctx.restore();
+    //   return;
+    // }
+
+    ctx.fill()
     // border
     if (USE_BORDERS) {
-      c.l = luminance(d.depth) + 4
-      ctx.strokeStyle = c
-      // ctx.strokeStyle = '#eee'
-      ctx.strokeRect(x, y, w, h)
+      // c.l = luminance(d.depth) + 4
+      // ctx.strokeStyle = c
+      ctx.strokeStyle = '#eee'
+      // ctx.strokeRect(x, y, w, h)
+      ctx.stroke()
     }
 
-    if (w > 10 && h > 10) {
-      ctx.font = '8px Tahoma' // Tahoma Arial serif
-      ctx.fillStyle = '#333'
-      ctx.textBaseline = 'top'
-      ctx.textAlign = 'left'
-
-      ctx.beginPath()
-      ctx.rect(x, y, w, h);
+    if (w * h > 100) { // draw text only on areas > 100 units squared
+      // ctx.beginPath()
+      // ctx.rect(x, y, w, h);
       ctx.clip();
+      ctx.fillStyle = '#333'
       ctx.fillText(d.name + ' ' + format(d.value), x + 3, y)
       // ctx.fillText(format(d.value), x + 3, y + height * 1.4)
     }

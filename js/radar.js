@@ -398,9 +398,7 @@ function onJson(error, data) {
   generateGraph(data);
 }
 
-// // testing test.json experiments/root.json experiments/mem
-// d3.json("test.json", function(x, y) {
-//   log(x, y)
-//   window.j = y
-//   setTimeout(() => complete(y))
-// });
+function loadLast() {
+  var json = JSON.parse(fs.readFileSync('lastload.json'));
+  complete(json);
+}
