@@ -158,7 +158,7 @@ function SunBurst() {
      // + '<br/>' + format(currentNode.value)
     // + ' (' + percent + ')<br/>'
 
-    updateBreadcrumbs(getAncestors(d))
+    updateBreadcrumbs(d)
   }
 
   function mouseover(d) {
@@ -183,10 +183,13 @@ function SunBurst() {
         }
       })
       .style("opacity", 1)
+
+      updateSelection(d)
   }
 
   function mouseout(d) {
     lastover = null
+    updateSelection(null)
 
     if (path) path.style('opacity', .8)
 
@@ -211,7 +214,7 @@ function SunBurst() {
     if (document.documentElement.__transition__) return;
 
     updateNavigation(keys(root))
-    updateBreadcrumbs(getAncestors(root));
+    updateBreadcrumbs(root);
 
     core_center.html(format(root.sum));
     core_top.html(root.name)

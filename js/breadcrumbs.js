@@ -45,6 +45,17 @@ function navigateForward() {
   graphPlugin.navigateTo(n)
 }
 
+var selection = null
+
+function updateBreadcrumbs(d) {
+  if (d) {
+    _updateBreadcrumbs(getAncestors(d))
+  }
+}
+
+function updateSelection(s) {
+  selection = s
+}
 
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
@@ -75,7 +86,7 @@ function getAncestors(node) {
 }
 
 // Update the breadcrumb trail to show the current sequence and percentage.
-function updateBreadcrumbs(nodeArray) {
+function _updateBreadcrumbs(nodeArray) {
 
   // Data join; key function combines name and depth (= position in sequence).
   let g = d3

@@ -300,9 +300,10 @@ function TreeMap() {
     // console.log(d3.event.clientX, d3.event.clientY)
   })
   .on('mouseout', function() {
-    if (currentNode) updateBreadcrumbs(getAncestors(currentNode))
+    updateBreadcrumbs(currentNode)
     // drawThenCancel()
     mouseovered = null
+    updateSelection(mouseovered)
     mousex = -1
     mousey = -1
   })
@@ -469,7 +470,8 @@ function TreeMap() {
     if (hover.length)
       mouseovered = hover[hover.length - 1]
       if (mouseovered) {
-        updateBreadcrumbs(getAncestors(mouseovered))
+        updateBreadcrumbs(mouseovered)
+        updateSelection(mouseovered)
       }
       mouseclicked = false
 
@@ -496,7 +498,7 @@ function TreeMap() {
     zoom(d)
 
     updateNavigation(keys(d))
-    updateBreadcrumbs(getAncestors(currentNode))
+    updateBreadcrumbs(currentNode)
 
     drawer.schedule(10)
   }
