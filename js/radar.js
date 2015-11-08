@@ -2,12 +2,13 @@
 
 const remote = require('remote')
 const shell = require('shell')
+const path = require('path')
+
+const LASTLOAD_FILE = path.join(__dirname, 'lastload.json')
 // var child_process = require('child_process')
 
 // IPC handling
 var current_size = 0, start_time
-
-var path
 
 var legend = d3.select("#legend")
 var explanation = d3.select("#explanation")
@@ -210,7 +211,7 @@ window.onbeforeunload = function(e) {
 
 var child
 function setupChildIPC() {
-  console.log(require('path').join(__dirname, 'js/scanner.js'))
+  console.log(path.join(__dirname, 'js/scanner.js'))
   log('process.execArgv', process.execArgv, 'execPath', process.execPath)
   child = child_process.fork('./js/scanner.js', {
     env: process.ENV,
@@ -402,12 +403,12 @@ function trashSelection() {
 
 function onJson(error, data) {
   if (error) throw error;
-  fs.writeFileSync('lastload.json', JSON.stringify(data));
+  fs.writeFileSync(LASTLOAD_FILE, JSON.stringify(data));
   graphPlugin.generate(data);
 }
 
 function loadLast() {
-  var json = JSON.parse(fs.readFileSync('lastload.json'));
+  var json = JSON.parse(fs.readFileSync(LASTLOAD_FILE));
   // complete(json);
   graphPlugin.generate(json);
 }
