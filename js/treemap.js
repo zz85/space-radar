@@ -513,11 +513,6 @@ function TreeMap() {
   }
 
   // Exports
-  window.navigateUp = navigateUp
-  window.showLess = showLess
-  window.showMore = showMore
-
-  d3.select(window).on('resize', onResize)
 
   return {
     generate: generateTreemap,

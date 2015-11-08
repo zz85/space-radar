@@ -233,3 +233,9 @@ body {
   padding: 20px;
   height: 200px;
 }
+
+
+#bottom_status {
+  text-overflow: ellipsis;
+  /* todo some kind of flex width */
+}

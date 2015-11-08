@@ -380,22 +380,32 @@ function loadLast() {
   complete(json);
 }
 
-function showSunburst() {
+function showSunburst(skip) {
   treemap_button.classList.remove('active')
   sunburst_button.classList.add('active')
-  graphPlugin = sunburstGraph
-  loadLast()
   d3.select('.svg-container').style('display', 'inline-block')
   d3.select('canvas').style('display', 'none')
+
+  graphPlugin = sunburstGraph
+
+  if (!skip) {
+    loadLast()
+    graphPlugin.resize()
+  }
 }
 
-function showTreemap() {
+function showTreemap(skip) {
   sunburst_button.classList.remove('active')
   treemap_button.classList.add('active')
-  graphPlugin = treemapGraph
-  loadLast()
   d3.select('.svg-container').style('display', 'none')
   d3.select('canvas').style('display', 'inline-block')
+
+  graphPlugin = graphPlugin = treemapGraph
+
+  if (!skip) {
+    loadLast()
+    graphPlugin.resize()
+  }
 }
 
 var graphPlugin
@@ -416,7 +426,7 @@ var sunburstGraph = SunBurst()
 
 graphPlugin = sunburstGraph
 
-showSunburst()
+showSunburst(true)
 // showTreemap()
 
 d3.select(window).on('resize', function() {
