@@ -42,9 +42,7 @@ function SunBurst() {
     - Back / Fwd paths
 
   - Perf
-    - Canvas implementation: http://bl.ocks.org/mbostock/1276463
     - Streaming partition datastructures
-    - Fastest IPC (headless node / electron)
     - Named Pipes
 
   - Others
@@ -69,6 +67,8 @@ function SunBurst() {
    - shows children selection on hover
    - Allow destination scanning (root / folder)
    - tested on windows
+   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
+   - Fastest IPC (headless node / electron)
   */
 
   var len = Math.min(window.innerWidth, window.innerHeight);

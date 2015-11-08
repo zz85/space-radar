@@ -288,13 +288,6 @@ function newWindow() {
   log('new window')
   var start = require('./js/start')
   start()
-
-  // var BrowserWindow = remote.require('browser-window')
-  // var win = new BrowserWindow(
-  //   { width: 800, height: 600 }
-  // )
-  // win.loadUrl('file://' + __dirname + '/index.html');
-
 }
 
 function scanFolder() {
@@ -312,7 +305,6 @@ function scanFolder() {
 function scanMemory() {
   mempoller.run()
 }
-
 
 document.ondragover = document.ondrop = function(e) {
   e.preventDefault();
@@ -406,7 +398,7 @@ function showTreemap(skip) {
   d3.select('.svg-container').style('display', 'none')
   d3.select('canvas').style('display', 'inline-block')
 
-  graphPlugin = graphPlugin = treemapGraph
+  graphPlugin = treemapGraph
 
   if (!skip) {
     loadLast()
@@ -426,7 +418,7 @@ var graphPlugin
  * .navigateUp()
  *  TODO
  * .cleanup()
- * .navigateTo(key_path)
+ * .navigateTo(keys)
  */
 
 var treemapGraph = TreeMap()
