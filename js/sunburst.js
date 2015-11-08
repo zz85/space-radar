@@ -180,10 +180,10 @@ function SunBurst() {
           return false
         }
       })
-      .style("opacity", 1);
+      .style("opacity", 1)
 
     // 3. breadcrumbs
-    // updateBreadcrumbs(getAncestors(d), percent);
+    // updateBreadcrumbs(getAncestors(d))
   }
 
   function mouseout(d) {
@@ -299,7 +299,7 @@ function SunBurst() {
 
     var oldLineage;
     if (currentNode)
-      oldLineage = tracelineage(currentNode)
+      oldLineage = keys(currentNode)
 
     currentNode = root;
     realroot = r;
@@ -463,7 +463,7 @@ function SunBurst() {
 
   window.zoom = zoom
 
-  // plugin interface
+   // Export plugin interface
   return {
     resize: onResize,
     generate: generateSunburst,
@@ -497,6 +497,9 @@ function SunBurst() {
 
         jsoned = false
       }
+    },
+    navigateTo: function() {
+
     }
   }
 

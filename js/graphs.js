@@ -14,15 +14,6 @@ function breadcrumbs(d) {
   return keys(d).join(' > ')
 }
 
-function tracelineage(node) {
-  var keys = [];
-  while (node) {
-    keys.push(node.name)
-    node = node.parent
-  }
-  return keys.reverse()
-}
-
 function getPath(d) {
   var path = [d]
   d = d.parent

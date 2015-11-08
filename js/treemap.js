@@ -175,8 +175,7 @@ function TreeMap() {
       }
     })
 
-    console.log('total keys', z, 'removed', exit.length, 'still in', zy)
-
+    // console.log('total keys', z, 'removed', exit.length, 'still in', zy)
     this.objects = objects
 
     return [enter, exit]
@@ -249,15 +248,51 @@ function TreeMap() {
 
   var currentDepth = 0,
     currentNode,
-    root
+    rootNode
 
   function generateTreemap(data) {
-    root = data // TODO cleanup
-    log('generateTreemap', root)
-    currentNode = root
+    rootNode = data // TODO cleanup
+    log('generateTreemap', rootNode)
+
+    let oldPath
+    if (currentNode) {
+      oldPath = keys(currentNode)
+    }
+
+    currentNode = rootNode
     currentDepth = 0
     // mktreemap()
-    display(root, true)
+    display(rootNode, true)
+
+    if (oldPath) navigateToPath(oldPath)
+  }
+
+  function navigateToPath(keys) {
+    log('navigateToPath', keys)
+    let name, n = rootNode
+
+    if (!keys.length) {
+      log('warning no keys to navigate to')
+      return
+    }
+
+    name = keys.shift()
+
+    if (!keys.length) {
+      if (name !== n.name) log('warning, root name dont match!')
+      return navigateTo(n)
+    }
+
+    while ((name = keys.shift()) && n) {
+      log(n.name)
+      n = n.children.filter(n => {
+        return n.name == name
+      })[0]
+    }
+
+    log('found n', n, rootNode)
+
+    if (n) navigateTo(n)
   }
 
   var zooming = false;
@@ -449,7 +484,8 @@ function TreeMap() {
     if (hover.length)
       mouseovered = hover[hover.length - 1]
       if (mouseovered) {
-        bottom_status.innerHTML = breadcrumbs(mouseovered) + ' (' + format(mouseovered.value) + ')'
+        // bottom_status.innerHTML = breadcrumbs(mouseovered) + ' (' + format(mouseovered.value) + ')'
+        updateBreadcrumbs(getAncestors(mouseovered))
       }
       mouseclicked = false
 
@@ -512,8 +548,7 @@ function TreeMap() {
     // d3.event.stopPropagation();
   }
 
-  // Exports
-
+  // Export plugin interface
   return {
     generate: generateTreemap,
     navigateUp: navigateUp,
@@ -522,7 +557,8 @@ function TreeMap() {
     resize: onResize,
     cleanup: function() {
       // TODO
-    }
+    },
+    navigateTo: navigateToPath
   }
 
 }

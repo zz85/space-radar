@@ -419,6 +419,7 @@ var graphPlugin
  * .navigateUp()
  *  TODO
  * .cleanup()
+ * .navigateTo(key_path)
  */
 
 var treemapGraph = TreeMap()
@@ -427,7 +428,7 @@ var sunburstGraph = SunBurst()
 graphPlugin = sunburstGraph
 
 showSunburst(true)
-// showTreemap()
+// showTreemap(true)
 
 d3.select(window).on('resize', function() {
   graphPlugin.resize()

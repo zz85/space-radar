@@ -236,6 +236,7 @@ body {
 
 
 #bottom_status {
+  overflow: hidden;
   text-overflow: ellipsis;
   /* todo some kind of flex width */
 }
