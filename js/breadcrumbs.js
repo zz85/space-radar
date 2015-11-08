@@ -4,12 +4,53 @@
 // Breadcrumbs
 //
 
+let backStack = [], fwdStack = []
+
+/*
+Simple Navigation Controller
+- toolbar gives intent to graph plugin via graph.navigateTo(bla)
+- when the graph navigates to a new path, it calls updateNavigation
+- (global)
+*/
+
+function clearNavigation() {
+  backStack = [], fwdStack = []
+}
+
+function currentPath() {
+  let n = backStack[backStack.length - 1]
+  return n
+}
+
+function updateNavigation(path) {
+  let n = backStack[backStack.length - 1]
+  if (!n || n !== path) {
+    backStack.push(path)
+    if (fwdStack.length) fwdStack = []
+  }
+}
+
+function navigateBack() {
+  let n = backStack.pop()
+  if (n) {
+    fwdStack.push(n)
+  }
+}
+
+function navigateForward() {
+  let n = fwdStack.pop()
+  if (n) {
+    backStack.push(n)
+  }
+}
+
+
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
 function getAncestors(node) {
   if (!node) return []
-  var path = [];
-  var current = node;
+  let path = [];
+  let current = node;
   while (current.parent) {
     path.unshift(current);
     current = current.parent;
@@ -36,13 +77,13 @@ function getAncestors(node) {
 function updateBreadcrumbs(nodeArray) {
 
   // Data join; key function combines name and depth (= position in sequence).
-  var g = d3
+  let g = d3
     .select('#bottom_status')
       .selectAll("span")
       .data(nodeArray, function(d) { return d.name + d.depth; });
 
   // Add breadcrumb and label for entering nodes.
-  var entering = g.enter()
+  let entering = g.enter()
     .append('span')
     // .style('-webkit-user-select', 'none')
     .style('-webkit-app-region', 'no-drag')
@@ -52,8 +93,11 @@ function updateBreadcrumbs(nodeArray) {
       graphPlugin.navigateTo(keys(d))
     })
 
-
-  entering.text(function(d) { return (nodeArray[0] === d ? '' : ' > ' ) + d.name })
+  entering.text(function(d) {
+    return (nodeArray[0] === d ? '' : ' > ' ) +
+      d.name
+      // (nodeArray[nodeArray.length - 1] === d ? ' (' + format(d.value) + ')' : '')
+  })
 
   // Remove exiting nodes.
   g.exit().remove();

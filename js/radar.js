@@ -1,3 +1,5 @@
+'use strict'
+
 var remote = require('remote')
 // var child_process = require('child_process')
 
@@ -357,9 +359,10 @@ promptbox.ondrop = function (e) {
 };
 
 function openDirectory() {
-  if (currentNode)
+  let loc = currentPath()
+  if (loc)
   require('shell')
-    .showItemInFolder(key(currentNode))
+    .showItemInFolder(loc.join(PATH_DELIMITER))
     // .openExternal(file.path)
 
   // shell.openItem(fullPath)
@@ -392,6 +395,7 @@ function showSunburst(skip) {
   if (!skip) {
     loadLast()
     graphPlugin.resize()
+    graphPlugin.navigateTo(currentPath())
   }
 }
 
@@ -406,6 +410,7 @@ function showTreemap(skip) {
   if (!skip) {
     loadLast()
     graphPlugin.resize()
+    graphPlugin.navigateTo(currentPath())
   }
 }
 

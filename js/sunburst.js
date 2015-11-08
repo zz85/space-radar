@@ -210,6 +210,7 @@ function SunBurst() {
   function zoom(root, p) {
     if (document.documentElement.__transition__) return;
 
+    updateNavigation(keys(root))
     updateBreadcrumbs(getAncestors(root));
 
     core_center.html(format(root.sum));

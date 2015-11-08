@@ -12,10 +12,6 @@ function key(d) {
   return keys(d).join(PATH_DELIMITER)
 }
 
-function breadcrumbs(d) {
-  return keys(d).join(' > ')
-}
-
 function getPath(d) {
   var path = [d]
   d = d.parent

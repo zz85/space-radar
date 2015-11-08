@@ -469,7 +469,6 @@ function TreeMap() {
     if (hover.length)
       mouseovered = hover[hover.length - 1]
       if (mouseovered) {
-        // bottom_status.innerHTML = breadcrumbs(mouseovered) + ' (' + format(mouseovered.value) + ')'
         updateBreadcrumbs(getAncestors(mouseovered))
       }
       mouseclicked = false
@@ -495,6 +494,9 @@ function TreeMap() {
     currentNode = d
 
     zoom(d)
+
+    updateNavigation(keys(d))
+    updateBreadcrumbs(getAncestors(currentNode))
 
     drawer.schedule(10)
   }
