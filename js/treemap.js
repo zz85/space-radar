@@ -262,7 +262,7 @@ function TreeMap() {
 
   var zooming = false;
 
-  var USE_GAP = 0, USE_BORDERS = 0, TREEMAP_LEVELS = 2, BENCH = 0,
+  var USE_GAP = 0, USE_BORDERS = 1, TREEMAP_LEVELS = 2, BENCH = 0,
     USE_LABEL_GAP = 1
   var mouseclicked, mousex, mousey, mouseovered = null;
 
@@ -524,7 +524,10 @@ function TreeMap() {
     navigateUp: navigateUp,
     showLess: showLess,
     showMore: showMore,
-    resize: onResize
+    resize: onResize,
+    cleanup: function() {
+      // TODO
+    }
   }
 
 }

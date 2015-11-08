@@ -190,7 +190,8 @@ function SunBurst() {
     lastover = null
 
     if (path) path.style('opacity', .8)
-    updateCore(currentNode)
+
+    if (currentNode) updateCore(currentNode)
   }
 
   function zoomIn(p) {
@@ -477,6 +478,25 @@ function SunBurst() {
     },
     navigateUp: function() {
       zoomOut(currentNode)
+    },
+    cleanup: function() {
+      if (path) {
+        // do some GC()!!!
+        path.remove()
+        center.remove()
+
+        d3
+        .select("#sequence")
+        .select('div')
+          .selectAll("a")
+          .remove()
+
+        partition = null
+        realroot = currentNode = null
+        path = center = null
+
+        jsoned = false
+      }
     }
   }
 

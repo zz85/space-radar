@@ -57,24 +57,7 @@ function cleanup() {
   // we have a possibility of running out of memory here, we could force a garbage collection to compact memory a little if neede!
   mempoller.cancel()
   lightbox(true)
-
-  if (path) {
-    // do some GC()!!!
-    path.remove()
-    center.remove()
-
-    d3
-    .select("#sequence")
-    .select('div')
-      .selectAll("a")
-      .remove()
-
-    partition = null
-    realroot = current_p = null
-    path = center = null
-
-    jsoned = false
-  }
+  graphPlugin.cleanup()
 
   // memory()
 }
@@ -275,8 +258,6 @@ function ready() {
   // start here
   showPrompt()
   // fsipc('fs-ipc.json')
-
-
 }
 
 function rerunPage() {
@@ -376,9 +357,9 @@ promptbox.ondrop = function (e) {
 };
 
 function openDirectory() {
-  if (current_p)
+  if (currentNode)
   require('shell')
-    .showItemInFolder(key(current_p))
+    .showItemInFolder(key(currentNode))
     // .openExternal(file.path)
 
   // shell.openItem(fullPath)
@@ -427,6 +408,7 @@ var graphPlugin
  * .showLess()
  * .navigateUp()
  *  TODO
+ * .cleanup()
  */
 
 var treemapGraph = TreeMap()
