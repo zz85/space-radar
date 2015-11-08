@@ -266,9 +266,9 @@ setupRemoteIPC()
 // ready() // run this
 
 function sendIpcMsg(cmd, msg) {
-  webview.send('scan', msg)
+  // webview.send('scan', msg)
   // child.send({cmd: cmd, msg: msg})
-  // win.webContents.send('scan', path)
+  win.webContents.send('scan', msg)
 }
 
 function ready() {
