@@ -291,12 +291,20 @@ function TreeMap() {
     zoom(currentNode)
   }
 
-  d3.select(canvas).on("mousemove", function() {
+  d3.select(canvas)
+  .on("mousemove", function() {
     mousex = d3.event.offsetX
     mousey = d3.event.offsetY
     drawThenCancel(10)
     // console.log(d3.event.offsetX, d3.event.offsetY)
     // console.log(d3.event.clientX, d3.event.clientY)
+  })
+  .on('mouseout', function() {
+    if (currentNode) updateBreadcrumbs(getAncestors(currentNode))
+    // drawThenCancel()
+    mouseovered = null
+    mousex = -1
+    mousey = -1
   })
 
   d3.select(canvas).on("click", function() {

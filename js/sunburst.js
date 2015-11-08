@@ -128,7 +128,7 @@ function SunBurst() {
       });
 
 
-  var currentNode, max_level, current_level = 0;
+  var realroot, currentNode, max_level, current_level = 0;
 
   var circular_meter = svg.append('g');
   // TODO make a tiny border around the rim of center to show the percentage of current space
@@ -157,6 +157,8 @@ function SunBurst() {
     core_tag.html(percent + '<br/>')
      // + '<br/>' + format(currentNode.value)
     // + ' (' + percent + ')<br/>'
+
+    updateBreadcrumbs(getAncestors(d))
   }
 
   function mouseover(d) {
@@ -181,9 +183,6 @@ function SunBurst() {
         }
       })
       .style("opacity", 1)
-
-    // 3. breadcrumbs
-    // updateBreadcrumbs(getAncestors(d))
   }
 
   function mouseout(d) {

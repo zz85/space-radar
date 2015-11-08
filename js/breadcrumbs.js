@@ -1,4 +1,4 @@
-var realroot;
+'use strict'
 
 //
 // Breadcrumbs
@@ -15,10 +15,12 @@ function getAncestors(node) {
     current = current.parent;
   }
 
-  if (realroot.name == '/') {
-    path.unshift(realroot);
+  let root = current
+
+  if (root.name == '/' || root.name.indexOf('/') === -1) {
+    path.unshift(root);
   } else {
-    path = realroot.name.split(PATH_DELIMITER).slice(1).map(d => {
+    path = root.name.split(PATH_DELIMITER).slice(1).map(d => {
       return {
         name: d,
         depth: -1,
@@ -51,7 +53,7 @@ function updateBreadcrumbs(nodeArray) {
     })
 
 
-  entering.text(function(d) { return (d.depth > 0 ? ' > ': '' ) + d.name })
+  entering.text(function(d) { return (nodeArray[0] === d ? '' : ' > ' ) + d.name })
 
   // Remove exiting nodes.
   g.exit().remove();
