@@ -37,6 +37,7 @@ V4
 - Treemap view
 - Memory monitoring
 - Mac App look using [Photon](http://photonkit.com)
+- Context Menus for locating and opening files
 - Navigation controls (back/fwd/up)
 - Switched disk scanning jobs to invisible renderer process
 

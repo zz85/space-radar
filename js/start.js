@@ -1,8 +1,12 @@
+'use strict'
+
 module.exports = opener
 
-DEBUG = 1
+
 function opener() {
   var remote;
+
+  let DEBUG = 1
 
   try {
     remote = require('remote')

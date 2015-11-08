@@ -57,6 +57,34 @@ function updateSelection(s) {
   selection = s
 }
 
+var Menu = remote.require('menu');
+var MenuItem = remote.require('menu-item');
+
+var contextMenu = new Menu();
+var openMenu = new MenuItem({ label: 'Open', click: openSelection })
+var sep = new MenuItem({ type: 'separator' })
+contextMenu.append(new MenuItem({ label: 'Locate', click: showSelection }))
+contextMenu.append(sep)
+contextMenu.append(openMenu)
+
+// contextMenu.append(new MenuItem({ label: 'External', click: externalSelection }))
+contextMenu.append(sep)
+contextMenu.append(new MenuItem({ label: 'Delete', click: trashSelection }))
+
+var optionsMenu = new Menu();
+optionsMenu.append(new MenuItem({ label: 'Sort by Size', type: 'checkbox', checked: true }));
+optionsMenu.append(new MenuItem({ label: 'Sort by Name', type: 'checkbox', checked: true }));
+
+window.addEventListener('contextmenu', function (e) {
+  if (!selection) return
+  e.preventDefault();
+
+  openMenu.enabled = !selection.children
+
+  contextMenu.popup(remote.getCurrentWindow());
+}, false);
+
+
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
 function getAncestors(node) {

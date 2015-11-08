@@ -1,5 +1,39 @@
 var template = [
   {
+    label: 'File',
+    submenu: [
+      {
+        label: 'Open new window',
+        accelerator: 'CmdOrCtrl+N',
+        click: function() {
+          require('./js/start')()
+        }
+      },
+      {
+        label: 'Scan Drive',
+        // accelerator: 'CmdOrCtrl+N',
+        // role: 'open',
+        click: function(item, focusedWindow) {
+          // focusedWindow.executeJavascript('bla')
+        }
+      },
+      {
+        label: 'Scan Folder',
+        // accelerator: 'CmdOrCtrl+N',
+        // role: 'open',
+        click: function(item, focusedWindow) {
+        }
+      },
+       {
+        label: 'Scan Memory',
+        // accelerator: 'CmdOrCtrl+N',
+        // role: 'open',
+        click: function(item, focusedWindow) {
+        }
+      },
+    ]
+  },
+  {
     label: 'Edit',
     submenu: [
       {
@@ -117,14 +151,6 @@ if (process.platform == 'darwin') {
         type: 'separator'
       },
       {
-        label: 'Services',
-        role: 'services',
-        submenu: []
-      },
-      {
-        type: 'separator'
-      },
-      {
         label: 'Hide ' + name,
         accelerator: 'Command+H',
         role: 'hide'
@@ -160,5 +186,6 @@ if (process.platform == 'darwin') {
   );
 }
 
-menu = Menu.buildFromTemplate(template);
-Menu.setApplicationMenu(menu);
+// Disable for now!
+// menu = Menu.buildFromTemplate(template);
+// Menu.setApplicationMenu(menu);

@@ -1,6 +1,7 @@
 'use strict'
 
-var remote = require('remote')
+const remote = require('remote')
+const shell = require('shell')
 // var child_process = require('child_process')
 
 // IPC handling
@@ -349,21 +350,48 @@ promptbox.ondrop = function (e) {
   // return
   if (file)
     return selectPath(file.path);
-};
+}
+
+/*** Selection Handling ****/
 
 function openDirectory() {
   let loc = currentPath()
   if (loc)
-  require('shell')
-    .showItemInFolder(loc.join(PATH_DELIMITER))
-    // .openExternal(file.path)
-
-  // shell.openItem(fullPath)
+    shell.showItemInFolder(loc.join(PATH_DELIMITER))
 
   // delete file, woah....
   // shell.moveItemToTrash(fullPath)
+}
+
+function openSelection() {
+  if (selection && !selection.children) {
+    let file = key(selection)
+    log('open selection', file)
+    shell.openItem(file)
+  }
+}
+
+function externalSelection() {
+  if (selection) {
+    let file = key(selection)
+    log('openExternal selection', file)
+    shell.openExternal(file)
+  }
+}
+
+function showSelection() {
+  if (selection) {
+    let file = key(selection)
+    log('show selection', file)
+    shell.showItemInFolder(file)
+  }
+}
+
+function trashSelection() {
 
 }
+
+/*** Data Loading ****/
 
 function onJson(error, data) {
   if (error) throw error;
