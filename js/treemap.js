@@ -112,8 +112,8 @@ function TreeMap() {
       .range([0, height])
 
 
-    canvas.width = width
-    canvas.height = height
+    canvas.width = width * window.devicePixelRatio
+    canvas.height = height * window.devicePixelRatio
 
     canvas.style.width = width + "px"
     canvas.style.height = height + "px"
@@ -362,6 +362,8 @@ function TreeMap() {
       }
 
       ctx.save()
+      let dpr = window.devicePixelRatio
+      ctx.scale(dpr, dpr)
 
       // if (d.children) return // show all children only
 

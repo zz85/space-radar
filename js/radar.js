@@ -83,7 +83,7 @@ function complete(json) {
 
   // webview.remove()
   // TODO add growl notification here
-  shell.beep()
+  // shell.beep() // disabling as this can be anonying for memory monitor
 }
 
 const DEBUG = 0 // process.ENV.DEBUG
