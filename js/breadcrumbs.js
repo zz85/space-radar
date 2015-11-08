@@ -31,26 +31,20 @@ function getAncestors(node) {
 }
 
 // Update the breadcrumb trail to show the current sequence and percentage.
-function updateBreadcrumbs(nodeArray, percentageString) {
+function updateBreadcrumbs(nodeArray) {
 
   // Data join; key function combines name and depth (= position in sequence).
   var g = d3
-    .select("#sequence")
-    .select('div')
-      .selectAll("a")
+    .select('#bottom_status')
+      .selectAll("span")
       .data(nodeArray, function(d) { return d.name + d.depth; });
 
   // Add breadcrumb and label for entering nodes.
   var entering = g.enter()
-    .append('a')
-    .attr('href', '#')
-      .style("background", function(d) {
-        var h = hue(key(d));
-        return h;
-        // var c = d3.lab(hue(p.name));
-        // c.l = luminance(d.sum);
-        // return colors[d.name];
-      })
+    .append('span')
+    // .style('-webkit-user-select', 'none')
+    .style('-webkit-app-region', 'no-drag')
+    .style('cursor', 'pointer')
     .on('click', d => {
       if (d.root)
         zoom(realroot, realroot)
@@ -58,7 +52,8 @@ function updateBreadcrumbs(nodeArray, percentageString) {
         zoom(d, d)
     })
 
-  entering.text(function(d) { return d.name; })
+
+  entering.text(function(d) { return (d.depth > 0 ? ' > ': '' ) + d.name })
 
   // Remove exiting nodes.
   g.exit().remove();
