@@ -6,7 +6,7 @@ module.exports = opener
 function opener() {
   var remote;
 
-  let DEBUG = 1
+  let DEBUG = 0
 
   try {
     remote = require('remote')

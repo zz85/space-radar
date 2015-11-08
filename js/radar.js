@@ -83,6 +83,7 @@ function complete(json) {
 
   // webview.remove()
   // TODO add growl notification here
+  shell.beep()
 }
 
 const DEBUG = 0 // process.ENV.DEBUG
@@ -358,9 +359,6 @@ function openDirectory() {
   let loc = currentPath()
   if (loc)
     shell.showItemInFolder(loc.join(PATH_DELIMITER))
-
-  // delete file, woah....
-  // shell.moveItemToTrash(fullPath)
 }
 
 function openSelection() {
@@ -388,7 +386,16 @@ function showSelection() {
 }
 
 function trashSelection() {
-
+  if (selection) {
+    let file = key(selection)
+    var ok = confirm('Are you sure you wish to send ' + file + ' to the trash?')
+    if (ok) {
+      log('trash selection', file)
+      if (shell.moveItemToTrash(file)) {
+        alert(file + ' moved to trash!\n(currently needs rescan to update graphs)')
+      }
+    }
+  }
 }
 
 /*** Data Loading ****/
