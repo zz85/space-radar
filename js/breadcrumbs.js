@@ -46,10 +46,8 @@ function updateBreadcrumbs(nodeArray) {
     .style('-webkit-app-region', 'no-drag')
     .style('cursor', 'pointer')
     .on('click', d => {
-      if (d.root)
-        zoom(realroot, realroot)
-      else
-        zoom(d, d)
+      log('navigate', d)
+      graphPlugin.navigateTo(keys(d))
     })
 
 

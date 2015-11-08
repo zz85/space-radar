@@ -461,9 +461,7 @@ function SunBurst() {
     return {depth: d.depth, x: d.x, dx: d.dx};
   }
 
-  window.zoom = zoom
-
-   // Export plugin interface
+  // Export plugin interface
   return {
     resize: onResize,
     generate: generateSunburst,
@@ -498,8 +496,9 @@ function SunBurst() {
         jsoned = false
       }
     },
-    navigateTo: function() {
-
+    navigateTo: function(keys) {
+      var n = getNodeFromPath(keys, realroot)
+      zoom(n, n)
     }
   }
 

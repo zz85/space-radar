@@ -268,30 +268,7 @@ function TreeMap() {
   }
 
   function navigateToPath(keys) {
-    log('navigateToPath', keys)
-    let name, n = rootNode
-
-    if (!keys.length) {
-      log('warning no keys to navigate to')
-      return
-    }
-
-    name = keys.shift()
-
-    if (!keys.length) {
-      if (name !== n.name) log('warning, root name dont match!')
-      return navigateTo(n)
-    }
-
-    while ((name = keys.shift()) && n) {
-      log(n.name)
-      n = n.children.filter(n => {
-        return n.name == name
-      })[0]
-    }
-
-    log('found n', n, rootNode)
-
+    let n = getNodeFromPath(keys, rootNode)
     if (n) navigateTo(n)
   }
 

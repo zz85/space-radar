@@ -377,7 +377,8 @@ function onJson(error, data) {
 
 function loadLast() {
   var json = JSON.parse(fs.readFileSync('lastload.json'));
-  complete(json);
+  // complete(json);
+  graphPlugin.generate(json);
 }
 
 function showSunburst(skip) {
