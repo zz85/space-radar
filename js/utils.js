@@ -67,6 +67,7 @@ function log() {
 	let now = new Date()
 
 	var args = Array.prototype.slice.call(arguments)
+
 	var fmt = args.map( a => {
 	switch (typeof(a)) {
 		case 'number':
@@ -82,6 +83,10 @@ function log() {
 	args.unshift('%c ' + /\d\d\:\d\d\:\d\d/.exec( now )[ 0 ]
 	+ '  +' + fmt_time(now - last_time) + '\t' + fmt.join(' '),
 	'background: #222; color: #bada55')
+	if (!CHROME) {
+		args = args.slice(2)
+		args.unshift( fmt_time(now - last_time) + '\t' )
+	}
 	last_time = now
 	console.log.apply(console, args);
 }
@@ -127,6 +132,39 @@ TimeoutTask.prototype.run = function() {
 	if (this.task) this.task(this.schedule.bind(this))
 }
 
+function TaskChecker(task, time) {
+	this.running = false
+	this.task = task
+	this.time = time
+	this.scheduled = Date.now() + time
+}
+
+TaskChecker.prototype.cancel = function() {
+	this.running = false
+}
+
+TaskChecker.prototype.schedule = function(t) {
+	this.running = true
+	this.time = t !== undefined ? t : this.time
+	this.scheduled = Date.now() + this.time
+}
+
+TaskChecker.prototype.run = function() {
+	if (this.task) this.task(this.schedule.bind(this))
+}
+
+
+TaskChecker.prototype.check = function() {
+	if (!this.running) return
+
+	var now = Date.now()
+	var diff = now - this.scheduled
+
+	if (diff >= 0) {
+		this.run()
+	}
+}
+
 var mempoller = new TimeoutTask(function(next) {
 	hidePrompt()
 
@@ -136,6 +174,17 @@ var mempoller = new TimeoutTask(function(next) {
 		next()
 	})
 }, 15000)
+
+var CHROME = typeof(window) !== 'undefined';
+
+if (typeof(module) !== 'undefined') {
+	module.exports = {
+		format: format,
+		log: log,
+		TimeoutTask: TimeoutTask,
+		TaskChecker: TaskChecker
+	}
+}
 
 // if (window) {
 // 	window.format = format

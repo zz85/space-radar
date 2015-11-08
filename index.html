@@ -1,60 +1,148 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
+<html>
 <head>
+  <meta charset="utf-8">
   <title>Space Radar</title>
 </head>
 <body>
+
 <script src="node_modules/d3/d3.js"></script>
 <link rel="stylesheet" href="css/style.css" type="text/css">
 <link rel="stylesheet" href="css/throbber.css" type="text/css">
 <link rel="stylesheet" href="css/breadcrumb.css" type="text/css">
+<link rel="stylesheet" href="node_modules/photon/dist/css/photon.min.css">
 
-<webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview>
+<!-- <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview> -->
 
-<div id="toolbar">
-  <button onclick="shades.style.display == 'none' ? showPrompt() : hidePrompt()">Scan Another</button>
+<div class="window" id="photon-window">
 
-  <button id="dir_opener" onclick="openDirectory()">Locate Directory</button>
-</div>
+  <header class="toolbar toolbar-header">
+    <h1 class="title">Space Radar</h1>
+
+    <div class="toolbar-actions">
+      <button class="btn btn-default btn-large" onclick="newWindow()">
+        <span class="icon icon-popup icon-text"></span>
+        Open
+      </button>
+
+      <div class="btn-group">
+        <button class="btn btn-default btn-large" onclick="scanRoot()">
+          <span class="icon icon-drive icon-text"></span>
+          Scan Drive
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="scanFolder()">
+          <span class="icon icon-folder icon-text"></span>
+          Scan Folder
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="scanMemory()">
+          <span class="icon icon-target icon-text"></span>
+          Scan Memory
+        </button>
+
+        <!--
+        TODO
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-archive icon-text"></span>
+          Root
+        </button>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-home icon-text"></span>
+          Home
+        </button>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-picture icon-text"></span>
+          Photos
+        </button>
+        -->
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-default btn-large" onclick="graphPlugin.showLess()">
+          <span class="icon icon-minus"></span>
+          <!-- Show Less -->
+        </button>
+        <!-- icon-text -->
+        <!-- icon-down-circled icon-up-circled icon-down icon-progress-2 icon-progress-1 -squared -circled -->
+        <button class="btn btn-default btn-large" onclick="graphPlugin.showMore()">
+          <span class="icon icon-plus"></span>
+          <!-- Show More -->
+        </button>
+      </div>
+
+      <button class="btn btn-default btn-large" onclick="graphPlugin.navigateUp()">
+        <span class="icon icon-up-circled"></span>
+      </button>
+
+
+<!--       <button class="btn btn-default btn-dropdown pull-right btn-large">
+        <span class="icon icon-cd"></span>
+      </button> -->
+
+      <!-- Large button group -->
+      <div class="btn-group pull-right">
+        <button class="btn btn-large btn-default active" id="sunburst_button" onclick="showSunburst()">
+          <span class="icon icon-cd"></span> <!-- icon-cd  icon-chart-pie icon-database icon-rss"-->
+        </button>
+
+        <button class="btn btn-default btn-large" id="treemap_button" onclick="showTreemap()">
+          <span class="icon icon-layout"></span> <!-- icon-map  icon-layout icon-sweden -->
+        </button>
+      </div>
+      <div></div> <!-- thin padding -->
+    </div>
+  </header>
+
+  <!-- Your app's content goes inside .window-content -->
+  <div class="window-content" style="overflow-y: hidden;">
 
 <div id="shades" class="Aligner">
   <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
   <div class="Aligner-item">
     <div id="promptbox">
-      <h3>Scan</h3>
+      <h4>Scan</h4>
       <p>
-      Drag a folder here to scan the size of its contents, otherwise pick a target to scan.
+      You may drag a folder here to scan the its contents, or pick one of the following.
       </p>
 
-      <p>
-        <button onclick="browseDialog()">Select Directory</button>
-      </p>
+      <div class="">
+        <button class="btn btn-default btn-large" onclick="scanRoot()">
+          <span class="icon icon-drive icon-text"></span>
+          Scan Drive
+        </button>
 
-      <p>
-        <button onclick="scanroot()">Scan Entire Drive</button>
-      </p>
+        <button class="btn btn-default btn-large" onclick="scanFolder()">
+          <span class="icon icon-folder icon-text"></span>
+          Scan Folder
+        </button>
 
-      <p>
-        <button onclick="scanMemory()">Scan Memory</button>
-      </p>
+        <button class="btn btn-default btn-large" onclick="scanMemory()">
+          <span class="icon icon-target icon-text"></span>
+          Scan Memory
+        </button>
+      </div>
+
     </div>
   </div>
   <!-- <div class="Aligner-item Aligner-item--bottom">…</div> -->
 </div>
 
+<canvas id="canvas"></canvas>
+
+<div class="svg-container">
+</div>
+
 <div id="loading">
+  Refreshing...
   <div class="throbber-loader">
     Loading…
   </div>
 </div>
 
-<div id="sequence">
-  <div class="breadcrumb flat">
-  </div>
-</div>
-
 <div id="legend">
-
 </div>
 
 <div id="explanation">
@@ -63,316 +151,60 @@
   <span id="core_tag"></span>
 </div>
 
+
+  <div id="sequence">
+    <div class="breadcrumb flat">
+    </div>
+  </div>
+
+
+</div> <!-- end window-content -->
+<footer class="toolbar toolbar-footer">
+
+  <div class="toolbar-actions">
+    <div class="btn-group">
+      <button class="btn btn-default" onclick="navigateBack()">
+        <span class="icon icon-left-bold"></span>
+        <!-- icon-left-bold icon-left-circled icon-left -->
+      </button>
+      <button class="btn btn-default" onclick="navigateForward()">
+        <span class="icon icon-right-bold"></span>
+      </button>
+    </div>
+
+    <span id="bottom_status" style="font-size:11px; padding-left: 8px"><!-- Welcome to Space Radar --></span>
+    <button class="btn btn-default pull-right" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
+
+    <!--
+    TODO
+    <button class="btn btn-default">Default</button>
+    <button class="btn btn-primary">Primary</button>
+    <button class="btn btn-positive">Positive</button>
+    <button class="btn btn-negative">Negative</button>
+    <button class="btn btn-warning">Warning</button>
+
+
+    <button class="btn btn-default pull-right">
+      Cancel
+    </button>
+
+    <button class="btn btn-primary pull-right">
+      Kill Process
+    </button>
+ -->
+  </div>
+</footer>
+</div> <!-- end window -->
+
 <script src="js/utils.js"></script>
 <script src="js/mem.js"></script>
+<script src="js/graphs.js"></script>
+
+<script src="js/sunburst.js"></script>
+<script src="js/treemap.js"></script>
+<script src="js/radar.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/breadcrumbs.js"></script>
-<!-- <script src="js/du.js"></script> -->
-<script src="js/bipartition_sunburst.js"></script>
-<!-- <script src="js/treemap.js"></script> -->
-
-<script>
-
-// IPC handling
-var current_size = 0, start_time
-
-function start(path) {
-  cleanup()
-  hidePrompt()
-  legend.style('display', 'block')
-  log('start', path)
-  start_time = performance.now()
-  console.time('scan_job')
-  webview.send('scan', path)
-}
-
-function progress(dir, name, size) {
-  // log('[' + ipc_name + '] progress', name)
-  legend.html("<h2>Scanning... <i>please be patient</i></h2><p>"+dir+"</p><br/>Scanned: " + format(size) )
-  current_size = size
-  // TODO collect number of files too
-}
-
-function lightbox(show) {
-  loading.style.display = show ? 'block' : 'none'
-  shades.style.display = show ? 'flex' : 'none'
-  promptbox.style.display  = show ? 'none': ''
-  shades.style.opacity = show ? 0.8 : 1
-}
-
-function refresh(json) {
-  log('[' + ipc_name + '] refresh..')
-
-
-  // should disable all inputs here because redraw would probably be intensive
-  lightbox(true)
-
-  setTimeout( () => {
-    onJson(null, json)
-    lightbox(false)
-  }, 1000 )
-}
-
-function cleanup() {
-  // we have a possibility of running out of memory here, we could force a garbage collection to compact memory a little if neede!
-
-  lightbox(true)
-
-  if (path) {
-    // do some GC()!!!
-    path.remove()
-    center.remove()
-
-    d3
-    .select("#sequence")
-    .select('div')
-      .selectAll("a")
-      .remove()
-
-    partition = null
-    realroot = current_p = null
-    path = center = null
-
-    jsoned = false
-  }
-
-  // memory()
-}
-
-function complete(json) {
-  // loading.style.display = 'none'
-  log('[' + ipc_name + '] complete..', json)
-  console.timeEnd('scan_job')
-
-  onJson(null, json)
-  legend.style('display', 'none')
-  lightbox(false)
-
-  var time_took = performance.now() - start_time
-  log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
-  lightbox(false)
-
-  // webview.remove()
-  // TODO add growl notification here
-}
-
-const DEBUG = 0
-const ipc_name = 'viz'
-const fs = require('fs')
-
-function spawnRenderer() {
-  var remote = require('remote')
-  var BrowserWindow = remote.require('browser-window')
-  var win = new BrowserWindow(
-    DEBUG ? { width: 800, height: 600 } : { show: false }
-  )
-  win.loadUrl('file://' + __dirname + '/headless.html');
-  if (DEBUG) win.openDevTools()
-
-  win.webContents.on('did-finish-load', function() {
-    win.webContents.send('ready')
-  })
-}
-
-function setupWebViewIPC() {
-
-  //
-  webview.addEventListener("dom-ready", function() {
-    if (DEBUG) {
-      webview.openDevTools()
-    }
-    webview.style.display = 'none'
-  })
-
-  webview.addEventListener('ipc-message', function(event) {
-    var args = event.args
-    var cmd = event.channel
-    handleIPC(cmd, args)
-  });
-
-  // this triggers ready
-  webview.addEventListener('did-finish-load', ready)
-}
-
-function handleIPC(cmd, args) {
-  switch (cmd) {
-    case 'progress':
-      return progress.apply(null, args)
-    case 'refresh':
-      return refresh.apply(null, args)
-    case 'complete':
-      return complete(args[0])
-    case 'fs-ipc':
-      return fsipc(args[0])
-  }
-}
-
-function runNext(f) {
-  setTimeout( f, 1000 )
-}
-
-function fsipc(filename) {
-  console.time('fsipc');
-  cleanup()
-  log(filename)
-
-  runNext( () => {
-    try {
-      var args = fs.readFileSync(filename, {encoding: 'utf-8'})
-      args = JSON.parse(args)
-      var cmd = args.shift()
-      handleIPC(cmd, args)
-    } catch (e) {
-      console.error(e.stack)
-    }
-    console.timeEnd('fsipc');
-
-  })
-}
-
-function setupIPC() {
-  var ipc = require('ipc')
-
-  ipc.send('register', ipc_name)
-
-  ipc.on('message', function(arg) {
-    log('[' + ipc_name + '] message', arg)
-  })
-
-  ipc.on('ready', function(arg) {
-    log('lets go');
-    loading.style.display = 'inline-block'
-  })
-
-  // ipc listeners
-  ipc.on('progress', progress)
-  ipc.on('refresh', refresh)
-  ipc.on('complete', complete)
-}
-
-function setupLocalStorageIPC() {
-  window.addEventListener('storage', function (e) {
-    if (e.key == 'lsipc') {
-      var args = JSON.parse(e.newValue)
-      var cmd = args.shift()
-      handleIPC(cmd, args)
-    }
-  });
-}
-
-setupLocalStorageIPC()
-setupWebViewIPC()
-
-function ready() {
-  // start here
-  showPrompt()
-  // fsipc('fs-ipc.json')
-}
-
-function rerunPage() {
-  var remote = require('remote');
-  remote.getCurrentWindow().reload();
-}
-
-function showPrompt() {
-  shades.style.display = 'flex'
-  dir_opener.style.display = 'none'
-
-  mempoller.cancel()
-}
-
-function scanMemory() {
-  mempoller.run()
-}
-
-function hidePrompt() {
-  shades.style.display = 'none'
-  dir_opener.style.display = 'inline-block'
-}
-
-function scanroot() {
-  var ok = confirm('This may take some time, continue?')
-  if (ok) {
-    start('/')
-  }
-}
-
-document.ondragover = document.ondrop = function(e) {
-  e.preventDefault();
-  // prevent anyhow drag
-  return false
-};
-
-function browseDialog() {
-  var dialog = require('remote').require('dialog')
-  var selection = dialog.showOpenDialog({ properties: [  'openDirectory']})
-
-  if (selection && selection[0]) {
-    selectPath(selection[0])
-  }
-
-  console.log(selection);
-  // 'openFile', 'multiSelections'
-}
-
-function selectPath(path) {
-  var stat = fs.lstatSync(path)
-  log('file', stat.isFile(), 'dir', stat.isDirectory())
-
-  if (stat.isFile()) {
-    alert('please select a directory!')
-    return
-  }
-
-  if (stat.isDirectory()) {
-    // var ok = confirm('Scan ' + path + '?')
-    // if (ok) {
-    start(path);
-    // }
-    return
-  }
-}
-
-var promptbox = document.getElementById('promptbox');
-promptbox.ondragover = function () {
-  this.className = 'hover';
-  return false;
-};
-promptbox.ondragleave = promptbox.ondragend = function () {
-  this.className = '';
-  return false;
-};
-promptbox.ondrop = function (e) {
-  this.className = '';
-  e.preventDefault();
-  var file = e.dataTransfer.files[0];
-
-  console.log('file', file)
-  // return
-  if (file)
-    return selectPath(file.path);
-};
-
-function openDirectory() {
-  if (current_p)
-  require('shell')
-    .showItemInFolder(key(current_p))
-    // .openExternal(file.path)
-
-  // shell.openItem(fullPath)
-
-  // delete file, woah....
-  // shell.moveItemToTrash(fullPath)
-
-}
-
-// // testing test.json experiments/root.json experiments/mem
-// d3.json("test.json", function(x, y) {
-//   log(x, y)
-//   window.j = y
-//   setTimeout(() => complete(y))
-// });
-
-</script>
 
 </body>
 </html>

@@ -1,13 +1,14 @@
 'use strict'
 // memory usage
 
-let CMD = 'ps -cxm -opid,ppid,rss,comm'
+let CMD = 'ps -cx -opid,ppid,rss,comm'
+// -m sort by memory
+// -c use short process name
+// -x extended (other users)
 let child_process = require('child_process')
-
 let VM_STAT = 'vm_stat'
 
 function stat(out) {
-
 	var r = /page size of (\d+)/.exec(out)
 	var page_size = +r[1]
 
@@ -23,12 +24,12 @@ function stat(out) {
 	}
 
 	return vm_stat
-
 }
 
 function process_out(stdout) {
+	// log(stdout)
 	// var lines = stdout.split("\n");
-	var regex = /^(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/mg
+	var regex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/mg
 	var m;
 
 	var c = 0, rss_sum = 0
@@ -52,7 +53,7 @@ function process_out(stdout) {
 
 		all[pid] = process
 
-		// console.log(c, pid, ppid, rss, comm)
+		// log(c, pid, ppid, rss, comm)
 	}
 
 	var app = {
@@ -63,7 +64,6 @@ function process_out(stdout) {
 	let sorted = Object.keys(all).map(k => { return all[k] })
 	.sort((a, b) => { return a.pid - b.pid})
 	.forEach(a => {
-		// console.log(a.pid)
 		let parent
 		if (a.ppid in all) {
 			parent = all[a.ppid]

@@ -1,24 +1,25 @@
 Space Radar Electron
 ====
-Space Radar Electron is a disk space visualizer built with [d3.js](d3js.org) and [atom electron](electron.atom.io)
+Space Radar Electron is a space visualizer that allows interactive Sunburst and Treemap charting of your disk space and memory.
 
 ![](https://pbs.twimg.com/media/CRi_IYuU8AAhobo.png:large)
 
+This project started as quick prototype for me to test drive [atom electron](http://electron.atom.io) (some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+
 Downloads
 ==
-Right now only Mac builds over at the [releases page](https://github.com/zz85/space-radar-electron/releases)
-
+Download Mac and Windows at the [releases page](https://github.com/zz85/space-radar-electron/releases)
 
 Features
 ==
-- preview visualization as disk is being scanned
-- cross platform (in theory, right now tested on Mac OSX)
+- previews visualization as disk is being scanned
+- cross platform (at least on Mac OS X and Windows)
 - allow drilldown of directories
-- breadcrumbs navigation
+- breadcrumbs and navigation
 
 Future Enhancements
 ==
-- select target for scanning
+- more target for scanning
 - color by file types
 - filter hidden files
 - moar!!
@@ -32,6 +33,14 @@ Futher Explorations
 
 Whats New
 ==
+V4
+- Treemap view
+- Memory monitoring
+- Mac App look using [Photon](http://photonkit.com)
+- Context Menus for locating + opening + deleting files / directories
+- Navigation controls (back/fwd/up)
+- Switched disk scanning jobs to invisible renderer process
+
 Version 3
 - App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
 - Many Bug fixes
@@ -78,7 +87,7 @@ npm install
 
 Thanks
 ==
-[Jill](http://jilln.com/) for designing the app logo
-Jianwei for his comments on the app
-Chee Aun for helping alpha test the app
-WM for his talk on Electron that got me started
+- [Jill](http://jilln.com/) for designing the app logo
+- Jianwei for his comments on the app
+- Chee Aun for helping alpha test the app
+- WM for his talk on Electron that got me started
