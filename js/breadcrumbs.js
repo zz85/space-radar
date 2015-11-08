@@ -23,7 +23,7 @@ function currentPath() {
 }
 
 function updateNavigation(path) {
-  let n = backStack[backStack.length - 1]
+  let n = currentPath()
   if (!n || n !== path) {
     backStack.push(path)
     if (fwdStack.length) fwdStack = []
@@ -31,17 +31,18 @@ function updateNavigation(path) {
 }
 
 function navigateBack() {
+  if (backStack.length < 2) return
   let n = backStack.pop()
-  if (n) {
-    fwdStack.push(n)
-  }
+  log('navigateBack', n)
+  fwdStack.push(n)
+  graphPlugin.navigateTo(currentPath())
 }
 
 function navigateForward() {
+  if (!fwdStack.length) return
   let n = fwdStack.pop()
-  if (n) {
-    backStack.push(n)
-  }
+  backStack.push(n)
+  graphPlugin.navigateTo(n)
 }
 
 

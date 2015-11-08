@@ -19,6 +19,7 @@ var hue = d3.scale.category10(); // colour hash
 function startScan(path) {
   cleanup()
   hidePrompt()
+  clearNavigation()
   legend.style('display', 'block')
   log('start', path)
   start_time = performance.now()
