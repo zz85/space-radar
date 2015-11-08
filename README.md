@@ -2,9 +2,15 @@ Space Radar Electron
 ====
 Space Radar Electron is a space visualizer that allows interactive Sunburst and Treemap charting of your disk space and memory.
 
-![](https://pbs.twimg.com/media/CRi_IYuU8AAhobo.png:large)
+This project started as quick prototype for me to test drive [atom electron](http://electron.atom.io) (& some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
 
-This project started as quick prototype for me to test drive [atom electron](http://electron.atom.io) (some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+Screenshots
+==
+![space-radar-4](https://cloud.githubusercontent.com/assets/314997/11022585/5c847364-869d-11e5-8079-0a16e7d747e4.gif)
+
+![screenshot 2015-11-09 04 45 27](https://cloud.githubusercontent.com/assets/314997/11022582/3cc0bc90-869d-11e5-85c2-e79a0bf7c27f.png)
+
+![screenshot 2015-11-09 04 45 36](https://cloud.githubusercontent.com/assets/314997/11022581/33822b50-869d-11e5-9fe6-2db6b7a81505.png)
 
 Downloads
 ==
