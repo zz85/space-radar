@@ -12,6 +12,8 @@ var core_top = d3.select("#core_top")
 var core_center = d3.select("#core_center")
 var core_tag = d3.select("#core_tag")
 
+var hue = d3.scale.category10(); // colour hash
+
 function startScan(path) {
   cleanup()
   hidePrompt()
@@ -386,12 +388,10 @@ function openDirectory() {
 
 }
 
-var generateGraph = generateTreemap;
-
 function onJson(error, data) {
   if (error) throw error;
   fs.writeFileSync('lastload.json', JSON.stringify(data));
-  generateGraph(data);
+  graphPlugin.generate(data);
 }
 
 function loadLast() {
@@ -402,7 +402,8 @@ function loadLast() {
 function showSunburst() {
   treemap_button.classList.remove('active')
   sunburst_button.classList.add('active')
-  generateGraph = generateSunburst
+  graphPlugin = sunburstGraph
+  loadLast()
   d3.select('.svg-container').style('display', 'inline-block')
   d3.select('canvas').style('display', 'none')
 }
@@ -410,10 +411,32 @@ function showSunburst() {
 function showTreemap() {
   sunburst_button.classList.remove('active')
   treemap_button.classList.add('active')
-  generateGraph = generateTreemap
+  graphPlugin = treemapGraph
+  loadLast()
   d3.select('.svg-container').style('display', 'none')
   d3.select('canvas').style('display', 'inline-block')
 }
 
+var graphPlugin
+
+/*****************
+ * Graph Plugins
+ * .resize()
+ * .generate(json)
+ * .showMore()
+ * .showLess()
+ * .navigateUp()
+ *  TODO
+ */
+
+var treemapGraph = TreeMap()
+var sunburstGraph = SunBurst()
+
+graphPlugin = sunburstGraph
+
 showSunburst()
 // showTreemap()
+
+d3.select(window).on('resize', function() {
+  graphPlugin.resize()
+})

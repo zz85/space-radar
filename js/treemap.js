@@ -12,8 +12,6 @@ function TreeMap() {
       .domain([0, height])
       .range([0, height])
 
-  var hue = d3.scale.category10(); // colour hash
-
   var
     luminance = d3.scale
       .linear() // .sqrt()
@@ -102,7 +100,6 @@ function TreeMap() {
   var canvas = document.getElementById('canvas')
 
   function onResize() {
-    console.log('resize....')
     width = window.innerWidth
     height = window.innerHeight - document.querySelector('header').getBoundingClientRect().height - document.querySelector('footer').getBoundingClientRect().height
 
@@ -516,12 +513,19 @@ function TreeMap() {
   }
 
   // Exports
-  window.generateTreemap = generateTreemap
   window.navigateUp = navigateUp
   window.showLess = showLess
   window.showMore = showMore
 
   d3.select(window).on('resize', onResize)
+
+  return {
+    generate: generateTreemap,
+    navigateUp: navigateUp,
+    showLess: showLess,
+    showMore: showMore,
+    resize: onResize
+  }
+
 }
 
-TreeMap()

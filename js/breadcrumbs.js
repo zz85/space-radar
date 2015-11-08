@@ -1,3 +1,5 @@
+var realroot;
+
 //
 // Breadcrumbs
 //
