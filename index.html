@@ -61,20 +61,6 @@
       </div>
 
       <div class="btn-group">
-        <button class="btn btn-default btn-large" onclick="navigateBack()">
-          <span class="icon icon-left-bold"></span>
-          <!-- icon-left-bold icon-left-circled icon-left -->
-        </button>
-        <button class="btn btn-default btn-large" onclick="navigateForward()">
-          <span class="icon icon-right-bold"></span>
-        </button>
-      </div>
-
-      <button class="btn btn-default btn-large" onclick="graphPlugin.navigateUp()">
-        <span class="icon icon-up-circled"></span>
-      </button>
-
-      <div class="btn-group">
         <button class="btn btn-default btn-large" onclick="graphPlugin.showLess()">
           <span class="icon icon-minus"></span>
           <!-- Show Less -->
@@ -86,6 +72,11 @@
           <!-- Show More -->
         </button>
       </div>
+
+      <button class="btn btn-default btn-large" onclick="graphPlugin.navigateUp()">
+        <span class="icon icon-up-circled"></span>
+      </button>
+
 
 <!--       <button class="btn btn-default btn-dropdown pull-right btn-large">
         <span class="icon icon-cd"></span>
@@ -171,6 +162,16 @@
 <footer class="toolbar toolbar-footer">
 
   <div class="toolbar-actions">
+    <div class="btn-group">
+      <button class="btn btn-default" onclick="navigateBack()">
+        <span class="icon icon-left-bold"></span>
+        <!-- icon-left-bold icon-left-circled icon-left -->
+      </button>
+      <button class="btn btn-default" onclick="navigateForward()">
+        <span class="icon icon-right-bold"></span>
+      </button>
+    </div>
+
     <span id="bottom_status" style="font-size:11px; padding-left: 8px"><!-- Welcome to Space Radar --></span>
     <button class="btn btn-default pull-right" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
 
