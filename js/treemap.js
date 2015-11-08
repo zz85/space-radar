@@ -193,7 +193,7 @@ function TreeMap() {
     var total_size = data.value
     console.log('total size', total_size)
 
-    nodes = walk(data)
+    nodes = walk(data, null, currentDepth + TREEMAP_LEVELS + 1)
 
     console.timeEnd('treemap')
 
@@ -506,14 +506,14 @@ function TreeMap() {
   }
 
   // breath first expansion
-  function walk(node, a) {
+  function walk(node, a, maxDepth) {
     a = a ? a : [node]
 
-    if (node.children) {
+    if (node.depth < maxDepth && node.children) {
       for (var i = 0, len = node.children.length; i < len; i++) {
         var n = node.children[i]
         a.push(n)
-        walk(n, a)
+        walk(n, a, maxDepth)
       }
     }
 
