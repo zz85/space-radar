@@ -1,14 +1,14 @@
 'use strict';
 
 console.error('testing.....')
-// console.error('{}')
 
 let browser = typeof(window) !== 'undefined'
-let node = typeof(module) !== 'undefined'
 
 if (browser) {
+  // it's electron, so typeof(module) !== 'undefined' is true :)
   module.exports = scanner
 } else {
+  // pure node (when forked inside electron)
   scanner()
 }
 
@@ -22,8 +22,6 @@ const utils = require('./utils'),
   TimeoutTask = utils.TimeoutTask,
   TaskChecker = utils.TaskChecker
 
-log('browser', browser, 'node', node)
-
 let ipc
 
 if (browser) {
@@ -34,14 +32,6 @@ if (browser) {
     log('got scan')
     go(target)
   })
-
-  // var i = 0
-  // setInterval( function() {
-  //   ipc.send('call', 'moo', i++)
-  // }, 2000 )
-
-  // require('ipc').send('call', 12345)
-
 } else {
   process.on('disconnect', function() {
     // exit when parent disconnects (killed / exit)
