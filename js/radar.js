@@ -5,7 +5,7 @@ const shell = require('shell')
 const path = require('path')
 
 const LASTLOAD_FILE = path.join(__dirname, 'lastload.json')
-// var child_process = require('child_process')
+// const child_process = require('child_process')
 
 // IPC handling
 var current_size = 0, start_time
@@ -116,8 +116,6 @@ function setupRemoteIPC() {
 }
 
 function setupWebViewIPC() {
-
-  //
   webview.addEventListener("dom-ready", function() {
     if (DEBUG) {
       webview.openDevTools()
@@ -151,7 +149,7 @@ function handleIPC(cmd, args) {
 }
 
 function runNext(f) {
-  setTimeout( f, 1000 )
+  setTimeout( f, 10 )
 }
 
 function fsipc(filename) {
