@@ -392,6 +392,7 @@ function trashSelection() {
       log('trash selection', file)
       if (shell.moveItemToTrash(file)) {
         alert(file + ' moved to trash!\n(currently needs rescan to update graphs)')
+        shell.beep()
       }
     }
   }
