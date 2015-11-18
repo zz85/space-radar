@@ -136,23 +136,24 @@ TimeoutTask.prototype.run = function() {
  * An abstraction Timer Task that runs
  * in a RAF fashion
  */
-function TimeoutRAFTask(task, time) {
+function TimeoutRAFTask(task, onrun) {
 	this.id = null
 	this.task = task
-	this.time = time
+	if (onrun) this.onrun = onrun
 }
 
 TimeoutRAFTask.prototype.cancel = function() {
 	if (this.id) {
-		this.id = cancelAnimationFrame(this.id);
+		this.id = cancelAnimationFrame(this.id)
 	}
 }
 
 TimeoutRAFTask.prototype.run = function() {
 	if (this.task) {
-		var self = this;
+		var self = this
+		this.cancel()
 		this.task(function() {
-			self.id = requestAnimationFrame(self.run);
+			self.id = requestAnimationFrame(self.run.bind(self))
 		})
 	}
 }

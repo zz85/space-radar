@@ -30,19 +30,16 @@ function TreeMap() {
       .interpolate(d3.interpolateLab)
 
   var
-    drawer = new TimeoutTask(draw, 50),
+    drawer = new TimeoutRAFTask(draw),
     canceller = new TimeoutTask(function() {
+      // stop draw task after 500ms
       drawer.cancel()
     }, 500)
 
-  function drawThenCancel(x) {
-    if (x) {
-      drawer.schedule(x)
-    }
-    else {
-      drawer.run()
-    }
-    canceller.schedule()
+  function drawThenCancel() {
+    // run this on RAF
+    drawer.run()
+    canceller.schedule() // schedule a task to stop the animation
   }
 
   /* TODO
@@ -119,7 +116,6 @@ function TreeMap() {
     canvas.style.height = height + "px"
 
     // full_repaint = true
-    // drawThenCancel(150)
     if (currentNode) navigateTo(currentNode)
   }
 
@@ -295,13 +291,12 @@ function TreeMap() {
   .on("mousemove", function() {
     mousex = d3.event.offsetX
     mousey = d3.event.offsetY
-    drawThenCancel(10)
+    drawThenCancel()
     // console.log(d3.event.offsetX, d3.event.offsetY)
     // console.log(d3.event.clientX, d3.event.clientY)
   })
   .on('mouseout', function() {
     updateBreadcrumbs(currentNode)
-    // drawThenCancel()
     mouseovered = null
     updateSelection(mouseovered)
     mousex = -1
@@ -311,7 +306,7 @@ function TreeMap() {
   d3.select(canvas).on("click", function() {
     // console.log('click')
     mouseclicked = true
-    drawThenCancel(10)
+    drawThenCancel()
   })
 
   function gx(d) {
@@ -501,8 +496,6 @@ function TreeMap() {
 
     updateNavigation(keys(d))
     updateBreadcrumbs(currentNode)
-
-    drawer.schedule(10)
   }
 
   function navigateUp() {
