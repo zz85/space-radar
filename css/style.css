@@ -1,3 +1,17 @@
+body {
+  margin: auto;
+  position: relative;
+  overflow: none;
+
+  /* Use System Fonts */
+  font-family:
+    -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif
+    !important;
+}
+
+
 #photon-window {
   z-index: 400;
 }
@@ -66,13 +80,6 @@ line {
 
 /* end treemap */
 
-body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  margin: auto;
-  position: relative;
-  overflow: none;
-}
-
 .cell > rect:hover {
   fill: yellow;
 }
@@ -80,7 +87,6 @@ body {
 /* legend */
 
 #explanation {
-  font-family: Avenir, Arial, Helvetica, sans-serif;
   position: absolute;
   /*top: 260px;
   left: 305px*/;
@@ -95,6 +101,8 @@ body {
   color: #333;
   z-index: -1;
   /*z-index: -1;*/
+
+  font-weight: 200;
 }
 
 #core_top {
@@ -107,7 +115,6 @@ body {
 
 #legend {
   text-align:center;
-  font-family: Avenir, Arial, Helvetica, sans-serif;
   padding-top:20px;
   position: absolute;
   left: 0;
