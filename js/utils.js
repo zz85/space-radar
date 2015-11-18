@@ -107,7 +107,7 @@ function memory() {
 }
 
 /*
- * an abstraction that runs a task in the future
+ * An abstraction that runs a task in the future
  * if a task is scheduled before it's ran,
  * the previous task would be cancelled
  */
@@ -132,6 +132,37 @@ TimeoutTask.prototype.run = function() {
 	if (this.task) this.task(this.schedule.bind(this))
 }
 
+/*
+ * An abstraction Timer Task that runs
+ * in a RAF fashion
+ */
+function TimeoutRAFTask(task, time) {
+	this.id = null
+	this.task = task
+	this.time = time
+}
+
+TimeoutRAFTask.prototype.cancel = function() {
+	if (this.id) {
+		this.id = cancelAnimationFrame(this.id);
+	}
+}
+
+TimeoutRAFTask.prototype.run = function() {
+	if (this.task) {
+		var self = this;
+		this.task(function() {
+			self.id = requestAnimationFrame(self.run);
+		})
+	}
+}
+
+
+/*
+ * Alternative task runner that runs
+ * during polled interval checks
+ */
+
 function TaskChecker(task, time) {
 	this.running = false
 	this.task = task
@@ -152,7 +183,6 @@ TaskChecker.prototype.schedule = function(t) {
 TaskChecker.prototype.run = function() {
 	if (this.task) this.task(this.schedule.bind(this))
 }
-
 
 TaskChecker.prototype.check = function() {
 	if (!this.running) return

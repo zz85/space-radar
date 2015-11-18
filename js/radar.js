@@ -342,9 +342,9 @@ promptbox.ondragleave = promptbox.ondragend = function () {
   return false;
 };
 promptbox.ondrop = function (e) {
-  this.className = '';
+  this.className = ''
   e.preventDefault();
-  var file = e.dataTransfer.files[0];
+  var file = e.dataTransfer.files[0]
 
   console.log('file', file)
   // return
