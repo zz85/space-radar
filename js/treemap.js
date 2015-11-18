@@ -12,6 +12,9 @@ function TreeMap() {
       .domain([0, height])
       .range([0, height])
 
+  let
+    textHeight
+
   var
     luminance = d3.scale
       .linear() // .sqrt()
@@ -115,11 +118,18 @@ function TreeMap() {
     canvas.style.width = width + "px"
     canvas.style.height = height + "px"
 
+    ctx.font = '8px Tahoma' // Tahoma Arial serif
+    ctx.textBaseline = 'top'
+    ctx.textAlign = 'left'
+    var metrics = ctx.measureText('M');
+    textHeight = metrics.width;
+
     // full_repaint = true
     if (currentNode) navigateTo(currentNode)
   }
 
   var ctx = canvas.getContext('2d')
+
   var fake_svg = new FakeSVG(key)
   var nnn
 
@@ -228,6 +238,10 @@ function TreeMap() {
     fake_svg.objects.forEach(rect)
     console.timeEnd('forEach')
 
+    console.time('gaps')
+    if (USE_LABEL_GAP) fake_svg.objects.forEach(gaps)
+    console.timeEnd('gaps')
+
     drawThenCancel()
 
     // TODO - exit update enter
@@ -240,6 +254,44 @@ function TreeMap() {
     g.y = yd(d.y)
     g.w = xd(d.x + d.dx) - xd(d.x)
     g.h = yd(d.y + d.dy) - yd(d.y)
+  }
+
+  function gaps(g) {
+    var d = g.__data__
+    let x, y, w, h
+    x = g.x
+    y = g.y
+    w = g.w
+    h = g.h
+
+    var depthDiff = d.depth - currentDepth
+    var labelAdjustment = textHeight * 1.4
+
+    var chain = [d]
+    var ry = []
+    for (var i = 0, n = d; i < depthDiff; i++, n = p) {
+      var p = n.parent
+      chain.push(p)
+      ry.push(gy(n) - gy(p))
+    }
+
+    var p = chain.pop()
+    h = gh(p)
+    var parentHeight = p.parent ? gh(p.parent) : height
+    var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
+    for (i = chain.length; i--; ) {
+      var n = chain[i]
+      ny += ry[i] / gh(p) * (h - labelAdjustment)
+      h = gh(n) / gh(p) * (h - labelAdjustment)
+      p = n
+    }
+
+    y = ny + labelAdjustment * depthDiff
+
+    g.x = x
+    g.y = y
+    g.h = h
+    g.w = w
   }
 
   var currentDepth = 0,
@@ -340,11 +392,10 @@ function TreeMap() {
 
     var found = [], hover = []
 
-    ctx.font = '8px Tahoma' // Tahoma Arial serif
-    ctx.textBaseline = 'top'
-    ctx.textAlign = 'left'
-    var metrics = ctx.measureText('M');
-    height = metrics.width;
+    ctx.save()
+    let dpr = window.devicePixelRatio
+    ctx.scale(dpr, dpr)
+
 
     console.time('each')
     dom.forEach(function each(g) {
@@ -357,8 +408,6 @@ function TreeMap() {
       }
 
       ctx.save()
-      let dpr = window.devicePixelRatio
-      ctx.scale(dpr, dpr)
 
       // if (d.children) return // show all children only
 
@@ -378,32 +427,6 @@ function TreeMap() {
         y += gap
         w -= gap * 2
         h -= gap * 2
-      }
-
-      var labelAdjustment = height * 1.4
-
-      if (USE_LABEL_GAP) {
-        // TODO move this block into display()
-        var chain = [d]
-        var ry = []
-        for (var i = 0, n = d; i < depthDiff; i++, n = p) {
-          var p = n.parent
-          chain.push(p)
-          ry.push(gy(n) - gy(p))
-        }
-
-        var p = chain.pop()
-        h = gh(p)
-        var parentHeight = p.parent ? gh(p.parent) : height
-        var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
-        for (i = chain.length; i--; ) {
-          var n = chain[i]
-          ny += ry[i] / gh(p) * (h - labelAdjustment)
-          h = gh(n) / gh(p) * (h - labelAdjustment)
-          p = n
-        }
-
-        y = ny + labelAdjustment * depthDiff
       }
 
       ctx.globalAlpha = 0.8
@@ -440,6 +463,7 @@ function TreeMap() {
       //   return;
       // }
 
+      // if (d.depth < currentDepth + TREEMAP_LEVELS)
       ctx.fill()
 
       if (USE_BORDERS) {
@@ -462,6 +486,7 @@ function TreeMap() {
     });
 
     console.timeEnd('each')
+    ctx.restore()
 
     if (BENCH) console.timeEnd('canvas draw');
     if (hover.length)
@@ -477,7 +502,7 @@ function TreeMap() {
       navigateTo( d.children ? d : d.parent )
     }
 
-    full_repaint = false;
+    full_repaint = false
 
     // if (zooming)
     next(100)
