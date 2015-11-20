@@ -238,10 +238,6 @@ function TreeMap() {
     fake_svg.objects.forEach(rect)
     console.timeEnd('forEach')
 
-    console.time('gaps')
-    if (USE_LABEL_GAP) fake_svg.objects.forEach(gaps)
-    console.timeEnd('gaps')
-
     drawThenCancel()
 
     // TODO - exit update enter
@@ -250,48 +246,65 @@ function TreeMap() {
 
   function rect(g) {
     var d = g.__data__
-    g.x = xd(d.x)
-    g.y = yd(d.y)
-    g.w = xd(d.x + d.dx) - xd(d.x)
-    g.h = yd(d.y + d.dy) - yd(d.y)
+    let x, y, w, h
+
+    x = xd(d.x)
+    y = yd(d.y)
+    w = xd(d.x + d.dx) - xd(d.x)
+    h = yd(d.y + d.dy) - yd(d.y)
+
+    // var depthDiff = d.depth - currentDepth
+    // var labelAdjustment = textHeight * 1.4
+
+    // var chain = [d]
+    // var ry = []
+    // for (var i = 0, n = d; i < depthDiff; i++, n = p) {
+    //   var p = n.parent
+    //   chain.push(p)
+    //   ry.push(gy(n) - gy(p))
+    // }
+
+    // var p = chain.pop()
+    // h = gh(p)
+    // var parentHeight = p.parent ? gh(p.parent) : height
+    // var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
+    // for (i = chain.length; i--; ) {
+    //   var n = chain[i]
+    //   ny += ry[i] / gh(p) * (h - labelAdjustment)
+    //   h = gh(n) / gh(p) * (h - labelAdjustment)
+    //   p = n
+    // }
+
+    // y = ny + labelAdjustment * depthDiff
+
+    // g.x = x
+    // g.y = y
+    // g.h = h
+    // g.w = w
+
+    let now = Date.now(),
+      end = now + 400
+
+    let t = g.__transition__ = {}
+
+    transition(t, 'x', g.x || 0, x, now, end, linear)
+    transition(t, 'y', g.y || 0, y, now, end, linear)
+    transition(t, 'w', g.w || 0, w, now, end, linear)
+    transition(t, 'h', g.h || 0, h, now, end, linear)
   }
 
-  function gaps(g) {
-    var d = g.__data__
-    let x, y, w, h
-    x = g.x
-    y = g.y
-    w = g.w
-    h = g.h
-
-    var depthDiff = d.depth - currentDepth
-    var labelAdjustment = textHeight * 1.4
-
-    var chain = [d]
-    var ry = []
-    for (var i = 0, n = d; i < depthDiff; i++, n = p) {
-      var p = n.parent
-      chain.push(p)
-      ry.push(gy(n) - gy(p))
+  function transition(o, prop, a, b, c, d, func) {
+    o[prop] = {
+      valueStart: a,
+      valueEnd: b,
+      timeStart: c,
+      timeEnd: d,
+      ease: func
     }
+  }
 
-    var p = chain.pop()
-    h = gh(p)
-    var parentHeight = p.parent ? gh(p.parent) : height
-    var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
-    for (i = chain.length; i--; ) {
-      var n = chain[i]
-      ny += ry[i] / gh(p) * (h - labelAdjustment)
-      h = gh(n) / gh(p) * (h - labelAdjustment)
-      p = n
-    }
-
-    y = ny + labelAdjustment * depthDiff
-
-    g.x = x
-    g.y = y
-    g.h = h
-    g.w = w
+  function linear(k) {
+    return k;
   }
 
   var currentDepth = 0,
@@ -381,7 +394,8 @@ function TreeMap() {
 
   function draw(next) {
     if (BENCH) console.time('canvas draw');
-    if (full_repaint) ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // if (full_repaint)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (BENCH) console.time('dom')
 
@@ -399,7 +413,31 @@ function TreeMap() {
 
     console.time('each')
     dom.forEach(function each(g) {
-      var d = g.__data__
+      let d = g.__data__
+      let t = g.__transition__
+
+      if (t) {
+        let now = Date.now()
+
+        for (let key in t) {
+          let prop = t[key]
+
+          let dur = prop.timeEnd - prop.timeStart
+          let diff = prop.valueEnd - prop.valueStart
+          let lapse = now - prop.timeStart
+          let k = lapse / dur
+          g[key] = prop.ease(k) * diff + prop.valueStart
+
+          // console.log(k)
+
+          if (prop.timeEnd <= now) {
+            delete t[key]
+            g[key] = prop.valueEnd
+          }
+        }
+      }
+
+
       if (d.depth < currentDepth) return
 
       var l = d.parent == mouseovered ? 1 : 0
@@ -411,17 +449,17 @@ function TreeMap() {
 
       // if (d.children) return // show all children only
 
-      var x, y, w, h, c
+      let x, y, w, h, c
       x = g.x
       y = g.y
       w = g.w
       h = g.h
 
-      var depthDiff = d.depth - currentDepth
+      let depthDiff = d.depth - currentDepth
 
       if (USE_GAP) {
         // this is buggy
-        var gap = 0.5 * depthDiff * 2
+        let gap = 0.5 * depthDiff * 2
 
         x += gap
         y += gap
