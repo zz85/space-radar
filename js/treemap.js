@@ -287,19 +287,23 @@ function TreeMap() {
 
     let t = g.__transition__ = {}
 
-    transition(t, 'x', g.x || 0, x, now, end, linear)
-    transition(t, 'y', g.y || 0, y, now, end, linear)
-    transition(t, 'w', g.w || 0, w, now, end, linear)
-    transition(t, 'h', g.h || 0, h, now, end, linear)
+    transition(t, 'x', g, x, now, end, linear)
+    transition(t, 'y', g, y, now, end, linear)
+    transition(t, 'w', g, w, now, end, linear)
+    transition(t, 'h', g, h, now, end, linear)
   }
 
   function transition(o, prop, a, b, c, d, func) {
-    o[prop] = {
-      valueStart: a,
-      valueEnd: b,
-      timeStart: c,
-      timeEnd: d,
-      ease: func
+    if (prop in a) {
+      o[prop] = {
+        valueStart: a[prop],
+        valueEnd: b,
+        timeStart: c,
+        timeEnd: d,
+        ease: func
+      }
+    } else {
+      a[prop] = b
     }
   }
 
@@ -430,13 +434,12 @@ function TreeMap() {
 
           // console.log(k)
 
-          if (prop.timeEnd <= now) {
+          if (now >= prop.timeEnd) {
             delete t[key]
             g[key] = prop.valueEnd
           }
         }
       }
-
 
       if (d.depth < currentDepth) return
 
