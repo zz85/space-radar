@@ -92,7 +92,7 @@ const ipc_name = 'viz'
 const fs = require('fs')
   var win
 
-  var main_ipc = remote.require('ipc')
+  var main_ipc = remote.ipcMain
 
   main_ipc.on('call', function(event, cmd) {
     var args = Array.prototype.slice.call(arguments, 2)
@@ -100,11 +100,10 @@ const fs = require('fs')
   })
 
 function setupRemoteIPC() {
-  var BrowserWindow = remote.require('browser-window')
-  win = new BrowserWindow(
+  win = new remote.BrowserWindow(
     DEBUG ? { width: 800, height: 600 } : { show: false }
   )
-  win.loadUrl('file://' + __dirname + '/headless.html');
+  win.loadURL('file://' + __dirname + '/headless.html');
   if (DEBUG) win.openDevTools()
 
   win.webContents.on('did-finish-load', function() {
@@ -292,7 +291,7 @@ function newWindow() {
 }
 
 function scanFolder() {
-  var dialog = require('remote').require('dialog')
+  var dialog = remote.dialog
   var selection = dialog.showOpenDialog({ properties: ['openDirectory']})
 
   if (selection && selection[0]) {
