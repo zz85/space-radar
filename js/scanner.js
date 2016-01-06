@@ -23,10 +23,10 @@ function scanner() {
   let ipc
 
   if (browser) {
-    ipc = require('ipc')
+    ipc = require("electron").ipcRenderer
     const ipc_name = 'du'
 
-    ipc.on('scan', function(target) {
+    ipc.on('scan', function(_, target) {
       log('got scan')
       go(target)
     })

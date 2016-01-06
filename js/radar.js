@@ -90,7 +90,7 @@ function complete(json) {
 const DEBUG = 0 // process.ENV.DEBUG
 const ipc_name = 'viz'
 const fs = require('fs')
-  var win
+let win
 
   var main_ipc = remote.ipcMain
 
