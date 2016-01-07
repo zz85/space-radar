@@ -128,6 +128,61 @@ function TreeMap() {
     if (currentNode) navigateTo(currentNode)
   }
 
+
+  class FakeSVG {
+    constructor (key) {
+      // fake d3 svg grahpical intermediate representation
+      // emulates the d3 join pattern
+      this.objects = []
+      this.map = {}
+      this.key = key
+    }
+
+    data(data) {
+      var d;
+
+      var map = this.map
+
+      var enter = [], exit = []
+
+      this.objects.forEach(function(o) {
+        o.__data__ = null
+      })
+      for (var i = 0, il = data.length; i < il; i++) {
+        d = data[i]
+        var key = this.key(d)
+        if (!map[key]) {
+          var o = {}
+          enter.push(o)
+          map[key] = o
+        }
+        map[key].__data__ = d
+      }
+
+      var objects = []
+      // new Array(data.length)
+
+      var z = 0, zx = 0, zy = 0;
+      Object.keys(map).forEach(function(k) {
+        z++;
+        var o = map[k]
+        if (!o.__data__) {
+          exit.push(o)
+          delete map[k]
+          zx ++
+        } else {
+          objects.push(o)
+          zy ++
+        }
+      })
+
+      // console.log('total keys', z, 'removed', exit.length, 'still in', zy)
+      this.objects = objects
+
+      return [enter, exit]
+    }
+  }
+
   var ctx = canvas.getContext('2d')
 
   var fake_svg = new FakeSVG(key)
@@ -135,63 +190,13 @@ function TreeMap() {
 
   onResize()
 
-  function FakeSVG(key) {
-    // fake d3 svg grahpical intermediate representation
-    // emulates the d3 join pattern
-    this.objects = []
-    this.map = {}
-    this.key = key
-  }
-
-  FakeSVG.prototype.data = function(data) {
-    var d;
-
-    var map = this.map
-
-    var enter = [], exit = []
-
-    this.objects.forEach(function(o) {
-      o.__data__ = null
-    })
-    for (var i = 0, il = data.length; i < il; i++) {
-      d = data[i]
-      var key = this.key(d)
-      if (!map[key]) {
-        var o = {}
-        enter.push(o)
-        map[key] = o
-      }
-      map[key].__data__ = d
-    }
-
-    var objects = []
-    // new Array(data.length)
-
-    var z = 0, zx = 0, zy = 0;
-    Object.keys(map).forEach(function(k) {
-      z++;
-      var o = map[k]
-      if (!o.__data__) {
-        exit.push(o)
-        delete map[k]
-        zx ++
-      } else {
-        objects.push(o)
-        zy ++
-      }
-    })
-
-    // console.log('total keys', z, 'removed', exit.length, 'still in', zy)
-    this.objects = objects
-
-    return [enter, exit]
-  }
-
+  // this is when we handle the rendering of data
   function display(data, relayout) {
     log('display', data)
 
     console.time('treemap')
     var nodes;
+    // nodes is a JS like representation of tree structure
     if (!nnn || relayout) {
       nodes = treemap.nodes(data)
     }
@@ -222,6 +227,7 @@ function TreeMap() {
     yd.domain([d.y, d.y + d.dy])
 
     console.time('fake_svg')
+    // we bind the JS data to a fake graphical representation
     var updates = fake_svg.data( nnn )
 
     console.time('sort')
@@ -235,9 +241,11 @@ function TreeMap() {
     // var exit = updates[1]
     // var enter = updates[0]
     console.time('forEach')
+    // we resize the graphical objects
     fake_svg.objects.forEach(rect)
     console.timeEnd('forEach')
 
+    // start drawing
     drawThenCancel()
 
     // TODO - exit update enter
@@ -416,6 +424,8 @@ function TreeMap() {
 
 
     console.time('each')
+
+    // Update animation
     dom.forEach(function each(g) {
       let d = g.__data__
       let t = g.__transition__
@@ -440,6 +450,11 @@ function TreeMap() {
           }
         }
       }
+    });
+
+    // now draw the elements if needed
+    dom.forEach(function each(g) {
+      let d = g.__data__
 
       if (d.depth < currentDepth) return
 
@@ -485,7 +500,6 @@ function TreeMap() {
       ctx.fillStyle = c
 
       if (isPointInRect(mousex, mousey, x, y, w, h)) {
-      // if (ctx.isPointInPath(mousex, mousey)) {
         if (mouseovered == d) {
           ctx.fillStyle = 'yellow';
           ctx.globalAlpha = 1
