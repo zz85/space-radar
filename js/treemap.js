@@ -136,6 +136,7 @@ function TreeMap() {
       this.objects = []
       this.map = new Map()
       this.key = key
+      this.sorter = null
     }
 
     data(data) {
@@ -170,7 +171,7 @@ function TreeMap() {
       var z = 0, zx = 0, zy = 0;
       map.forEach(function(o, k) {
         z++;
-        if (false && o.__remove__) {
+        if (false && o.__remove__ && !o.__transition__) {
           // this is currently not used.
           exit.push(o)
           map.delete(k)
@@ -181,10 +182,26 @@ function TreeMap() {
         }
       })
 
-      console.log('total keys', z, objects.length, zy, 'added', enter.length, 'removed', exit.length)
-      this.objects = objects
+
+
+      console.log('total keys', z, objects.length, zy, fake_svg.map.size, 'added', enter.length, 'removed', exit.length)
+      this.updateObjects()
+      // this.objects = objects
 
       return [enter, exit]
+    }
+
+    sort(func) {
+      console.log('total sort')
+      if (func) this.sorter = func
+
+      if (this.sorter) this.objects.sort(this.sorter)
+    }
+
+    updateObjects() {
+      console.log('total update')
+      this.objects = [...fake_svg.map.values()];
+      // this.sort()
     }
   }
 
@@ -240,7 +257,7 @@ function TreeMap() {
     xd.domain([d.x, d.x + d.dx])
     yd.domain([d.y, d.y + d.dy])
 
-    fake_svg.objects = [...fake_svg.map.values()];
+    // fake_svg.objects = [...fake_svg.map.values()];
 
     console.time('forEach')
     // we resize the graphical objects
@@ -248,7 +265,7 @@ function TreeMap() {
     console.timeEnd('forEach')
 
     console.time('sort')
-    fake_svg.objects.sort(function sort(a, b) {
+    fake_svg.sort(function sort(a, b) {
       return a.__data__.depth - b.__data__.depth
     })
     console.timeEnd('sort')
@@ -305,12 +322,19 @@ function TreeMap() {
       let now = Date.now(),
       end = now + 400
 
-      let trans = g.__transition__ = {}
+      let trans = g.__transition__ = {
+        timeStart: now,
+        timeEnd: end,
+        ease: linear,
+        props: {
 
-      transition(trans, 'x', g, x, now, end, linear)
-      transition(trans, 'y', g, y, now, end, linear)
-      transition(trans, 'w', g, w, now, end, linear)
-      transition(trans, 'h', g, h, now, end, linear)
+        }
+      }
+
+      transition(trans.props, 'x', g, x)
+      transition(trans.props, 'y', g, y)
+      transition(trans.props, 'w', g, w)
+      transition(trans.props, 'h', g, h)
     } else {
       g.x = x
       g.y = y
@@ -320,14 +344,11 @@ function TreeMap() {
 
   }
 
-  function transition(trans, prop, graphic, value, timeStart, timeEnd, func) {
+  function transition(trans, prop, graphic, value) {
     if (prop in graphic) {
       trans[prop] = {
         valueStart: graphic[prop],
-        valueEnd: value,
-        timeStart: timeStart,
-        timeEnd: timeEnd,
-        ease: func
+        valueEnd: value
       }
     } else {
       graphic[prop] = value
@@ -430,7 +451,7 @@ function TreeMap() {
 
     if (BENCH) console.time('dom')
 
-    fake_svg.objects = [...fake_svg.map.values()];
+    // fake_svg.objects = [...fake_svg.map.values()];
     var dom = fake_svg.objects
     log('cells', dom.length)
 
@@ -445,38 +466,47 @@ function TreeMap() {
 
     console.time('each')
 
+    let needSvgUpdate = false
     // Update animation
     dom.forEach(function each(g) {
       let d = g.__data__
-      let t = g.__transition__
+      let trans = g.__transition__
 
-      if (t) {
+      if (trans) {
         let now = Date.now()
+        let dur = trans.timeEnd - trans.timeStart
+        let lapse = now - trans.timeStart
+        let k = lapse / dur
+        let ease = trans.ease
 
-        for (let key in t) {
-          let prop = t[key]
-
-          let dur = prop.timeEnd - prop.timeStart
+        var props = trans.props;
+        for (let key in props) {
+          let prop = props[key]
           let diff = prop.valueEnd - prop.valueStart
-          let lapse = now - prop.timeStart
-          let k = lapse / dur
-          g[key] = prop.ease(k) * diff + prop.valueStart
 
-          // console.log(k)
+          g[key] = ease(k) * diff + prop.valueStart
 
-          if (now >= prop.timeEnd) {
-            delete t[key]
-            g[key] = prop.valueEnd
-            if (g.__remove__) {
-              // TODO delete these as a batch,
-              // convert to array, then sort them!
-              // console.log('total keys done', fake_svg.map.size)
-              fake_svg.map.delete(fake_svg.key(d))
-            }
+        }
+
+        if (now >= trans.timeEnd) {
+          delete g.__transition__
+
+          if (g.__remove__) {
+            // TODO delete these as a batch,
+            // convert to array, then sort them!
+            // console.log('total keys delete', fake_svg.map.size)
+            fake_svg.map.delete(fake_svg.key(d))
+            needSvgUpdate = true
           }
         }
+
       }
     });
+
+    if (needSvgUpdate) {
+      fake_svg.updateObjects()
+      fake_svg.sort()
+    }
 
     // now draw the elements if needed
     dom.forEach(function each(g) {
