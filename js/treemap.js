@@ -136,9 +136,6 @@ function TreeMap() {
       this.objects = []
       this.map = new Map()
       this.key = key
-
-      this.entering = []
-      this.leaving = []
     }
 
     data(data) {
@@ -174,6 +171,7 @@ function TreeMap() {
       map.forEach(function(o, k) {
         z++;
         if (false && o.__remove__) {
+          // this is currently not used.
           exit.push(o)
           map.delete(k)
           zx ++
@@ -185,8 +183,6 @@ function TreeMap() {
 
       console.log('total keys', z, objects.length, zy, 'added', enter.length, 'removed', exit.length)
       this.objects = objects
-
-      // this.leaving = this.leaving.concat(exit);
 
       return [enter, exit]
     }
@@ -237,7 +233,6 @@ function TreeMap() {
     var updates = fake_svg.data( nnn )
     console.timeEnd('fake_svg')
 
-    var exit = updates[1]
     var enter = updates[0]
     enter.forEach(rectB)
 
@@ -252,8 +247,6 @@ function TreeMap() {
     fake_svg.objects.forEach(rect)
     console.timeEnd('forEach')
 
-
-
     console.time('sort')
     fake_svg.objects.sort(function sort(a, b) {
       return a.__data__.depth - b.__data__.depth
@@ -262,9 +255,6 @@ function TreeMap() {
 
     // start drawing
     drawThenCancel()
-
-    // TODO - exit update enter
-
   }
 
   function rect(g) {
@@ -284,29 +274,32 @@ function TreeMap() {
     w = xd(d.x + d.dx) - xd(d.x)
     h = yd(d.y + d.dy) - yd(d.y)
 
-    // var depthDiff = d.depth - currentDepth
-    // var labelAdjustment = textHeight * 1.4
+    var labels = true;
+    if (labels) {
+      var depthDiff = d.depth - currentDepth
+      var labelAdjustment = textHeight * 1.4
 
-    // var chain = [d]
-    // var ry = []
-    // for (var i = 0, n = d; i < depthDiff; i++, n = p) {
-    //   var p = n.parent
-    //   chain.push(p)
-    //   ry.push(gy(n) - gy(p))
-    // }
+      var chain = [d]
+      var ry = []
+      for (var i = 0, n = d; i < depthDiff; i++, n = p) {
+        var p = n.parent
+        chain.push(p)
+        ry.push(gy(n) - gy(p))
+      }
 
-    // var p = chain.pop()
-    // h = gh(p)
-    // var parentHeight = p.parent ? gh(p.parent) : height
-    // var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
-    // for (i = chain.length; i--; ) {
-    //   var n = chain[i]
-    //   ny += ry[i] / gh(p) * (h - labelAdjustment)
-    //   h = gh(n) / gh(p) * (h - labelAdjustment)
-    //   p = n
-    // }
+      var p = chain.pop()
+      h = gh(p)
+      var parentHeight = p.parent ? gh(p.parent) : height
+      var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
+      for (i = chain.length; i--; ) {
+        var n = chain[i]
+        ny += ry[i] / gh(p) * (h - labelAdjustment)
+        h = gh(n) / gh(p) * (h - labelAdjustment)
+        p = n
+      }
 
-    // y = ny + labelAdjustment * depthDiff
+      y = ny + labelAdjustment * depthDiff
+    }
 
     if (animate) {
       let now = Date.now(),
@@ -440,6 +433,7 @@ function TreeMap() {
 
     if (BENCH) console.time('dom')
 
+    fake_svg.objects = [...fake_svg.map.values()];
     var dom = fake_svg.objects
     log('cells', dom.length)
 
