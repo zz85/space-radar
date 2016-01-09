@@ -134,41 +134,48 @@ function TreeMap() {
       // fake d3 svg grahpical intermediate representation
       // emulates the d3 join pattern
       this.objects = []
-      this.map = {}
+      this.map = new Map()
       this.key = key
+
+      this.entering = []
+      this.leaving = []
     }
 
     data(data) {
-      var d;
+      let d;
 
-      var map = this.map
+      let map = this.map
 
-      var enter = [], exit = []
+      let enter = [], exit = []
 
-      this.objects.forEach(function(o) {
-        o.__data__ = null
+      // mark item to be removed
+      this.objects.forEach(o => {
+        o.__remove__ = true
       })
+
       for (var i = 0, il = data.length; i < il; i++) {
         d = data[i]
         var key = this.key(d)
-        if (!map[key]) {
-          var o = {}
+        var o;
+        if (!map.has(key)) {
+          // create a new object
+          o = {}
           enter.push(o)
-          map[key] = o
+          map.set(key, o);
         }
-        map[key].__data__ = d
+        o = map.get(key);
+        o.__data__ = d
+        o.__remove__ = false;
       }
 
       var objects = []
-      // new Array(data.length)
 
       var z = 0, zx = 0, zy = 0;
-      Object.keys(map).forEach(function(k) {
+      map.forEach(function(o, k) {
         z++;
-        var o = map[k]
-        if (!o.__data__) {
+        if (false && o.__remove__) {
           exit.push(o)
-          delete map[k]
+          map.delete(k)
           zx ++
         } else {
           objects.push(o)
@@ -176,8 +183,10 @@ function TreeMap() {
         }
       })
 
-      // console.log('total keys', z, 'removed', exit.length, 'still in', zy)
+      console.log('total keys', z, objects.length, zy, 'added', enter.length, 'removed', exit.length)
       this.objects = objects
+
+      // this.leaving = this.leaving.concat(exit);
 
       return [enter, exit]
     }
@@ -221,29 +230,35 @@ function TreeMap() {
     console.timeEnd('filter')
     console.log('after', nnn.length)
 
-    // Update the domain only after entering new elements.
     var d = data
-    xd.domain([d.x, d.x + d.dx])
-    yd.domain([d.y, d.y + d.dy])
 
     console.time('fake_svg')
     // we bind the JS data to a fake graphical representation
     var updates = fake_svg.data( nnn )
+    console.timeEnd('fake_svg')
+
+    var exit = updates[1]
+    var enter = updates[0]
+    enter.forEach(rectB)
+
+    // Update the domain only after entering new elements.
+    xd.domain([d.x, d.x + d.dx])
+    yd.domain([d.y, d.y + d.dy])
+
+    fake_svg.objects = [...fake_svg.map.values()];
+
+    console.time('forEach')
+    // we resize the graphical objects
+    fake_svg.objects.forEach(rect)
+    console.timeEnd('forEach')
+
+
 
     console.time('sort')
     fake_svg.objects.sort(function sort(a, b) {
       return a.__data__.depth - b.__data__.depth
     })
     console.timeEnd('sort')
-
-    console.timeEnd('fake_svg')
-
-    // var exit = updates[1]
-    // var enter = updates[0]
-    console.time('forEach')
-    // we resize the graphical objects
-    fake_svg.objects.forEach(rect)
-    console.timeEnd('forEach')
 
     // start drawing
     drawThenCancel()
@@ -253,6 +268,14 @@ function TreeMap() {
   }
 
   function rect(g) {
+    rectC(g, true);
+  }
+
+  function rectB(g) {
+    rectC(g, false);
+  }
+
+  function rectC(g, animate) {
     var d = g.__data__
     let x, y, w, h
 
@@ -285,20 +308,26 @@ function TreeMap() {
 
     // y = ny + labelAdjustment * depthDiff
 
-    // g.x = x
-    // g.y = y
-    // g.h = h
-    // g.w = w
-
-    let now = Date.now(),
+    if (animate) {
+      let now = Date.now(),
       end = now + 400
 
-    let t = g.__transition__ = {}
+      let t = g.__transition__ = {}
 
-    transition(t, 'x', g, x, now, end, linear)
-    transition(t, 'y', g, y, now, end, linear)
-    transition(t, 'w', g, w, now, end, linear)
-    transition(t, 'h', g, h, now, end, linear)
+      transition(t, 'x', g, x, now, end, linear)
+      transition(t, 'y', g, y, now, end, linear)
+      transition(t, 'w', g, w, now, end, linear)
+      transition(t, 'h', g, h, now, end, linear)
+    } else {
+      g.x = x
+      g.y = y
+      g.h = h
+      g.w = w
+
+    }
+
+
+
   }
 
   function transition(o, prop, a, b, c, d, func) {
@@ -447,6 +476,10 @@ function TreeMap() {
           if (now >= prop.timeEnd) {
             delete t[key]
             g[key] = prop.valueEnd
+            if (g.__remove__) {
+              // console.log('total keys done', fake_svg.map.size)
+              fake_svg.map.delete(fake_svg.key(d))
+            }
           }
         }
       }
