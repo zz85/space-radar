@@ -305,35 +305,32 @@ function TreeMap() {
       let now = Date.now(),
       end = now + 400
 
-      let t = g.__transition__ = {}
+      let trans = g.__transition__ = {}
 
-      transition(t, 'x', g, x, now, end, linear)
-      transition(t, 'y', g, y, now, end, linear)
-      transition(t, 'w', g, w, now, end, linear)
-      transition(t, 'h', g, h, now, end, linear)
+      transition(trans, 'x', g, x, now, end, linear)
+      transition(trans, 'y', g, y, now, end, linear)
+      transition(trans, 'w', g, w, now, end, linear)
+      transition(trans, 'h', g, h, now, end, linear)
     } else {
       g.x = x
       g.y = y
       g.h = h
       g.w = w
-
     }
-
-
 
   }
 
-  function transition(o, prop, a, b, c, d, func) {
-    if (prop in a) {
-      o[prop] = {
-        valueStart: a[prop],
-        valueEnd: b,
-        timeStart: c,
-        timeEnd: d,
+  function transition(trans, prop, graphic, value, timeStart, timeEnd, func) {
+    if (prop in graphic) {
+      trans[prop] = {
+        valueStart: graphic[prop],
+        valueEnd: value,
+        timeStart: timeStart,
+        timeEnd: timeEnd,
         ease: func
       }
     } else {
-      a[prop] = b
+      graphic[prop] = value
     }
   }
 
@@ -471,6 +468,8 @@ function TreeMap() {
             delete t[key]
             g[key] = prop.valueEnd
             if (g.__remove__) {
+              // TODO delete these as a batch,
+              // convert to array, then sort them!
               // console.log('total keys done', fake_svg.map.size)
               fake_svg.map.delete(fake_svg.key(d))
             }
