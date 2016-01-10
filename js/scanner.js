@@ -15,10 +15,10 @@ function scanner() {
   const path = require('path')
   const du = require('./du')
   const fs = require('fs')
-  const utils = require('./utils'),
-    log = utils.log,
-    TimeoutTask = utils.TimeoutTask,
-    TaskChecker = utils.TaskChecker
+  const utils = require('./utils')
+  const log = utils.log
+  const TimeoutTask = utils.TimeoutTask
+  const TaskChecker = utils.TaskChecker
 
   let ipc
 
