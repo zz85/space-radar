@@ -13,10 +13,10 @@ function opener() {
   } catch (e) {
 
   }
-  console.log('moo', remote)
+
   var r = remote ? remote.require : require
 
-  var atomScreen = r('screen');
+  var atomScreen = r('screen')
   var size = atomScreen.getPrimaryDisplay().workAreaSize
   console.log(size)
 
@@ -38,8 +38,7 @@ function opener() {
     icon: require('path').join(__dirname, 'Icon.png'),
   })
 
-  mainWindow.loadUrl('file://' + __dirname + '/../index.html');
-  // mainWindow.loadUrl('file://' + __dirname + '/photon.html');
+  mainWindow.loadURL('file://' + __dirname + '/../index.html')
 
   if (DEBUG) {
     mainWindow.openDevTools()

@@ -15,18 +15,18 @@ function scanner() {
   const path = require('path')
   const du = require('./du')
   const fs = require('fs')
-  const utils = require('./utils'),
-    log = utils.log,
-    TimeoutTask = utils.TimeoutTask,
-    TaskChecker = utils.TaskChecker
+  const utils = require('./utils')
+  const log = utils.log
+  const TimeoutTask = utils.TimeoutTask
+  const TaskChecker = utils.TaskChecker
 
   let ipc
 
   if (browser) {
-    ipc = require('ipc')
+    ipc = require("electron").ipcRenderer
     const ipc_name = 'du'
 
-    ipc.on('scan', function(target) {
+    ipc.on('scan', function(_, target) {
       log('got scan')
       go(target)
     })

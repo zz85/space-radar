@@ -12,6 +12,9 @@ function TreeMap() {
       .domain([0, height])
       .range([0, height])
 
+  let
+    textHeight
+
   var
     luminance = d3.scale
       .linear() // .sqrt()
@@ -30,19 +33,16 @@ function TreeMap() {
       .interpolate(d3.interpolateLab)
 
   var
-    drawer = new TimeoutTask(draw, 50),
+    drawer = new TimeoutRAFTask(draw),
     canceller = new TimeoutTask(function() {
+      // stop draw task after 500ms
       drawer.cancel()
     }, 500)
 
-  function drawThenCancel(x) {
-    if (x) {
-      drawer.schedule(x)
-    }
-    else {
-      drawer.run()
-    }
-    canceller.schedule()
+  function drawThenCancel() {
+    // run this on RAF
+    drawer.run()
+    canceller.schedule() // schedule a task to stop the animation
   }
 
   /* TODO
@@ -57,7 +57,7 @@ function TreeMap() {
   - [x] go into directory
   - [x] show more children
   - [x] color gradients
-  - [ ] animations entering directory
+  - [x] animations entering directory
   - [ ] update tree
   - [ ] show number of files / subdirectories
 
@@ -118,74 +118,86 @@ function TreeMap() {
     canvas.style.width = width + "px"
     canvas.style.height = height + "px"
 
+    ctx.font = '8px Tahoma' // Tahoma Arial serif
+    ctx.textBaseline = 'top'
+    ctx.textAlign = 'left'
+    var metrics = ctx.measureText('M');
+    textHeight = metrics.width;
+
     // full_repaint = true
-    // drawThenCancel(150)
     if (currentNode) navigateTo(currentNode)
   }
 
+
+  class FakeSVG {
+    constructor (key) {
+      // fake d3 svg grahpical intermediate representation
+      // emulates the d3 join pattern
+      this.objects = []
+      this.map = new Map()
+      this.key = key
+      this.sorter = null
+    }
+
+    data(data) {
+      let d;
+
+      let map = this.map
+
+      let enter = []
+
+      // mark item to be removed
+      this.objects.forEach(o => {
+        o.__remove__ = true
+      })
+
+      for (var i = 0, il = data.length; i < il; i++) {
+        d = data[i]
+        var key = this.key(d)
+        var o;
+        if (!map.has(key)) {
+          // create a new object
+          o = {}
+          enter.push(o)
+          map.set(key, o);
+        }
+        o = map.get(key);
+        o.__data__ = d
+        o.__remove__ = false;
+      }
+
+      this.updateObjects()
+
+      return enter
+    }
+
+    sort(func) {
+      console.log('total sort')
+      if (func) this.sorter = func
+
+      if (this.sorter) this.objects.sort(this.sorter)
+    }
+
+    updateObjects() {
+      console.log('total update')
+      this.objects = [...fake_svg.map.values()];
+    }
+  }
+
   var ctx = canvas.getContext('2d')
+
   var fake_svg = new FakeSVG(key)
   var nnn
 
   onResize()
 
-  function FakeSVG(key) {
-    // fake d3 svg grahpical intermediate representation
-    // emulates the d3 join pattern
-    this.objects = []
-    this.map = {}
-    this.key = key
-  }
-
-  FakeSVG.prototype.data = function(data) {
-    var d;
-
-    var map = this.map
-
-    var enter = [], exit = []
-
-    this.objects.forEach(function(o) {
-      o.__data__ = null
-    })
-    for (var i = 0, il = data.length; i < il; i++) {
-      d = data[i]
-      var key = this.key(d)
-      if (!map[key]) {
-        var o = {}
-        enter.push(o)
-        map[key] = o
-      }
-      map[key].__data__ = d
-    }
-
-    var objects = []
-    // new Array(data.length)
-
-    var z = 0, zx = 0, zy = 0;
-    Object.keys(map).forEach(function(k) {
-      z++;
-      var o = map[k]
-      if (!o.__data__) {
-        exit.push(o)
-        delete map[k]
-        zx ++
-      } else {
-        objects.push(o)
-        zy ++
-      }
-    })
-
-    // console.log('total keys', z, 'removed', exit.length, 'still in', zy)
-    this.objects = objects
-
-    return [enter, exit]
-  }
-
+  // this is when we handle the rendering of data
   function display(data, relayout) {
     log('display', data)
 
     console.time('treemap')
     var nodes;
+    // nodes is a JS like representation of tree structure
     if (!nnn || relayout) {
       nodes = treemap.nodes(data)
     }
@@ -210,40 +222,116 @@ function TreeMap() {
     console.timeEnd('filter')
     console.log('after', nnn.length)
 
-    // Update the domain only after entering new elements.
     var d = data
+
+    console.time('fake_svg')
+    // we bind the JS data to a fake graphical representation
+    var enter = fake_svg.data( nnn )
+    console.timeEnd('fake_svg')
+
+    enter.forEach(rectB)
+
+    // Update the domain only after entering new elements.
     xd.domain([d.x, d.x + d.dx])
     yd.domain([d.y, d.y + d.dy])
 
-    console.time('fake_svg')
-    var updates = fake_svg.data( nnn )
+    console.time('forEach')
+    // we resize the graphical objects
+    fake_svg.objects.forEach(rect)
+    console.timeEnd('forEach')
 
     console.time('sort')
-    fake_svg.objects.sort(function sort(a, b) {
+    fake_svg.sort(function sort(a, b) {
       return a.__data__.depth - b.__data__.depth
     })
     console.timeEnd('sort')
 
-    console.timeEnd('fake_svg')
-
-    // var exit = updates[1]
-    // var enter = updates[0]
-    console.time('forEach')
-    fake_svg.objects.forEach(rect)
-    console.timeEnd('forEach')
-
+    // start drawing
     drawThenCancel()
-
-    // TODO - exit update enter
-
   }
 
   function rect(g) {
+    rectC(g, true);
+  }
+
+  function rectB(g) {
+    rectC(g, false);
+  }
+
+  function rectC(g, animate) {
     var d = g.__data__
-    g.x = xd(d.x)
-    g.y = yd(d.y)
-    g.w = xd(d.x + d.dx) - xd(d.x)
-    g.h = yd(d.y + d.dy) - yd(d.y)
+
+    let x = xd(d.x)
+    let y = yd(d.y)
+    let w = xd(d.x + d.dx) - xd(d.x)
+    let h = yd(d.y + d.dy) - yd(d.y)
+
+    let labels = true;
+    if (labels) {
+      var depthDiff = d.depth - currentDepth
+      var labelAdjustment = textHeight * 1.4
+
+      var chain = [d]
+      var ry = []
+      for (var i = 0, n = d; i < depthDiff; i++, n = p) {
+        var p = n.parent
+        chain.push(p)
+        ry.push(gy(n) - gy(p))
+      }
+
+      var p = chain.pop()
+      h = gh(p)
+      var parentHeight = p.parent ? gh(p.parent) : height
+      var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
+      for (i = chain.length; i--; ) {
+        var n = chain[i]
+        ny += ry[i] / gh(p) * (h - labelAdjustment)
+        h = gh(n) / gh(p) * (h - labelAdjustment)
+        p = n
+      }
+
+      y = ny + labelAdjustment * depthDiff
+    }
+
+    if (animate) {
+      let now = Date.now(),
+      end = now + 400
+
+      let trans = g.__transition__ = {
+        timeStart: now,
+        timeEnd: end,
+        ease: linear,
+        props: {
+
+        }
+      }
+
+      transition(trans.props, 'x', g, x)
+      transition(trans.props, 'y', g, y)
+      transition(trans.props, 'w', g, w)
+      transition(trans.props, 'h', g, h)
+    } else {
+      g.x = x
+      g.y = y
+      g.h = h
+      g.w = w
+    }
+
+  }
+
+  function transition(trans, prop, graphic, value) {
+    if (prop in graphic) {
+      trans[prop] = {
+        valueStart: graphic[prop],
+        valueEnd: value
+      }
+    } else {
+      graphic[prop] = value
+    }
+  }
+
+  function linear(k) {
+    return k;
   }
 
   var currentDepth = 0,
@@ -295,13 +383,12 @@ function TreeMap() {
   .on("mousemove", function() {
     mousex = d3.event.offsetX
     mousey = d3.event.offsetY
-    drawThenCancel(10)
+    drawThenCancel()
     // console.log(d3.event.offsetX, d3.event.offsetY)
     // console.log(d3.event.clientX, d3.event.clientY)
   })
   .on('mouseout', function() {
     updateBreadcrumbs(currentNode)
-    // drawThenCancel()
     mouseovered = null
     updateSelection(mouseovered)
     mousex = -1
@@ -311,7 +398,7 @@ function TreeMap() {
   d3.select(canvas).on("click", function() {
     // console.log('click')
     mouseclicked = true
-    drawThenCancel(10)
+    drawThenCancel()
   })
 
   function gx(d) {
@@ -332,12 +419,24 @@ function TreeMap() {
 
   var full_repaint = true
 
+  var _color_cache = new Map()
+  function color_cache(x) {
+    if (!_color_cache.has(x)) {
+      _color_cache.set(x, o(x))
+    }
+
+    return _color_cache.get(x)
+
+  }
+
   function draw(next) {
     if (BENCH) console.time('canvas draw');
-    if (full_repaint) ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // if (full_repaint)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (BENCH) console.time('dom')
 
+    // fake_svg.objects = [...fake_svg.map.values()];
     var dom = fake_svg.objects
     log('cells', dom.length)
 
@@ -345,15 +444,56 @@ function TreeMap() {
 
     var found = [], hover = []
 
-    ctx.font = '8px Tahoma' // Tahoma Arial serif
-    ctx.textBaseline = 'top'
-    ctx.textAlign = 'left'
-    var metrics = ctx.measureText('M');
-    height = metrics.width;
+    ctx.save()
+    let dpr = window.devicePixelRatio
+    ctx.scale(dpr, dpr)
 
     console.time('each')
+
+    let needSvgUpdate = false
+
+    // Update animation
     dom.forEach(function each(g) {
-      var d = g.__data__
+      let d = g.__data__
+      let trans = g.__transition__
+
+      if (trans) {
+        let now = Date.now()
+        let dur = trans.timeEnd - trans.timeStart
+        let lapse = now - trans.timeStart
+        let k = Math.min(lapse / dur, 1);
+        let ease = trans.ease
+
+        let props = trans.props;
+        for (let key in props) {
+          let prop = props[key]
+          let diff = prop.valueEnd - prop.valueStart
+
+          g[key] = ease(k) * diff + prop.valueStart
+        }
+
+        if (now >= trans.timeEnd) {
+          delete g.__transition__
+
+          if (g.__remove__) {
+            fake_svg.map.delete(fake_svg.key(d))
+            needSvgUpdate = true
+          }
+        }
+
+      }
+    });
+
+    if (needSvgUpdate) {
+      fake_svg.updateObjects()
+      fake_svg.sort()
+      dom = fake_svg.objects
+    }
+
+    // now draw the elements if needed
+    dom.forEach(function draw(g) {
+      let d = g.__data__
+
       if (d.depth < currentDepth) return
 
       var l = d.parent == mouseovered ? 1 : 0
@@ -362,53 +502,24 @@ function TreeMap() {
       }
 
       ctx.save()
-      let dpr = window.devicePixelRatio
-      ctx.scale(dpr, dpr)
 
       // if (d.children) return // show all children only
 
-      var x, y, w, h, c
-      x = g.x
-      y = g.y
-      w = g.w
-      h = g.h
+      let x = g.x
+      let y = g.y
+      let w = g.w
+      let h = g.h
 
-      var depthDiff = d.depth - currentDepth
+      let depthDiff = d.depth - currentDepth
 
       if (USE_GAP) {
         // this is buggy
-        var gap = 0.5 * depthDiff * 2
+        let gap = 0.5 * depthDiff * 2
 
         x += gap
         y += gap
         w -= gap * 2
         h -= gap * 2
-      }
-
-      var labelAdjustment = height * 1.4
-
-      if (USE_LABEL_GAP) {
-        // TODO move this block into display()
-        var chain = [d]
-        var ry = []
-        for (var i = 0, n = d; i < depthDiff; i++, n = p) {
-          var p = n.parent
-          chain.push(p)
-          ry.push(gy(n) - gy(p))
-        }
-
-        var p = chain.pop()
-        h = gh(p)
-        var parentHeight = p.parent ? gh(p.parent) : height
-        var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
-        for (i = chain.length; i--; ) {
-          var n = chain[i]
-          ny += ry[i] / gh(p) * (h - labelAdjustment)
-          h = gh(n) / gh(p) * (h - labelAdjustment)
-          p = n
-        }
-
-        y = ny + labelAdjustment * depthDiff
       }
 
       ctx.globalAlpha = 0.8
@@ -422,11 +533,10 @@ function TreeMap() {
       ctx.beginPath()
       ctx.rect(x, y, w, h)
 
-      c = o(d.depth)
+      let c = color_cache(d.depth)
       ctx.fillStyle = c
 
       if (isPointInRect(mousex, mousey, x, y, w, h)) {
-      // if (ctx.isPointInPath(mousex, mousey)) {
         if (mouseovered == d) {
           ctx.fillStyle = 'yellow';
           ctx.globalAlpha = 1
@@ -445,6 +555,7 @@ function TreeMap() {
       //   return;
       // }
 
+      // if (d.depth < currentDepth + TREEMAP_LEVELS)
       ctx.fill()
 
       if (USE_BORDERS) {
@@ -467,6 +578,7 @@ function TreeMap() {
     });
 
     console.timeEnd('each')
+    ctx.restore()
 
     if (BENCH) console.timeEnd('canvas draw');
     if (hover.length)
@@ -482,7 +594,7 @@ function TreeMap() {
       navigateTo( d.children ? d : d.parent )
     }
 
-    full_repaint = false;
+    full_repaint = false
 
     // if (zooming)
     next(100)
@@ -501,8 +613,6 @@ function TreeMap() {
 
     updateNavigation(keys(d))
     updateBreadcrumbs(currentNode)
-
-    drawer.schedule(10)
   }
 
   function navigateUp() {
@@ -531,8 +641,6 @@ function TreeMap() {
     log('zoom')
 
     display(d)
-
-    // TODO transition of 500-750ms
 
     zooming = false;
 
