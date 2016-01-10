@@ -260,14 +260,13 @@ function TreeMap() {
 
   function rectC(g, animate) {
     var d = g.__data__
-    let x, y, w, h
 
-    x = xd(d.x)
-    y = yd(d.y)
-    w = xd(d.x + d.dx) - xd(d.x)
-    h = yd(d.y + d.dy) - yd(d.y)
+    let x = xd(d.x)
+    let y = yd(d.y)
+    let w = xd(d.x + d.dx) - xd(d.x)
+    let h = yd(d.y + d.dy) - yd(d.y)
 
-    var labels = true;
+    let labels = true;
     if (labels) {
       var depthDiff = d.depth - currentDepth
       var labelAdjustment = textHeight * 1.4
@@ -420,6 +419,16 @@ function TreeMap() {
 
   var full_repaint = true
 
+  var _color_cache = new Map()
+  function color_cache(x) {
+    if (!_color_cache.has(x)) {
+      _color_cache.set(x, o(x))
+    }
+
+    return _color_cache.get(x)
+
+  }
+
   function draw(next) {
     if (BENCH) console.time('canvas draw');
     // if (full_repaint)
@@ -455,7 +464,7 @@ function TreeMap() {
         let k = Math.min(lapse / dur, 1);
         let ease = trans.ease
 
-        var props = trans.props;
+        let props = trans.props;
         for (let key in props) {
           let prop = props[key]
           let diff = prop.valueEnd - prop.valueStart
@@ -482,7 +491,7 @@ function TreeMap() {
     }
 
     // now draw the elements if needed
-    dom.forEach(function each(g) {
+    dom.forEach(function draw(g) {
       let d = g.__data__
 
       if (d.depth < currentDepth) return
@@ -524,7 +533,7 @@ function TreeMap() {
       ctx.beginPath()
       ctx.rect(x, y, w, h)
 
-      let c = o(d.depth)
+      let c = color_cache(d.depth)
       ctx.fillStyle = c
 
       if (isPointInRect(mousex, mousey, x, y, w, h)) {
