@@ -523,11 +523,10 @@ function TreeMap() {
 
       // if (d.children) return // show all children only
 
-      let x, y, w, h, c
-      x = g.x
-      y = g.y
-      w = g.w
-      h = g.h
+      let x = g.x
+      let y = g.y
+      let w = g.w
+      let h = g.h
 
       let depthDiff = d.depth - currentDepth
 
