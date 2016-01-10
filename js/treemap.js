@@ -476,7 +476,7 @@ function TreeMap() {
         let now = Date.now()
         let dur = trans.timeEnd - trans.timeStart
         let lapse = now - trans.timeStart
-        let k = lapse / dur
+        let k = Math.min(lapse / dur, 1);
         let ease = trans.ease
 
         var props = trans.props;
