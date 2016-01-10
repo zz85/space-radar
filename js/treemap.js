@@ -57,7 +57,7 @@ function TreeMap() {
   - [x] go into directory
   - [x] show more children
   - [x] color gradients
-  - [ ] animations entering directory
+  - [x] animations entering directory
   - [ ] update tree
   - [ ] show number of files / subdirectories
 
@@ -144,7 +144,7 @@ function TreeMap() {
 
       let map = this.map
 
-      let enter = [], exit = []
+      let enter = []
 
       // mark item to be removed
       this.objects.forEach(o => {
@@ -166,29 +166,9 @@ function TreeMap() {
         o.__remove__ = false;
       }
 
-      var objects = []
-
-      var z = 0, zx = 0, zy = 0;
-      map.forEach(function(o, k) {
-        z++;
-        if (false && o.__remove__ && !o.__transition__) {
-          // this is currently not used.
-          exit.push(o)
-          map.delete(k)
-          zx ++
-        } else {
-          objects.push(o)
-          zy ++
-        }
-      })
-
-
-
-      console.log('total keys', z, objects.length, zy, fake_svg.map.size, 'added', enter.length, 'removed', exit.length)
       this.updateObjects()
-      // this.objects = objects
 
-      return [enter, exit]
+      return enter
     }
 
     sort(func) {
@@ -201,7 +181,6 @@ function TreeMap() {
     updateObjects() {
       console.log('total update')
       this.objects = [...fake_svg.map.values()];
-      // this.sort()
     }
   }
 
@@ -247,17 +226,14 @@ function TreeMap() {
 
     console.time('fake_svg')
     // we bind the JS data to a fake graphical representation
-    var updates = fake_svg.data( nnn )
+    var enter = fake_svg.data( nnn )
     console.timeEnd('fake_svg')
 
-    var enter = updates[0]
     enter.forEach(rectB)
 
     // Update the domain only after entering new elements.
     xd.domain([d.x, d.x + d.dx])
     yd.domain([d.y, d.y + d.dy])
-
-    // fake_svg.objects = [...fake_svg.map.values()];
 
     console.time('forEach')
     // we resize the graphical objects
@@ -463,10 +439,10 @@ function TreeMap() {
     let dpr = window.devicePixelRatio
     ctx.scale(dpr, dpr)
 
-
     console.time('each')
 
     let needSvgUpdate = false
+
     // Update animation
     dom.forEach(function each(g) {
       let d = g.__data__
@@ -485,16 +461,12 @@ function TreeMap() {
           let diff = prop.valueEnd - prop.valueStart
 
           g[key] = ease(k) * diff + prop.valueStart
-
         }
 
         if (now >= trans.timeEnd) {
           delete g.__transition__
 
           if (g.__remove__) {
-            // TODO delete these as a batch,
-            // convert to array, then sort them!
-            // console.log('total keys delete', fake_svg.map.size)
             fake_svg.map.delete(fake_svg.key(d))
             needSvgUpdate = true
           }
@@ -506,6 +478,7 @@ function TreeMap() {
     if (needSvgUpdate) {
       fake_svg.updateObjects()
       fake_svg.sort()
+      dom = fake_svg.objects
     }
 
     // now draw the elements if needed
@@ -551,7 +524,7 @@ function TreeMap() {
       ctx.beginPath()
       ctx.rect(x, y, w, h)
 
-      c = o(d.depth)
+      let c = o(d.depth)
       ctx.fillStyle = c
 
       if (isPointInRect(mousex, mousey, x, y, w, h)) {
@@ -659,8 +632,6 @@ function TreeMap() {
     log('zoom')
 
     display(d)
-
-    // TODO transition of 500-750ms
 
     zooming = false;
 
