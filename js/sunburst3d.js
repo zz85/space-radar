@@ -11,62 +11,19 @@
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define("d3-timer",["exports"],e):e(t.d3_timer={})}(this,function(t){"use strict";function e(t,e,n){this.id=++c,this.restart(t,e,n)}function n(t,n,i){return new e(t,n,i)}function i(t){t=null==t?Date.now():+t,++l;try{for(var e,n=a;n;)t>=n.time&&(e=n.callback)(t-n.time,t),n=n.next}finally{--l}}function o(){l=f=0;try{i()}finally{for(var t,e=a,n=1/0;e;)e.callback?(n>e.time&&(n=e.time),e=(t=e).next):e=t?t.next=e.next:a=e.next;u=t,r(n)}}function r(t){if(!l){f&&(f=clearTimeout(f));var e=t-Date.now();e>24?1/0>t&&(f=setTimeout(o,e)):(l=1,s(o))}}var a,u,l=0,f=0,c=0,m={},s="undefined"!=typeof window&&(window.requestAnimationFrame||window.msRequestAnimationFrame||window.mozRequestAnimationFrame||window.webkitRequestAnimationFrame||window.oRequestAnimationFrame)||function(t){return setTimeout(t,17)};e.prototype=n.prototype={restart:function(t,e,n){if("function"!=typeof t)throw new TypeError("callback is not a function");n=(null==n?Date.now():+n)+(null==e?0:+e);var i=this.id,o=m[i];o?(o.callback=t,o.time=n):(o={next:null,callback:t,time:n},u?u.next=o:a=o,m[i]=u=o),r()},stop:function(){var t=this.id,e=m[t];e&&(e.callback=null,e.time=1/0,delete m[t],r())}};var d="0.0.6";t.version=d,t.timer=n,t.timerFlush=i});
 
 function plot3d(data) {
-
-	console.log('PLOTTING ', data)
-
-	var arcs = [
-	  // {"startAngle": 6.0164006661729340, "endAngle": 6.1497929866762595},
-	  // {"startAngle": 6.1497929866762595, "endAngle": 6.2831853071795850},
-	  // {"startAngle": 5.7696160251662825, "endAngle": 6.0164006661729340},
-	  // {"startAngle": 5.4094390636563060, "endAngle": 5.7696160251662825},
-	  // {"startAngle": 4.8224774611396780, "endAngle": 5.4094390636563060},
-	  // {"startAngle": 3.8953388971130725, "endAngle": 4.8224774611396780},
-	  // {"startAngle": 2.4012387305698390, "endAngle": 3.8953388971130725},
-	  // {"startAngle": 0.0000000000000000, "endAngle": 2.4012387305698392}
-
-	  // {"startAngle": 0.0000000000000000, "endAngle": 2.4012387305698392}
-	  // {"startAngle": 0.0000000000000000, "endAngle": 2.4012387305698392}
-	  // {"startAngle": 0.0000000000000000, "endAngle": 2.4012387305698392}
-	];
-
-	var x = 0;
-
-	data.forEach( (d) => {
-		if (d.depth != 1) return;
-		a = d.x;
-		b = d.x + d.dx;
-
-		var s = Math.min(a, b);
-		var t = Math.max(a, b);
-
-		console.log(a, b, d);
-
-		arcs.push({
-			startAngle: s,
-			endAngle: t
-		});
-	});
-
-	console.log('arcs', arcs);
-
 	var width = 960,
 	    height = 500;
 
-	var arc = d3_shape.arc()
-	    .innerRadius(40) //
-	    .outerRadius(90)
-	    .cornerRadius(0)
-	    .padAngle(0.02);
 
 	var renderer = new THREE.WebGLRenderer;
 	renderer.setClearColor(new THREE.Color("#fff", 1.0));
 	renderer.setSize(width, height);
-	renderer.domElement.style.cssText ="width: 960px; height: 500px; z-index:1000; position:absolute;"
+	renderer.domElement.style.cssText ="width: 960px; height: 500px; z-index:1000; position:absolute; opacity: 0.5;"
 
 	document.body.appendChild(renderer.domElement);
 
-	window.meow = renderer.domElement;
-	meow.style.display = 'none';
+	// window.meow = renderer.domElement;
+	// meow.style.display = 'none';
 
 	var extrudeOptions = {
 	  amount: 1,
@@ -81,56 +38,49 @@ function plot3d(data) {
 	var scene = new THREE.Scene;
 	var shapes = [];
 
-	arcs.forEach(function(d) {
-	  var path = new THREE.Shape;
+	var arc = d3_shape.arc()
 
-	  console.log(d);
+	console.log('PLOTTING ', data)
+
+
+	data.forEach(function(d) {
+
+		if (d.depth < 1) return;
+		var a = d.x;
+		var b = d.x + d.dx;
+		var s = Math.min(a, b);
+		var t = Math.max(a, b);
+
+		var THICKNESS = 40;
+		var HOLE = 20;
+
+		var r = d.depth * THICKNESS + HOLE;
+
+		arc.innerRadius(r) //
+    .outerRadius(r + THICKNESS)
+    .cornerRadius(0)
+    .padAngle(0.01);
+
+	  var path = new THREE.Shape;
 
 	  arc.context({
 	    moveTo: function(x, y) { path.moveTo(x, y); },
 	    lineTo: function(x, y) { path.lineTo(x, y); },
 	    arc: function(x, y, r, a0, a1, ccw) {
-	    	// path.arc(x, y, r, a0, a1, ccw);
-	      // var a;
+	      var a;
 	      if (ccw) a = a1, a1 = a0, a0 = a; // Uh, what?
-	      // path.absarc(x, y, r, a0, a1, !ccw);
 	      path.absarc(x, y, r, a0, a1, !ccw);
 	    },
 	    closePath: function() { path.closePath(); }
-	  })(d);
+	  })({
+			startAngle: s,
+			endAngle: t
+		});
 
 	  var shape = THREE.SceneUtils.createMultiMaterialObject(path.extrude(extrudeOptions), [material]);
 	  shapes.push(shape);
 	  scene.add(shape);
 	});
-
-
-	// data.forEach(function(d) {
-	//   var path = new THREE.Shape;
-
-	//   console.log(d);
-
-	// arc.innerRadius(20)
-	//     .outerRadius(90)
-	//     .cornerRadius(0)
-	//     .padAngle(0.05);
-
-	//   arc.context({
-	//     moveTo: function(x, y) { path.moveTo(x, y); },
-	//     lineTo: function(x, y) { path.lineTo(x, y); },
-	//     arc: function(x, y, r, a0, a1, ccw) {
-	// 		// path.arc(x, y, r, a0, a1, ccw);
-	//       // var a;
-	//       if (ccw) a = a1, a1 = a0, a0 = a; // Uh, what?
-	//       path.absarc(x, y, r, a0, a1, !ccw);
-	//     },
-	//     closePath: function() { path.closePath(); }
-	//   })(d);
-
-	//   var shape = THREE.SceneUtils.createMultiMaterialObject(path.extrude(extrudeOptions), [material]);
-	//   shapes.push(shape);
-	//   scene.add(shape);
-	// });
 
 	var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
 	camera.position.x = 250;
