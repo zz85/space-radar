@@ -17,6 +17,7 @@
 var inited = false;
 
 var material, scene, chart, arc;
+var canvas3d
 
 function init3d() {
 
@@ -25,6 +26,10 @@ function init3d() {
 
 	var width = 960,
 	    height = 500;
+
+	width = window.innerWidth;
+	height = window.innerHeight - document.querySelector('header').getBoundingClientRect().height - document.querySelector('footer').getBoundingClientRect().height;
+
 
   // material = new THREE.MeshNormalMaterial({transparent: true, opacity: 0.9});
 
@@ -36,12 +41,13 @@ function init3d() {
 
 	arc = d3_shape.arc()
 
-	var renderer = new THREE.WebGLRenderer;
+	canvas3d = document.getElementById('three-canvas');
+
+	var renderer = new THREE.WebGLRenderer({
+		canvas: canvas3d
+	});
 	renderer.setClearColor(new THREE.Color("#fff", 1.0));
 	renderer.setSize(width, height);
-	renderer.domElement.style.cssText ="width: 960px; height: 500px; z-index:1000; position:absolute; opacity: 0.5;"
-
-	document.body.appendChild(renderer.domElement);
 
 	var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
 	camera.position.x = 250;
@@ -71,6 +77,12 @@ function init3d() {
 
 
 function plot3d(data) {
+
+	setTimeout( () => {
+		canvas3d.style.display = 'block';
+	}, 2000)
+
+
 	var extrudeOptions = {
 	  amount: 1,
 	  bevelSize: 0,
