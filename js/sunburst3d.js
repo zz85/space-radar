@@ -10,10 +10,31 @@
 /* https://github.com/d3/d3-timer Copyright 2015 Mike Bostock */
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define("d3-timer",["exports"],e):e(t.d3_timer={})}(this,function(t){"use strict";function e(t,e,n){this.id=++c,this.restart(t,e,n)}function n(t,n,i){return new e(t,n,i)}function i(t){t=null==t?Date.now():+t,++l;try{for(var e,n=a;n;)t>=n.time&&(e=n.callback)(t-n.time,t),n=n.next}finally{--l}}function o(){l=f=0;try{i()}finally{for(var t,e=a,n=1/0;e;)e.callback?(n>e.time&&(n=e.time),e=(t=e).next):e=t?t.next=e.next:a=e.next;u=t,r(n)}}function r(t){if(!l){f&&(f=clearTimeout(f));var e=t-Date.now();e>24?1/0>t&&(f=setTimeout(o,e)):(l=1,s(o))}}var a,u,l=0,f=0,c=0,m={},s="undefined"!=typeof window&&(window.requestAnimationFrame||window.msRequestAnimationFrame||window.mozRequestAnimationFrame||window.webkitRequestAnimationFrame||window.oRequestAnimationFrame)||function(t){return setTimeout(t,17)};e.prototype=n.prototype={restart:function(t,e,n){if("function"!=typeof t)throw new TypeError("callback is not a function");n=(null==n?Date.now():+n)+(null==e?0:+e);var i=this.id,o=m[i];o?(o.callback=t,o.time=n):(o={next:null,callback:t,time:n},u?u.next=o:a=o,m[i]=u=o),r()},stop:function(){var t=this.id,e=m[t];e&&(e.callback=null,e.time=1/0,delete m[t],r())}};var d="0.0.6";t.version=d,t.timer=n,t.timerFlush=i});
 
-function plot3d(data) {
+
+(() => {
+'use strict'
+
+var inited = false;
+
+var material, scene, chart, arc;
+
+function init3d() {
+
+	if (inited) return;
+	inited = true;
+
 	var width = 960,
 	    height = 500;
 
+  // material = new THREE.MeshNormalMaterial({transparent: true, opacity: 0.9});
+
+  material = new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff, opacity: 0.9});
+	scene = new THREE.Scene;
+
+	chart = new THREE.Object3D();
+	scene.add(chart);
+
+	arc = d3_shape.arc()
 
 	var renderer = new THREE.WebGLRenderer;
 	renderer.setClearColor(new THREE.Color("#fff", 1.0));
@@ -22,9 +43,34 @@ function plot3d(data) {
 
 	document.body.appendChild(renderer.domElement);
 
-	// window.meow = renderer.domElement;
-	// meow.style.display = 'none';
+	var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+	camera.position.x = 250;
+	camera.position.y = 100;
+	camera.position.z = 100;
+	camera.lookAt(new THREE.Vector3(20, 15, 0));
 
+	d3_timer.timer(function(elapsed) {
+		chart.rotation.y = elapsed / 1600;
+		chart.rotation.z = elapsed / 2300;
+	  renderer.render(scene, camera);
+	});
+
+	var light = new THREE.PointLight( 0xffffff, 0.8 );
+	light.position.z = -100;
+	scene.add( light );
+
+	var light = new THREE.PointLight( 0xffffff, 0.8 );
+	light.position.y = 60;
+	scene.add( light );
+
+	var light = new THREE.PointLight( 0xffffff, 1 );
+	light.position.z = 0;
+	camera.add( light );
+
+}
+
+
+function plot3d(data) {
 	var extrudeOptions = {
 	  amount: 1,
 	  bevelSize: 0,
@@ -34,30 +80,23 @@ function plot3d(data) {
 	  steps: 1
 	};
 
-	var material = new THREE.MeshNormalMaterial({transparent: true, opacity: 0.7});
-	var scene = new THREE.Scene;
-	var shapes = [];
-
-	var arc = d3_shape.arc()
-
 	console.log('PLOTTING ', data)
 
-
 	data.forEach(function(d) {
-
 		if (d.depth < 1) return;
 		var a = d.x;
 		var b = d.x + d.dx;
 		var s = Math.min(a, b);
 		var t = Math.max(a, b);
 
-		var THICKNESS = 40;
+		var THICKNESS = 20;
+		var RADIUS = 200;
 		var HOLE = 20;
 
 		var r = d.depth * THICKNESS + HOLE;
 
 		arc.innerRadius(r) //
-    .outerRadius(r + THICKNESS)
+    .outerRadius(r + THICKNESS) // RADIUS - for cake like
     .cornerRadius(0)
     .padAngle(0.01);
 
@@ -77,19 +116,18 @@ function plot3d(data) {
 			endAngle: t
 		});
 
-	  var shape = THREE.SceneUtils.createMultiMaterialObject(path.extrude(extrudeOptions), [material]);
-	  shapes.push(shape);
-	  scene.add(shape);
+		if (path.curves.length < 3) return;
+
+	  // var shape = THREE.SceneUtils.createMultiMaterialObject(path.extrude(extrudeOptions), [material]);
+
+	  var shape = new THREE.Mesh(path.extrude(extrudeOptions), material);
+	  shape.position.z = d.depth * -10;
+	  chart.add(shape);
 	});
 
-	var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-	camera.position.x = 250;
-	camera.position.y = 100;
-	camera.position.z = 100;
-	camera.lookAt(new THREE.Vector3(20, 15, 0));
-
-	d3_timer.timer(function(elapsed) {
-	  shapes.forEach(function(s) { s.rotation.x = elapsed / 1600; });
-	  renderer.render(scene, camera);
-	});
 }
+
+	window.plot3d = plot3d;
+	init3d();
+
+})()
