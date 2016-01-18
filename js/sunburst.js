@@ -435,6 +435,7 @@ function SunBurst() {
         //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
         // })
 
+    plot3d(partition.nodes(root));
     redraw()
   }
 
