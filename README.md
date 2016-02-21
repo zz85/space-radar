@@ -22,6 +22,7 @@ Features
 - cross platform (at least on Mac OS X and Windows)
 - allow drilldown of directories
 - breadcrumbs and navigation
+- to create a file to be read from use: find <path> -type f -printf "%s %p\n" > /tmp/sizes.txt
 
 Future Enhancements
 ==
