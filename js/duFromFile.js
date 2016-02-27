@@ -14,40 +14,37 @@
 
   resetCounters()
 
-  function addFileByPath(node, path, size) {
-    if ( path.length == 1 ) {
-      node[path[0]] = size;
-      return node;
-    }
+  function addFileToNode(files, path, size) {
     var dirname = path.shift();
-    if ( !node[dirname] ) {
-      node[dirname] = {};
-    }
-    node[dirname] = addFileByPath(node[dirname], path, size);
-    return node;
-  }
+    var index = -1;
+    if ( path.length === 0 ) {
+      // Last element is the file, so we push it
+      files.children.push({name: dirname, size: size});
+    } else {
+      if ( files.children ) {
+        // Try to find the directory within the current children
+        index = files.children.findIndex(function(element) {
+          return element.name === dirname;
+        });
+      }
 
-  function changeNodeFormat(json, root) {
-    var newNode = {
-      name: root,
-      children: []
-    };
-    for (var elem in json ) {
-      if (typeof json[elem] == "object") {
-        newNode["children"].push(changeNodeFormat(json[elem], elem));
-      } else if (typeof json[elem] == "number") {
-        newNode["children"].push({
-          name: elem,
-          size: json[elem]
-        })
+      if ( index === -1 ) {
+        // not found, so we push a new one
+        files.children.push(
+          addFileToNode({name: dirname, children: []}, path, size)
+        );
+      } else {
+        files.children[index] = addFileToNode(files.children[index], path, size);
       }
     }
-    return newNode;
+    return files;
   }
 
   function readFSFromFile(options, done) {
     let node;
     node = options.node;
+    node.name = options.parent;
+    node.children = [];
 
     var json = {};
     var currentSize = 0;
@@ -62,6 +59,11 @@
        var result = line.match(lineRegex);
        var size = parseInt(result[1]);
        var path = result[2].split('/');
+       // Depending on how find is used the first element may be:
+       // empty if the path started with / or a .
+       if ( path[0] === "." || path[0] === "" ) {
+         path.shift();
+       }
 
        currentLine++;
        currentSize += size;
@@ -69,12 +71,9 @@
          options.onprogress(result[2], '', currentSize)
        }
 
-       addFileByPath(json, path, size);
+       addFileToNode(node, path, size);
     });
     rl.on('close', function() {
-      node.name = options.parent;
-      node.children = changeNodeFormat(json, '').children;
-
       done();
     });
   }
