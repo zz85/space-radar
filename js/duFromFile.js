@@ -14,30 +14,34 @@
 
   resetCounters()
 
-  function addFileToNode(files, path, size) {
+  function addFileToNode(node, path, size) {
     var dirname = path.shift();
     var index = -1;
     if ( path.length === 0 ) {
       // Last element is the file, so we push it
-      files.children.push({name: dirname, size: size});
+      node.children.push({name: dirname, size: size});
     } else {
-      if ( files.children ) {
-        // Try to find the directory within the current children
-        index = files.children.findIndex(function(element) {
+      // Try to find the directory within the current children
+      // Since the file is usually sorted and we push the last element is likely to the the one
+      var clen = node.children.length;
+      if ( clen> 1 && node.children[clen-1].name === dirname ) {
+        index = clen-1;
+      } else {
+        index = node.children.findIndex(function(element) {
           return element.name === dirname;
         });
       }
 
       if ( index === -1 ) {
         // not found, so we push a new one
-        files.children.push(
+        node.children.push(
           addFileToNode({name: dirname, children: []}, path, size)
         );
       } else {
-        files.children[index] = addFileToNode(files.children[index], path, size);
+        node.children[index] = addFileToNode(node.children[index], path, size);
       }
     }
-    return files;
+    return node;
   }
 
   function readFSFromFile(options, done) {
@@ -46,9 +50,9 @@
     node.name = options.parent;
     node.children = [];
 
-    var json = {};
     var currentSize = 0;
     var currentLine = 0;
+    // Format is "<size><whitespaces><path>"
     var lineRegex = /^(\d+)\s+(.*)$/
 
     var rl = readline.createInterface({
@@ -59,8 +63,8 @@
        var result = line.match(lineRegex);
        var size = parseInt(result[1]);
        var path = result[2].split('/');
-       // Depending on how find is used the first element may be:
-       // empty if the path started with / or a .
+       // Depending on how find is used the first element may be empty
+       // if the path started with / or a . which we also don't want
        if ( path[0] === "." || path[0] === "" ) {
          path.shift();
        }
