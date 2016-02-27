@@ -3,6 +3,7 @@
 
   const fs = require('fs')
   const path = require('path')
+  const readline = require('readline');
 
   let counter, current_size
 
@@ -45,46 +46,38 @@
   }
 
   function readFSFromFile(options, done) {
-    let node, json, tmp;
+    let node;
     node = options.node;
 
-    json = readFile(options.parent, options.onprogress);
-    tmp = changeNodeFormat(json, ""); // Maybe we can get rid of this, since the changed node format is not JSON like
-
-    // simply node=tmp does not work and I am currently to lazy to find out why
-    node.name = tmp.name;
-    node.children = tmp.children;
-
-    // console.log('node is: ' + JSON.stringify(node));
-
-    done();
-    return
-  }
-
-  function readFile(file, progress) {
     var json = {};
     var currentSize = 0;
-
+    var currentLine = 0;
     var lineRegex = /^(\d+)\s+(.*)$/
 
-    var offlineFileSizes = fs.readFileSync(file).toString().split("\n");
-    for (var line = 0; line < offlineFileSizes.length; line++ ) {
-      if (!offlineFileSizes[line]) continue;
-      var result = offlineFileSizes[line].match(lineRegex);
-      var size = parseInt(result[1]);
-      var path = result[2].split('/');
+    var rl = readline.createInterface({
+        input: fs.createReadStream(options.parent),
+        terminal: false
+    })
+    rl.on('line', function(line) {
+       var result = line.match(lineRegex);
+       var size = parseInt(result[1]);
+       var path = result[2].split('/');
 
-      currentSize += size;
-      if ( line % 1000 === 0 ) { // update progress every Xth file
-        progress(result[2], '', currentSize)
-      }
+       currentLine++;
+       currentSize += size;
+       if ( currentLine % 1000 === 0 ) { // update progress every Xth file
+         options.onprogress(result[2], '', currentSize)
+       }
 
-      addFileByPath(json, path, size);
-    }
-    return json;
+       addFileByPath(json, path, size);
+    });
+    rl.on('close', function() {
+      node.name = options.parent;
+      node.children = changeNodeFormat(json, '').children;
+
+      done();
+    });
   }
-
-
 
   readFSFromFile.resetCounters = resetCounters
   module.exports = readFSFromFile
