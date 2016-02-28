@@ -4,6 +4,7 @@
   const fs = require('fs')
   const path = require('path')
   const readline = require('readline');
+  var zlib = require("zlib");
 
   let counter, current_size
 
@@ -45,7 +46,7 @@
   }
 
   function readFSFromFile(options, done) {
-    let node;
+    let node, instream;
     node = options.node;
     node.name = options.parent;
     node.children = [];
@@ -55,8 +56,14 @@
     // Format is "<size><whitespaces><path>"
     var lineRegex = /^(\d+)\s+(.*)$/
 
+    if ( options.parent.endsWith(".gz") ) {
+      instream = fs.createReadStream(options.parent).pipe(zlib.createGunzip());
+    } else {
+      instream = fs.createReadStream(options.parent);
+    }
+
     var rl = readline.createInterface({
-        input: fs.createReadStream(options.parent),
+        input: instream,
         terminal: false
     })
     rl.on('line', function(line) {
@@ -71,7 +78,7 @@
 
        currentLine++;
        currentSize += size;
-       if ( currentLine % 1000 === 0 ) { // update progress every Xth file
+       if ( currentLine % 5000 === 0 ) { // update progress every Xth file
          options.onprogress(result[2], '', currentSize)
        }
 
