@@ -22,9 +22,10 @@ Features
 - cross platform (at least on Mac OS X and Windows)
 - allow drilldown of directories
 - breadcrumbs and navigation
-- to create a file to be read from use (compressed files need to end with '.gz')
-  - `find <path> -type f -printf "%s %p\n" > /tmp/sizes.txt`
-  - `find <path> -type f -printf "%s %p\n" | gzip -c > /tmp/sizes.txt.gz`
+- analyze disk contents from a remote server. to create a file to be read from use (compressed files need to end with '.gz')
+  - `du -ab <path1> <path2> | gzip -c > /tmp/sizes.txt.gz`
+  - `du -ab <path1> <path2> > /tmp/sizes.txt`
+  - `find <path1> <path2> -type f -printf "%s %p\n" | gzip -c > /tmp/sizes.txt.gz`
 
 Future Enhancements
 ==
