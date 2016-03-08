@@ -77,7 +77,7 @@
     })
     rl.on('line', function(line) {
       var result = line.match(lineRegex);
-      var size = parseInt(result[1]);
+      var size = parseInt(result[1]) * 1024;
       var path = result[2].split('/');
       // Depending on how find is used the first element may be empty
       // if the path started with / or a . which we also don't want
