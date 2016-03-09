@@ -9,6 +9,7 @@
     "clean": "rm -rf SpaceRadar-darwin-x64",
     "build": "electron-packager . SpaceRadar --platform=darwin --arch=x64 --version=0.34.3 --ignore=experiments --ignore='node_modules/(electron-packager|electron-prebuilt|standard|publish-release)' --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
     "build:win": "electron-packager . SpaceRadar --platform=win32 --arch=x64 --version=0.34.3 --ignore=experiments --ignore=node_modules/electron-packager --ignore=node_modules/electron-prebuilt --ignore=node_modules/standard --ignore=node_modules/publish-release --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
+    "build:linux": "electron-packager . SpaceRadar --platform=linux --arch=x64 --version=0.36.10 --ignore=experiments --ignore=node_modules/electron-packager --ignore=node_modules/electron-prebuilt --ignore=node_modules/standard --ignore=node_modules/publish-release --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
     "zip": "cd SpaceRadar-darwin-x64 && zip -ryX SpaceRadar-darwin-x64.zip SpaceRadar.app",
     "publish": "publish-release SpaceRadar-darwin-x64/SpaceRadar-darwin-x64.zip",
     "everything": "npm run clean && npm run build && npm run zip && npm run publish"
