@@ -87,7 +87,7 @@ function complete(json) {
   // shell.beep() // disabling as this can be anonying for memory monitor
 }
 
-const DEBUG = 0 // process.ENV.DEBUG
+const DEBUG = process.env.DEBUG //
 const ipc_name = 'viz'
 const fs = require('fs')
 let win
