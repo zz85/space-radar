@@ -14,6 +14,7 @@ function scanner() {
 
   const path = require('path')
   const du = require('./du')
+  const duFromFile = require('./duFromFile')
   const fs = require('fs')
   const utils = require('./utils')
   const log = utils.log
@@ -82,14 +83,27 @@ function scanner() {
     }
 
     target = path.resolve(target)
-    log('Scanning target', target)
 
-    du({
+    var stat = fs.lstatSync(target)
+    if (stat.isDirectory()) {
+      log('Scanning target', target)
+
+      du({
         parent: target,
         node: json,
         onprogress: progress,
         // onrefresh: refresh
       }, complete)
+    } else if (stat.isFile()) {
+      log('Reading file', target)
+
+      duFromFile({
+        parent: target,
+        node: json,
+        onprogress: progress,
+        // onrefresh: refresh
+      }, complete)
+    }
 
     refreshTask.schedule()
   }

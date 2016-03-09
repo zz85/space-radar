@@ -302,6 +302,17 @@ function scanFolder() {
   // 'openFile', 'multiSelections'
 }
 
+function readFile() {
+  var dialog = remote.dialog
+  var selection = dialog.showOpenDialog({ properties: ['openFile']})
+
+  if (selection && selection[0]) {
+    selectPath(selection[0])
+  }
+
+  console.log(selection);
+}
+
 function scanMemory() {
   mempoller.run()
 }
@@ -320,15 +331,8 @@ function selectPath(path) {
   var stat = fs.lstatSync(path)
   log('file', stat.isFile(), 'dir', stat.isDirectory())
 
-  if (stat.isFile()) {
-    alert('please select a directory!')
-    return
-  }
-
-  if (stat.isDirectory()) {
-    startScan(path);
-    return
-  }
+  startScan(path);
+  return
 }
 
 var promptbox = document.getElementById('promptbox');

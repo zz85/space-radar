@@ -22,6 +22,15 @@ Features
 - cross platform (at least on Mac OS X and Windows)
 - allow drilldown of directories
 - breadcrumbs and navigation
+- analyze disk contents from a remote server (see section [Reading from a file](#reading-file))
+
+Reading from a file <a id="reading-file"></a>
+==
+To create a file to be read from use `du -ak`, for example:
+- `du -ak /var/log /usr | gzip -c > /tmp/sizes.txt.gz`
+- `du -ak /opt /home /tmp > /tmp/sizes.txt`
+
+Compressed files can be read directly. To detect them, the file name has to end with `.gz`.
 
 Future Enhancements
 ==
