@@ -1,5 +1,7 @@
 'use strict'
 
+const RENDER_3D = false;
+
 function SunBurst() {
 
   function onResize() {
@@ -435,7 +437,7 @@ function SunBurst() {
         //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
         // })
 
-    plot3d(partition.nodes(root));
+    if (RENDER_3D) plot3d(partition.nodes(root));
     redraw()
   }
 
