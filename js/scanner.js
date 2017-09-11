@@ -51,8 +51,9 @@ function scanner() {
     log('go', target);
     const
       START_REFRESH_INTERVAL = 5000,
-      REFRESH_INTERVAL = START_REFRESH_INTERVAL,
       MAX_REFRESH_INTERVAL = 15 * 60 * 1000
+
+    let REFRESH_INTERVAL = START_REFRESH_INTERVAL
 
     target = path.resolve(target)
     var stat = fs.lstatSync(target)
