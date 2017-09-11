@@ -27,8 +27,33 @@ function startScan(path) {
   start_time = performance.now()
   console.time('scan_job_time')
 
-  sendIpcMsg('go', path)
+  var stat = fs.lstatSync(path)
+  log('file', stat.isFile(), 'dir', stat.isDirectory())
+  // return sendIpcMsg('go', path);
+  if (stat.isFile()) {
+    const json = new duFromFile.iNode()
+    duFromFile({
+      parent: path,
+      node: json,
+      onprogress: progress,
+      // onrefresh: refresh
+    }, () => {
+      return complete(json)
+      log('serial')
+      const a = JSON.stringify(json)
+      log('end serial')
+
+      const b = JSON.parse(a)
+      log('end deserial')
+      complete(b);
+    })
+  }
+  else {
+    sendIpcMsg('go', path)
+  }
 }
+
+
 
 function progress(dir, name, size) {
   // log('[' + ipc_name + '] progress', name)
@@ -55,7 +80,7 @@ function refresh(json) {
   setTimeout( () => {
     onJson(null, json)
     lightbox(false)
-  }, 1000 )
+  }, 1000)
 }
 
 function cleanup() {
@@ -311,7 +336,6 @@ function readFile() {
 
   if (selection && selection[0]) {
     const file = selection[0];
-    console.log('read file', file);
     selectPath(file)
   }
 }
@@ -331,9 +355,6 @@ function welcomeDialog() {
 }
 
 function selectPath(path) {
-  var stat = fs.lstatSync(path)
-  log('file', stat.isFile(), 'dir', stat.isDirectory())
-
   startScan(path);
   return
 }

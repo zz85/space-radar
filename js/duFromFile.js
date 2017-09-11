@@ -5,7 +5,9 @@
   const path = require('path')
   const readline = require('readline')
   const zlib = require('zlib')
-  const log = require('./utils').log
+
+  const electron = typeof(window) !== 'undefined'
+  const log = window.log ? window.log : require('./utils').log;
 
   let counter, current_size
 
@@ -18,11 +20,13 @@
     constructor(name, size) {
       this.name = name;
       this.size = size || 0;
-      this.children = new Map();
+      this.children = []
+      this._children = new Map();
     }
 
     addChild(node) {
-      this.children.set(node.name, node);
+      this.children.push(node)
+      this._children.set(node.name, node);
     }
 
     // finds child node based on path/file/dir name
@@ -30,14 +34,14 @@
       if (!pathname) return this;
 
       // the index indexes all the children name
-      return this.children.get(pathname);
+      return this._children.get(pathname);
     }
 
     toJSON() {
       return {
         name: this.name,
         // parent: this.parent,
-        children: [...this.children.values()],
+        children: [...this._children.values()],
         size: this.size
       };
     }
@@ -123,6 +127,10 @@
   readFSFromFile.resetCounters = resetCounters
   readFSFromFile.iNode = iNode;
   module.exports = readFSFromFile
+
+  if (electron) {
+   window.duFromFile = readFSFromFile;
+  }
 
   /*
   const parent = new iNode('test')
