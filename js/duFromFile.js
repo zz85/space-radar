@@ -5,6 +5,7 @@
   const path = require('path')
   const readline = require('readline')
   const zlib = require('zlib')
+  const log = require('./utils').log
 
   let counter, current_size
 
@@ -13,67 +14,82 @@
     current_size = 0
   }
 
-  resetCounters();
-
-  function findChild(children, dirname) {
-    // Try to find the directory within the current children
-    // Since the file is usually sorted and we push, the last element is likely the directory we seek
-    let clen = children.length;
-    if (clen > 1 && children[clen-1].name === dirname) {
-      return clen - 1
-    } else {
-      return children.findIndex(function(element) {
-        return element.name === dirname;
-      })
+  class iNode {
+    constructor(name, size) {
+      this.name = name;
+      this.size = size || 0;
+      this.children = new Map();
     }
 
+    addChild(node) {
+      this.children.set(node.name, node);
+    }
+
+    // finds child node based on path/file/dir name
+    findChild(pathname) {
+      if (!pathname) return node;
+
+      // the index indexes all the children name
+      return this.children.get(pathname);
+    }
+
+    toJSON() {
+      return {
+        name: this.name,
+        // parent: this.parent,
+        children: [...this.children.values()],
+        size: this.size
+      };
+    }
   }
 
+  resetCounters();
+
   function addFileToNode(node, path, size) {
-    let dirname = path.shift();
-    let index = findChild(node.children, dirname);
+    let pathname = path.shift();
+    const child = node.findChild(pathname);
 
     if (path.length === 0) {
-      // Last element is either a new file which we just push (index -1), or
-      // a directory which already exists (index != -1) because of du's sorting
-      // so we just add the size to it
-      if (index === -1) {
-        node.children.push({ name: dirname, size: size });
+      // Last element is either a new file, or
+      // a directory which already exists
+      if (!child) {
+        node.addChild(new iNode(pathname, size)) // { name: pathname, size: size }
       } else {
-        node.children[index].size = size;
+        child.size = size;
       }
     } else {
-      if (index === -1) {
-        // not found, so we push a new one
-        node.children.push(
-          addFileToNode({ name: dirname, children: [] }, path, size)
-        );
+      if (!child) {
+        // not found, so we push a new node (directory);
+        const new_child = new iNode(pathname);
+        node.addChild(new_child);
+        addFileToNode(new_child, path, size);
       } else {
-        node.children[index] = addFileToNode(node.children[index], path, size);
+        addFileToNode(child, path, size);
       }
     }
     return node;
   }
 
   function readFSFromFile(options, done) {
-    let node, instream
-    node = options.node
-    node.name = options.parent
-    node.children = []
+    let instream
+    const target_file = options.parent;
+    const node = options.node
+    node.name = target_file
 
     let currentSize = 0
     // Format is "<size><whitespaces><path>"
-    let lineRegex = /^(\d+)\s+([\s\S]*)$/
+    const lineRegex = /^(\d+)\s+([\s\S]*)$/
+    console.time('readfs');
 
-    if (options.parent.endsWith('.gz')) {
-      instream = fs.createReadStream(options.parent).pipe(zlib.createGunzip());
+    if (target_file.endsWith('.gz')) {
+      instream = fs.createReadStream(target_file).pipe(zlib.createGunzip());
     } else {
-      instream = fs.createReadStream(options.parent);
+      instream = fs.createReadStream(target_file);
     }
 
     instream.setEncoding('utf-8');
 
-    let rl = readline.createInterface({
+    const rl = readline.createInterface({
       input: instream,
       terminal: false
     })
@@ -98,10 +114,37 @@
     });
 
     rl.on('close', function() {
-      done()
+      log('entry counter', counter);
+      console.timeEnd('readfs');
+      done(counter)
     });
   }
 
   readFSFromFile.resetCounters = resetCounters
+  readFSFromFile.iNode = iNode;
   module.exports = readFSFromFile
+
+  /*
+  const parent = new iNode('test')
+  readFSFromFile({
+    parent: './sizes_hashed.txt.gz',
+    node: parent,
+    onprogress: (...a) => { console.log('progress', a); },
+    // onrefresh: refresh
+  }, (e) => { console.log('done', 1 || JSON.stringify(parent, 0, 1)) })
+  */
+
 })()
+
+
+/*
+counter 322361
+done
+node js/duFromFile.js  56.85s user 0.81s system 95% cpu 1:00.23 total
+
+322361
+node js/duFromFile.js  52.85s user 0.65s system 98% cpu 54.549 total
+
+after map speedup
+node js/duFromFile.js  ~2.19s user 1.61s system 58% cpu 11.598 total
+*/

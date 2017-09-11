@@ -1,7 +1,5 @@
 'use strict'
 
-const RENDER_3D = false;
-
 function SunBurst() {
 
   function onResize() {

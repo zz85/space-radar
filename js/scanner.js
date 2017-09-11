@@ -48,45 +48,20 @@ function scanner() {
   }
 
   function go(target) {
-    let
+    log('go', target);
+    const
       START_REFRESH_INTERVAL = 5000,
       REFRESH_INTERVAL = START_REFRESH_INTERVAL,
       MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
-    let json = {}
-    let refreshTask = new TaskChecker(function(next) {
-      log('refresh...')
-      transfer('refresh', json)
-      REFRESH_INTERVAL *= 3
-      next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
-    }, REFRESH_INTERVAL)
-
-    console.time('async2')
-
-    function complete(counter) {
-        // log("Scan completed", counter, "files");
-        console.timeEnd('async2')
-        refreshTask.cancel()
-
-        log(json);
-        transfer('complete', json)
-        log('ok')
-
-        // cleanup
-        json = {}
-        du.resetCounters()
-    };
-
-    function progress(path, name, size) {
-      refreshTask.check()
-      transfer('progress', path, name, size)
-    }
-
     target = path.resolve(target)
-
     var stat = fs.lstatSync(target)
+
+    let json
+
     if (stat.isDirectory()) {
       log('Scanning target', target)
+      json = {}
 
       du({
         parent: target,
@@ -96,6 +71,7 @@ function scanner() {
       }, complete)
     } else if (stat.isFile()) {
       log('Reading file', target)
+      json = new duFromFile.iNode()
 
       duFromFile({
         parent: target,
@@ -105,7 +81,34 @@ function scanner() {
       }, complete)
     }
 
+    const refreshTask = new TaskChecker(function(next) {
+      log('refresh...')
+      transfer('refresh', json)
+      REFRESH_INTERVAL *= 3
+      next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
+    }, REFRESH_INTERVAL)
     refreshTask.schedule()
+
+    console.time('async2')
+
+    function complete(counter) {
+        // log("Scan completed", counter, "files");
+        console.timeEnd('async2')
+        refreshTask.cancel()
+
+        log('complete task, transferring json', json)
+        transfer('complete', json)
+        log('transfer done')
+
+        // cleanup
+        json = null
+        du.resetCounters()
+    };
+
+    function progress(path, name, size) {
+      refreshTask.check()
+      transfer('progress', path, name, size)
+    }
   }
 
   function webviewTransfer() {
@@ -119,32 +122,33 @@ function scanner() {
     }
   }
 
-  function lsipc(jsonstr) {
+  /* Local storage IPC */
+  function lsipc(json_str) {
     let err
     try {
       // localStorage IPC
-      localStorage.lsipc = localStorage.lsipc === jsonstr ? jsonstr + ' ' : jsonstr
+      localStorage.lsipc = localStorage.lsipc === json_str ? json_str + ' ' : json_str
     } catch (e) {
       console.error('fail: ')
-      log('len', jsonstr.length)
+      log('len', json_str.length)
       err = e;
     }
 
     return err
   }
 
-  function transfer(target) {
-    var args = Array.prototype.slice.call(arguments)
-
-    var jsonstr = JSON.stringify(args)
+  function transfer(...args) {
+    const json_str = JSON.stringify(args)
     var err;
 
     err = null
 
     if (browser) {
-      // jsonstr.length > 8192 &&
-      if (jsonstr.length < 10000000) {
-        err = lsipc(jsonstr)
+      // log('browser ipc');
+      // json_str.length > 8192 &&
+      if (json_str.length < 10000000) {
+        // roughly 10MB payload
+        err = lsipc(json_str)
         if (!err) return
       }
 
@@ -163,14 +167,14 @@ function scanner() {
     /* process */
 
     // if (!browser) {
-    //   if (jsonstr.length > 20000000) {
+    //   if (json_str.length > 20000000) {
     //     err = true
     //   } else {
     //     try {
     //       process.send(args)
     //     } catch (e) {
     //       console.error('fail: ')
-    //       log('len', jsonstr.length)
+    //       log('len', json_str.length)
     //       err = e;
     //    }
     //   }
@@ -178,10 +182,11 @@ function scanner() {
     //   if (!err) return
     // }
 
+    log('process fs ipc');
     err = null
     // fs ipc
-    let p = path.join(__dirname, 'fs-ipc.json')
-    fs.writeFileSync(p, jsonstr, { encoding: 'utf-8' })
+    const p = path.join(__dirname, 'fs-ipc.json')
+    fs.writeFileSync(p, json_str, { encoding: 'utf-8' })
     transfer('fs-ipc', p)
     return
   }
