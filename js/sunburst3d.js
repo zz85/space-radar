@@ -2,6 +2,8 @@
 
 d3_shape = require('d3-shape');
 
+window.RENDER_3D = false;
+
 (() => {
 'use strict'
 
@@ -139,6 +141,6 @@ function plot3d(data) {
 }
 
 	window.plot3d = plot3d;
-	init3d();
+	if (RENDER_3D) init3d();
 
 })()

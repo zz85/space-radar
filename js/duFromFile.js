@@ -17,14 +17,12 @@
   class iNode {
     constructor(name, size) {
       this.name = name;
-      // this.children = [];
       this.size = size || 0;
-      this.index = new Map();
+      this.children = new Map();
     }
 
     addChild(node) {
-      this.index.set(node.name, node);
-      // this.children.push(node);
+      this.children.set(node.name, node);
     }
 
     // finds child node based on path/file/dir name
@@ -32,14 +30,14 @@
       if (!pathname) return node;
 
       // the index indexes all the children name
-      return this.index.get(pathname);
+      return this.children.get(pathname);
     }
 
     toJSON() {
       return {
         name: this.name,
-        // children: this.children,
-        children: [...this.index.values()],
+        // parent: this.parent,
+        children: [...this.children.values()],
         size: this.size
       };
     }
@@ -49,7 +47,6 @@
 
   function addFileToNode(node, path, size) {
     let pathname = path.shift();
-    // console.log('node', node, 'pathname', path, pathname);
     const child = node.findChild(pathname);
 
     if (path.length === 0) {
@@ -75,14 +72,14 @@
 
   function readFSFromFile(options, done) {
     let instream
-    const node = options.node
-    node.name = options.parent
-
     const target_file = options.parent;
+    const node = options.node
+    node.name = target_file
 
     let currentSize = 0
     // Format is "<size><whitespaces><path>"
-    let lineRegex = /^(\d+)\s+([\s\S]*)$/
+    const lineRegex = /^(\d+)\s+([\s\S]*)$/
+    console.time('readfs');
 
     if (target_file.endsWith('.gz')) {
       instream = fs.createReadStream(target_file).pipe(zlib.createGunzip());
@@ -92,7 +89,7 @@
 
     instream.setEncoding('utf-8');
 
-    let rl = readline.createInterface({
+    const rl = readline.createInterface({
       input: instream,
       terminal: false
     })
@@ -118,6 +115,7 @@
 
     rl.on('close', function() {
       log('entry counter', counter);
+      console.timeEnd('readfs');
       done(counter)
     });
   }
