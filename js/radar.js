@@ -307,10 +307,10 @@ function readFile() {
   var selection = dialog.showOpenDialog({ properties: ['openFile']})
 
   if (selection && selection[0]) {
-    selectPath(selection[0])
+    const file = selection[0];
+    console.log('read file', file);
+    selectPath(file)
   }
-
-  console.log(selection);
 }
 
 function scanMemory() {

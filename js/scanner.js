@@ -48,12 +48,14 @@ function scanner() {
   }
 
   function go(target) {
+    log('go', target);
     let
       START_REFRESH_INTERVAL = 5000,
       REFRESH_INTERVAL = START_REFRESH_INTERVAL,
       MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
-    let json = {}
+    // let json = {}
+    let json = new duFromFile.iNode;
     let refreshTask = new TaskChecker(function(next) {
       log('refresh...')
       transfer('refresh', json)
