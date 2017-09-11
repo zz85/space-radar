@@ -20,6 +20,7 @@ function scanner() {
   const log = utils.log
   const TimeoutTask = utils.TimeoutTask
   const TaskChecker = utils.TaskChecker
+  const zlib = require('zlib')
 
   let ipc
 
@@ -187,7 +188,10 @@ function scanner() {
     err = null
     // fs ipc
     const p = path.join(__dirname, 'fs-ipc.json')
-    fs.writeFileSync(p, json_str, { encoding: 'utf-8' })
+    const before_size = json_str.length;
+    const zlib_json_str = zlib.deflateSync(json_str)
+    log('compression', (zlib_json_str.length / before_size * 100).toFixed(2), '% original size')
+    fs.writeFileSync(p, zlib_json_str)
     transfer('fs-ipc', p)
     return
   }

@@ -90,6 +90,8 @@ function complete(json) {
 const DEBUG = process.env.DEBUG //
 const ipc_name = 'viz'
 const fs = require('fs')
+const zlib = require('zlib')
+
 let win
 
   var main_ipc = remote.ipcMain
@@ -158,7 +160,8 @@ function fsipc(filename) {
 
   runNext( () => {
     try {
-      var args = fs.readFileSync(filename, {encoding: 'utf-8'})
+      var args = fs.readFileSync(filename)
+      args = zlib.inflateSync(args)
       args = JSON.parse(args)
       var cmd = args.shift()
       handleIPC(cmd, args)
