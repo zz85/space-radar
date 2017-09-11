@@ -27,7 +27,7 @@
 
     // finds child node based on path/file/dir name
     findChild(pathname) {
-      if (!pathname) return node;
+      if (!pathname) return this;
 
       // the index indexes all the children name
       return this.children.get(pathname);

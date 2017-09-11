@@ -25,7 +25,7 @@ function startScan(path) {
   legend.style('display', 'block')
   log('start', path)
   start_time = performance.now()
-  console.time('scan_job')
+  console.time('scan_job_time')
 
   sendIpcMsg('go', path)
 }
@@ -69,7 +69,7 @@ function cleanup() {
 
 function complete(json) {
   log('[' + ipc_name + '] complete..', json)
-  console.timeEnd('scan_job')
+  console.timeEnd('scan_job_time')
 
   console.time('a')
   onJson(null, json)
