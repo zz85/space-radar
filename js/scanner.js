@@ -55,7 +55,7 @@ function scanner() {
       MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
     // let json = {}
-    let json = new duFromFile.iNode;
+    let json = new duFromFile.iNode()
     let refreshTask = new TaskChecker(function(next) {
       log('refresh...')
       transfer('refresh', json)
@@ -75,7 +75,7 @@ function scanner() {
         log('ok')
 
         // cleanup
-        json = {}
+        json = new duFromFile.iNode()
         du.resetCounters()
     };
 
