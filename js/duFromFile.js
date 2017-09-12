@@ -5,6 +5,7 @@
   const path = require('path')
   const readline = require('readline')
   const zlib = require('zlib')
+  const ts = require('tail-stream');
 
   const electron = typeof(window) !== 'undefined'
   const log = window.log ? window.log : require('./utils').log;
@@ -75,7 +76,7 @@
   }
 
   function readFSFromFile(options, done) {
-    let instream
+    // let instream
     const target_file = options.parent;
     const node = options.node
     node.name = target_file
@@ -85,23 +86,53 @@
     const lineRegex = /^(\d+)\s+([\s\S]*)$/
     console.time('readfs');
 
+    let rl, instream;
     if (target_file.endsWith('.gz')) {
       instream = fs.createReadStream(target_file).pipe(zlib.createGunzip());
+      instream.setEncoding('utf-8');
     } else {
-      instream = fs.createReadStream(target_file);
+      instream = ts.createReadStream(target_file, {
+        beginAt: 0,
+        onMove: 'follow',
+        detectTruncate: true,
+        onTruncate: 'end',
+        endOnError: false,
+     });
+
+     instream.on('end', function() {
+      console.log("ended");
+  });
+
+  instream.on('error', function(err) {
+      console.log("error: " + err);
+  });
+
+  instream.on('eof', function() {
+    console.log("reached end of file");
+    // reached end of file
+  });
+
+  instream.on('truncate', function(newsize, oldsize) {
+    console.log("file truncated from: " + oldsize + " to " + newsize);
+});
+
+
     }
-
-    instream.setEncoding('utf-8');
-
-    const rl = readline.createInterface({
+    rl = readline.createInterface({
       input: instream,
       terminal: false
     })
 
     rl.on('line', function(line) {
       let result = line.match(lineRegex);
+      if (!line || result.length != 3) {
+        console.log('source: ', line);
+        return close();
+      }
+
       let size = 0 | result[1] * 1024;
       let path = result[2].split('/');
+
       // Depending on how find is used the first element may be empty
       // if the path started with / or a . which we also don't want
       if ( path[0] === '.' || path[0] === '' ) {
@@ -117,11 +148,13 @@
       addFileToNode(node, path, size);
     });
 
-    rl.on('close', function() {
+    function close() {
       log('entry counter', counter);
       console.timeEnd('readfs');
       done(counter)
-    });
+    }
+
+    rl.on('close', close);
   }
 
   readFSFromFile.resetCounters = resetCounters

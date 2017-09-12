@@ -29,7 +29,7 @@ function startScan(path) {
 
   var stat = fs.lstatSync(path)
   log('file', stat.isFile(), 'dir', stat.isDirectory())
-  // return sendIpcMsg('go', path);
+
   if (stat.isFile()) {
     const json = new duFromFile.iNode()
     duFromFile({
@@ -39,18 +39,25 @@ function startScan(path) {
       // onrefresh: refresh
     }, () => {
       return complete(json)
-      log('serial')
-      const a = JSON.stringify(json)
-      log('end serial')
-
-      const b = JSON.parse(a)
-      log('end deserial')
-      complete(b);
     })
   }
   else {
     sendIpcMsg('go', path)
   }
+}
+
+function start_read() {
+  console.log('start_read')
+
+  const json = new duFromFile.iNode()
+  duFromFile({
+    parent: './output.txt',
+    node: json,
+    onprogress: progress,
+    // onrefresh: refresh
+  }, () => {
+    return complete(json)
+  })
 }
 
 
@@ -171,6 +178,8 @@ function handleIPC(cmd, args) {
       return complete(args[0])
     case 'fs-ipc':
       return fsipc(args[0])
+    case 'du_pipe_start':
+      return start_read()
   }
 }
 

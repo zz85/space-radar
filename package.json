@@ -33,6 +33,7 @@
     "d3": "^3.5.6",
     "d3-path": "^0.1.5",
     "d3-shape": "^0.5.1",
-    "photon": "git://github.com/connors/photon.git"
+    "photon": "git://github.com/connors/photon.git",
+    "tail-stream": "^0.3.3"
   }
 }
