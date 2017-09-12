@@ -66,22 +66,22 @@ function scanner() {
       log('Scanning target', target)
       json = {}
 
-      duPipe.pipe({
-        parent: target,
-        node: json,
-        // onprogress: progress,
-        // onrefresh: refresh
-        onstart: () => {
-          ipc_transfer('du_pipe_start')
-        }
-      }, complete)
-
-      // du({
+      // duPipe.pipe({
       //   parent: target,
       //   node: json,
-      //   onprogress: progress,
+      //   // onprogress: progress,
       //   // onrefresh: refresh
+      //   onstart: () => {
+      //     ipc_transfer('du_pipe_start')
+      //   }
       // }, complete)
+
+      du({
+        parent: target,
+        node: json,
+        onprogress: progress,
+        // onrefresh: refresh
+      }, complete)
     } else if (stat.isFile()) {
       log('Reading file', target)
       json = new duFromFile.iNode()

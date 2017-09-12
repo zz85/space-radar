@@ -22,12 +22,12 @@
       this.name = name;
       this.size = size || 0;
       this.children = []
-      this._children = new Map();
+      this._childrenMap = new Map();
     }
 
     addChild(node) {
       this.children.push(node)
-      this._children.set(node.name, node);
+      this._childrenMap.set(node.name, node);
     }
 
     // finds child node based on path/file/dir name
@@ -35,14 +35,14 @@
       if (!pathname) return this;
 
       // the index indexes all the children name
-      return this._children.get(pathname);
+      return this._childrenMap.get(pathname);
     }
 
     toJSON() {
       return {
         name: this.name,
         // parent: this.parent,
-        children: [...this._children.values()],
+        children: [...this._childrenMap.values()],
         size: this.size
       };
     }
@@ -91,32 +91,35 @@
       instream = fs.createReadStream(target_file).pipe(zlib.createGunzip());
       instream.setEncoding('utf-8');
     } else {
+      instream = fs.createReadStream(target_file);
+      instream.setEncoding('utf-8');
+
+      /*
       instream = ts.createReadStream(target_file, {
         beginAt: 0,
         onMove: 'follow',
         detectTruncate: true,
         onTruncate: 'end',
         endOnError: false,
-     });
+      });
 
-     instream.on('end', function() {
-      console.log("ended");
-  });
+      instream.on('end', function() {
+        console.log("ended");
+      });
 
-  instream.on('error', function(err) {
-      console.log("error: " + err);
-  });
+      instream.on('error', function(err) {
+        console.log("error: " + err);
+      });
 
-  instream.on('eof', function() {
-    console.log("reached end of file");
-    // reached end of file
-  });
+      instream.on('eof', function() {
+        console.log("reached end of file");
+        // reached end of file
+      });
 
-  instream.on('truncate', function(newsize, oldsize) {
-    console.log("file truncated from: " + oldsize + " to " + newsize);
-});
-
-
+      instream.on('truncate', function(newsize, oldsize) {
+        console.log("file truncated from: " + oldsize + " to " + newsize);
+      });
+      */
     }
     rl = readline.createInterface({
       input: instream,

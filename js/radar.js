@@ -30,6 +30,7 @@ function startScan(path) {
   var stat = fs.lstatSync(path)
   log('file', stat.isFile(), 'dir', stat.isDirectory())
 
+  // return sendIpcMsg('go', path);
   if (stat.isFile()) {
     const json = new duFromFile.iNode()
     duFromFile({
@@ -38,7 +39,7 @@ function startScan(path) {
       onprogress: progress,
       // onrefresh: refresh
     }, () => {
-      return complete(json)
+      complete(json)
     })
   }
   else {
