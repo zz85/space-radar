@@ -57,8 +57,9 @@ function updateSelection(s) {
   selection = s
 }
 
-var Menu = remote.require('menu');
-var MenuItem = remote.require('menu-item');
+
+var Menu = remote.Menu
+var MenuItem = remote.MenuItem
 
 var contextMenu = new Menu();
 var openMenu = new MenuItem({ label: 'Open', click: openSelection })

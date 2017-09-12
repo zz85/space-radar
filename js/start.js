@@ -2,25 +2,25 @@
 
 module.exports = opener
 
-
 function opener() {
-  var remote;
+  var remote
 
   let DEBUG = 0
 
-  try {
-    remote = require('remote')
-  } catch (e) {
+  let electron = require('electron')
 
+  try {
+    remote = electron.remote
+  } catch (e) {
+    console.log('cannot require', e)
   }
 
-  var r = remote ? remote.require : require
-
-  var atomScreen = r('screen')
+  electron = remote || electron
+  var atomScreen = electron.screen
   var size = atomScreen.getPrimaryDisplay().workAreaSize
   console.log(size)
 
-  var BrowserWindow = r('browser-window')
+  var BrowserWindow = electron.BrowserWindow
 
   var
     minw = 794,
@@ -31,10 +31,12 @@ function opener() {
   var mainWindow = new BrowserWindow({
     width: width,
     height: height,
-    'min-width': minw,
-    'min-height': minh,
-    'accept-first-mouse': true,
-    'title-bar-style': 'hidden',
+    minWidth: minw,
+    minHeight: minh,
+    acceptFirstMouse: true,
+    // frame: false, // new api to hide
+    // transparent: true,
+    titleBarStyle: 'hidden', // hidden hiddenInset customButtonsOnHover
     icon: require('path').join(__dirname, 'Icon.png'),
   })
 

@@ -1,8 +1,8 @@
 'use strict'
 
 let DEBUG = process.env.DEBUG
-let app = require('app')
-app.commandLine.appendSwitch('js-flags', '--expose_gc');
+const { app } = require('electron')
+app.commandLine.appendSwitch('js-flags', '--expose_gc')
 
 /*
 const crashReporter = require('electron').crashReporter

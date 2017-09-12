@@ -1,7 +1,6 @@
 'use strict'
 
-const remote = require('remote')
-const shell = require('shell')
+const { remote, shell } = require('electron')
 const path = require('path')
 
 const LASTLOAD_FILE = path.join(__dirname, 'lastload.json')

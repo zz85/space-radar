@@ -139,7 +139,7 @@ var template = [
 ];
 
 if (process.platform == 'darwin') {
-  var name = require('remote').require('app').getName();
+  var name = remote.app.getName();
   template.unshift({
     label: name,
     submenu: [

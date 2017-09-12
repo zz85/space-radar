@@ -9,6 +9,7 @@
 
   const electron = typeof(window) !== 'undefined'
   const log = window.log ? window.log : require('./utils').log;
+  // require(__dirname + '/js/utils')
 
   let counter, current_size
 
@@ -42,7 +43,8 @@
       return {
         name: this.name,
         // parent: this.parent,
-        children: [...this._childrenMap.values()],
+        children: this.children,
+        // children: [...this._childrenMap.values()],
         size: this.size
       };
     }
