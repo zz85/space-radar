@@ -14,7 +14,8 @@ Simple Navigation Controller
 */
 
 function clearNavigation() {
-  backStack = [], fwdStack = []
+  backStack = []
+  fwdStack = []
 }
 
 function currentPath() {
