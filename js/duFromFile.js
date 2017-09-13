@@ -1,14 +1,14 @@
-(() => {
+;(() => {
   'use strict'
 
   const fs = require('fs')
   const path = require('path')
   const readline = require('readline')
   const zlib = require('zlib')
-  const ts = require('tail-stream');
+  const ts = require('tail-stream')
 
-  const electron = typeof(window) !== 'undefined'
-  const log = window.log ? window.log : require('./utils').log;
+  const electron = typeof window !== 'undefined'
+  const log = window.log ? window.log : require('./utils').log
   // require(__dirname + '/js/utils')
 
   let counter, current_size
@@ -20,23 +20,23 @@
 
   class iNode {
     constructor(name, size) {
-      this.name = name;
-      this.size = size || 0;
+      this.name = name
+      this.size = size || 0
       this.children = []
-      this._childrenMap = new Map();
+      this._childrenMap = new Map()
     }
 
     addChild(node) {
       this.children.push(node)
-      this._childrenMap.set(node.name, node);
+      this._childrenMap.set(node.name, node)
     }
 
     // finds child node based on path/file/dir name
     findChild(pathname) {
-      if (!pathname) return this;
+      if (!pathname) return this
 
       // the index indexes all the children name
-      return this._childrenMap.get(pathname);
+      return this._childrenMap.get(pathname)
     }
 
     toJSON() {
@@ -46,15 +46,15 @@
         children: this.children,
         // children: [...this._childrenMap.values()],
         size: this.size
-      };
+      }
     }
   }
 
-  resetCounters();
+  resetCounters()
 
   function addFileToNode(node, path, size) {
-    let pathname = path.shift();
-    const child = node.findChild(pathname);
+    let pathname = path.shift()
+    const child = node.findChild(pathname)
 
     if (path.length === 0) {
       // Last element is either a new file, or
@@ -62,39 +62,39 @@
       if (!child) {
         node.addChild(new iNode(pathname, size)) // { name: pathname, size: size }
       } else {
-        child.size = size;
+        child.size = size
       }
     } else {
       if (!child) {
         // not found, so we push a new node (directory);
-        const new_child = new iNode(pathname);
-        node.addChild(new_child);
-        addFileToNode(new_child, path, size);
+        const new_child = new iNode(pathname)
+        node.addChild(new_child)
+        addFileToNode(new_child, path, size)
       } else {
-        addFileToNode(child, path, size);
+        addFileToNode(child, path, size)
       }
     }
-    return node;
+    return node
   }
 
   function readFSFromFile(options, done) {
     // let instream
-    const target_file = options.parent;
+    const target_file = options.parent
     const node = options.node
     node.name = target_file
 
     let currentSize = 0
     // Format is "<size><whitespaces><path>"
     const lineRegex = /^(\d+)\s+([\s\S]*)$/
-    console.time('readfs');
+    console.time('readfs')
 
-    let rl, instream;
+    let rl, instream
     if (target_file.endsWith('.gz')) {
-      instream = fs.createReadStream(target_file).pipe(zlib.createGunzip());
-      instream.setEncoding('utf-8');
+      instream = fs.createReadStream(target_file).pipe(zlib.createGunzip())
+      instream.setEncoding('utf-8')
     } else {
-      instream = fs.createReadStream(target_file);
-      instream.setEncoding('utf-8');
+      instream = fs.createReadStream(target_file)
+      instream.setEncoding('utf-8')
 
       /*
       instream = ts.createReadStream(target_file, {
@@ -129,45 +129,46 @@
     })
 
     rl.on('line', function(line) {
-      let result = line.match(lineRegex);
+      let result = line.match(lineRegex)
       if (!line || result.length != 3) {
-        console.log('source: ', line);
-        return close();
+        console.log('source: ', line)
+        return close()
       }
 
-      let size = 0 | result[1] * 1024;
-      let path = result[2].split('/');
+      let size = 0 | (result[1] * 1024)
+      let path = result[2].split('/')
 
       // Depending on how find is used the first element may be empty
       // if the path started with / or a . which we also don't want
-      if ( path[0] === '.' || path[0] === '' ) {
-        path.shift();
+      if (path[0] === '.' || path[0] === '') {
+        path.shift()
       }
 
-      counter++;
-      currentSize += size;
-      if ( counter % 5000 === 0 ) { // update progress every Xth file
+      counter++
+      currentSize += size
+      if (counter % 5000 === 0) {
+        // update progress every Xth file
         options.onprogress(result[2], '', currentSize)
       }
 
-      addFileToNode(node, path, size);
-    });
+      addFileToNode(node, path, size)
+    })
 
     function close() {
-      log('entry counter', counter);
-      console.timeEnd('readfs');
+      log('entry counter', counter)
+      console.timeEnd('readfs')
       done(counter)
     }
 
-    rl.on('close', close);
+    rl.on('close', close)
   }
 
   readFSFromFile.resetCounters = resetCounters
-  readFSFromFile.iNode = iNode;
+  readFSFromFile.iNode = iNode
   module.exports = readFSFromFile
 
   if (electron) {
-   window.duFromFile = readFSFromFile;
+    window.duFromFile = readFSFromFile
   }
 
   /*
@@ -179,9 +180,7 @@
     // onrefresh: refresh
   }, (e) => { console.log('done', 1 || JSON.stringify(parent, 0, 1)) })
   */
-
 })()
-
 
 /*
 counter 322361

@@ -3,9 +3,10 @@
 var PATH_DELIMITER = '/'
 
 function keys(d) {
-  var k = [], p = d;
-  while (p) k.push(p.name), p = p.parent;
-  return k.reverse();
+  var k = [],
+    p = d
+  while (p) k.push(p.name), (p = p.parent)
+  return k.reverse()
 }
 
 function key(d) {
@@ -24,7 +25,8 @@ function getPath(d) {
 
 function getNodeFromPath(keys, root) {
   log('navigateToPath', keys)
-  let name, n = root
+  let name,
+    n = root
 
   if (!keys.length) {
     log('warning no keys to navigate to')
@@ -38,7 +40,7 @@ function getNodeFromPath(keys, root) {
     return n
   }
 
-  while (name = keys.shift()) {
+  while ((name = keys.shift())) {
     log(n.name)
     let children = n.children.filter(n => {
       return n.name == name

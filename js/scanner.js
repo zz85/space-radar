@@ -1,6 +1,6 @@
-'use strict';
+'use strict'
 
-let browser = typeof(window) !== 'undefined'
+let browser = typeof window !== 'undefined'
 
 if (browser) {
   // it's electron, so typeof(module) !== 'undefined' is true :)
@@ -11,7 +11,6 @@ if (browser) {
 }
 
 function scanner() {
-
   const path = require('path')
   const du = require('./du')
   const duPipe = require('./duPipe')
@@ -26,7 +25,7 @@ function scanner() {
   let ipc
 
   if (browser) {
-    ipc = require("electron").ipcRenderer
+    ipc = require('electron').ipcRenderer
     const ipc_name = 'du'
 
     ipc.on('scan', function(_, target) {
@@ -37,7 +36,7 @@ function scanner() {
     process.on('disconnect', function() {
       // exit when parent disconnects (killed / exit)
       console.log('parent exited')
-      process.exit();
+      process.exit()
     })
 
     process.on('message', function(m) {
@@ -50,9 +49,8 @@ function scanner() {
   }
 
   function go(target) {
-    log('go', target);
-    const
-      START_REFRESH_INTERVAL = 5000,
+    log('go', target)
+    const START_REFRESH_INTERVAL = 5000,
       MAX_REFRESH_INTERVAL = 15 * 60 * 1000
 
     let REFRESH_INTERVAL = START_REFRESH_INTERVAL
@@ -76,22 +74,28 @@ function scanner() {
       //   }
       // }, complete)
 
-      du({
-        parent: target,
-        node: json,
-        onprogress: progress,
-        // onrefresh: refresh
-      }, complete)
+      du(
+        {
+          parent: target,
+          node: json,
+          onprogress: progress
+          // onrefresh: refresh
+        },
+        complete
+      )
     } else if (stat.isFile()) {
       log('Reading file', target)
       json = new duFromFile.iNode()
 
-      duFromFile({
-        parent: target,
-        node: json,
-        onprogress: progress,
-        // onrefresh: refresh
-      }, complete)
+      duFromFile(
+        {
+          parent: target,
+          node: json,
+          onprogress: progress
+          // onrefresh: refresh
+        },
+        complete
+      )
     }
 
     const refreshTask = new TaskChecker(function(next) {
@@ -105,18 +109,18 @@ function scanner() {
     console.time('async2')
 
     function complete(counter) {
-        // log("Scan completed", counter, "files");
-        console.timeEnd('async2')
-        refreshTask.cancel()
+      // log("Scan completed", counter, "files");
+      console.timeEnd('async2')
+      refreshTask.cancel()
 
-        log('complete task, ipc_transferring json', json)
-        ipc_transfer('complete', json)
-        log('ipc_transfer done')
+      log('complete task, ipc_transferring json', json)
+      ipc_transfer('complete', json)
+      log('ipc_transfer done')
 
-        // cleanup
-        json = null
-        du.resetCounters()
-    };
+      // cleanup
+      json = null
+      du.resetCounters()
+    }
 
     function progress(path, name, size) {
       refreshTask.check()
@@ -144,7 +148,7 @@ function scanner() {
     } catch (e) {
       console.error('fail: ')
       log('len', json_str.length)
-      err = e;
+      err = e
     }
 
     return err
@@ -152,7 +156,7 @@ function scanner() {
 
   function ipc_transfer(...args) {
     const json_str = JSON.stringify(args)
-    var err;
+    var err
 
     err = null
 
@@ -195,11 +199,11 @@ function scanner() {
     //   if (!err) return
     // }
 
-    log('process fs ipc');
+    log('process fs ipc')
     err = null
     // fs ipc
     const p = path.join(__dirname, 'fs-ipc.json')
-    const before_size = json_str.length;
+    const before_size = json_str.length
     const zlib_json_str = zlib.deflateSync(json_str)
     log('compression', (zlib_json_str.length / before_size * 100).toFixed(2), '% original size')
     fs.writeFileSync(p, zlib_json_str)

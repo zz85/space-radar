@@ -9,126 +9,129 @@ let child_process = require('child_process')
 let VM_STAT = 'vm_stat'
 
 function stat(out) {
-	var r = /page size of (\d+)/.exec(out)
-	var page_size = +r[1]
+  var r = /page size of (\d+)/.exec(out)
+  var page_size = +r[1]
 
-	var m;
+  var m
 
-	var page_reg = /Pages\s+([^:]+)[^\d]+(\d+)/g
+  var page_reg = /Pages\s+([^:]+)[^\d]+(\d+)/g
 
-	var vm_stat = {}
+  var vm_stat = {}
 
-	while (m = page_reg.exec(out)) {
-		// console.log(m[1], m[2] * page_size / 1024 / 1024)
-		vm_stat[m[1]] = m[2] * page_size
-	}
+  while ((m = page_reg.exec(out))) {
+    // console.log(m[1], m[2] * page_size / 1024 / 1024)
+    vm_stat[m[1]] = m[2] * page_size
+  }
 
-	return vm_stat
+  return vm_stat
 }
 
 function process_out(stdout) {
-	// log(stdout)
-	// var lines = stdout.split("\n");
-	var regex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/mg
-	var m;
+  // log(stdout)
+  // var lines = stdout.split("\n");
+  var regex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/gm
+  var m
 
-	var c = 0, rss_sum = 0
-	var pid, ppid, rss, comm, process
-	var all = {}
-	while (m = regex.exec(stdout)) {
-		pid = +m[1]
-		ppid = +m[2]
-		rss = +m[3] * 1024
-		comm = m[4]
+  var c = 0,
+    rss_sum = 0
+  var pid, ppid, rss, comm, process
+  var all = {}
+  while ((m = regex.exec(stdout))) {
+    pid = +m[1]
+    ppid = +m[2]
+    rss = +m[3] * 1024
+    comm = m[4]
 
-		c++
-		rss_sum += rss
+    c++
+    rss_sum += rss
 
-		process = {
-			pid: pid,
-			ppid: ppid,
-			rss: rss,
-			comm: comm
-		}
+    process = {
+      pid: pid,
+      ppid: ppid,
+      rss: rss,
+      comm: comm
+    }
 
-		all[pid] = process
+    all[pid] = process
 
-		// log(c, pid, ppid, rss, comm)
-	}
+    // log(c, pid, ppid, rss, comm)
+  }
 
-	var app = {
-		name: 'App Memory',
-		children: []
-	}
+  var app = {
+    name: 'App Memory',
+    children: []
+  }
 
-	let sorted = Object.keys(all).map(k => { return all[k] })
-	.sort((a, b) => { return a.pid - b.pid})
-	.forEach(a => {
-		let parent
-		if (a.ppid in all) {
-			parent = all[a.ppid]
-		} else {
-			// console.log('top level', a)
-			parent = app
-		}
+  let sorted = Object.keys(all)
+    .map(k => {
+      return all[k]
+    })
+    .sort((a, b) => {
+      return a.pid - b.pid
+    })
+    .forEach(a => {
+      let parent
+      if (a.ppid in all) {
+        parent = all[a.ppid]
+      } else {
+        // console.log('top level', a)
+        parent = app
+      }
 
-		if (!parent.children) {
-			parent.children = []
-			parent.children.push({
-				name: parent.name,
-				size: parent.size,
-				parent: 1
-			})
-			delete parent.size
-		}
-		parent.children.push(a)
+      if (!parent.children) {
+        parent.children = []
+        parent.children.push({
+          name: parent.name,
+          size: parent.size,
+          parent: 1
+        })
+        delete parent.size
+      }
+      parent.children.push(a)
 
-		// cleanup
-		a.name = a.comm + ' (' + a.pid + ')'
-		a.size = a.rss
-		delete a.comm
-		delete a.pid
-		delete a.rss
-		delete a.ppid
+      // cleanup
+      a.name = a.comm + ' (' + a.pid + ')'
+      a.size = a.rss
+      delete a.comm
+      delete a.pid
+      delete a.rss
+      delete a.ppid
+    })
 
-	})
-
-	// console.log(app)
-	// console.log('rss_sum', rss_sum)
-	return {
-		app: app,
-		sum: rss_sum,
-		count: c
-	}
-
+  // console.log(app)
+  // console.log('rss_sum', rss_sum)
+  return {
+    app: app,
+    sum: rss_sum,
+    count: c
+  }
 }
 
 function mem(callback) {
+  let vm_stat
 
-	let vm_stat
+  child_process.exec(VM_STAT, (error, stdout, stderr) => {
+    if (error) {
+      callback(error)
+      return console.error(error)
+    }
 
-	child_process.exec(VM_STAT, (error, stdout, stderr) => {
-		if (error) {
-			callback(error)
-			return console.error(error)
-		}
+    vm_stat = stat(stdout)
 
-		vm_stat = stat(stdout)
+    child_process.exec(CMD, ps)
+  })
 
-		child_process.exec(CMD, ps)
-	})
+  let ps = (error, stdout, stderr) => {
+    if (error) {
+      callback(error)
+      return console.error(error)
+    }
+    let app = process_out(stdout)
 
-	let ps = (error, stdout, stderr) => {
-		if (error) {
-			callback(error)
-			return console.error(error)
-		}
-		let app = process_out(stdout)
+    let top = combine(app, vm_stat)
 
-		let top = combine(app, vm_stat)
-
-		callback(null, top)
-	}
+    callback(null, top)
+  }
 }
 /*
 free 1782.23046875
@@ -147,41 +150,32 @@ occupied by compressor 499.375
 */
 
 function combine(app, vm_stat) {
-	var top = {
-		name: 'Memory',
-		children: [
-		]
-	}
+  var top = {
+    name: 'Memory',
+    children: []
+  }
 
-	var diff = vm_stat.active - app.sum
-	var active = {
-		name: 'Active Memory',
-		children: [app.app]
-	}
+  var diff = vm_stat.active - app.sum
+  var active = {
+    name: 'Active Memory',
+    children: [app.app]
+  }
 
-	top.children.push(active)
+  top.children.push(active)
 
-	// app.app
-	active
-	.children.push({
-		name: 'Kernel / others?',
-		size: diff
-	})
+  // app.app
+  active.children.push({
+    name: 'Kernel / others?',
+    size: diff
+  })
+  ;['free', 'inactive', 'speculative', 'wired down', 'occupied by compressor']
+    //, 'purgeable', 'stored in compressor', 'active',
+    .forEach(function(n) {
+      top.children.push({
+        name: n,
+        size: vm_stat[n]
+      })
+    })
 
-	;['free',  'inactive', 'speculative', 'wired down', 'occupied by compressor']
-	//, 'purgeable', 'stored in compressor', 'active',
-	.forEach(
-		function(n) {
-			top.children.push(
-				{
-					name: n,
-					size: vm_stat[n]
-				}
-			)
-		}
-	)
-
-	return top
-
-
+  return top
 }

@@ -7,15 +7,16 @@ const LASTLOAD_FILE = path.join(__dirname, 'lastload.json')
 // const child_process = require('child_process')
 
 // IPC handling
-var current_size = 0, start_time
+var current_size = 0,
+  start_time
 
-var legend = d3.select("#legend")
-var explanation = d3.select("#explanation")
-var core_top = d3.select("#core_top")
-var core_center = d3.select("#core_center")
-var core_tag = d3.select("#core_tag")
+var legend = d3.select('#legend')
+var explanation = d3.select('#explanation')
+var core_top = d3.select('#core_top')
+var core_center = d3.select('#core_center')
+var core_tag = d3.select('#core_tag')
 
-var hue = d3.scale.category10(); // colour hash
+var hue = d3.scale.category10() // colour hash
 
 function startScan(path) {
   cleanup()
@@ -32,16 +33,18 @@ function startScan(path) {
   // return sendIpcMsg('go', path);
   if (stat.isFile()) {
     const json = new duFromFile.iNode()
-    duFromFile({
-      parent: path,
-      node: json,
-      onprogress: progress,
-      // onrefresh: refresh
-    }, () => {
-      complete(json)
-    })
-  }
-  else {
+    duFromFile(
+      {
+        parent: path,
+        node: json,
+        onprogress: progress
+        // onrefresh: refresh
+      },
+      () => {
+        complete(json)
+      }
+    )
+  } else {
     sendIpcMsg('go', path)
   }
 }
@@ -50,22 +53,23 @@ function start_read() {
   console.log('start_read')
 
   const json = new duFromFile.iNode()
-  duFromFile({
-    parent: './output.txt',
-    node: json,
-    onprogress: progress,
-    // onrefresh: refresh
-  }, () => {
-    return complete(json)
-  })
+  duFromFile(
+    {
+      parent: './output.txt',
+      node: json,
+      onprogress: progress
+      // onrefresh: refresh
+    },
+    () => {
+      return complete(json)
+    }
+  )
 }
-
-
 
 function progress(dir, name, size) {
   // log('[' + ipc_name + '] progress', name)
   // may take a little while
-  legend.html("<h2>Scanning... <i>(try grabbing a drink..)</i></h2><p>"+dir+"</p><br/>Scanned: " + format(size) )
+  legend.html('<h2>Scanning... <i>(try grabbing a drink..)</i></h2><p>' + dir + '</p><br/>Scanned: ' + format(size))
   current_size = size
   // TODO collect number of files too
 }
@@ -73,7 +77,7 @@ function progress(dir, name, size) {
 function lightbox(show) {
   loading.style.display = show ? 'block' : 'none'
   shades.style.display = show ? 'flex' : 'none'
-  promptbox.style.display  = show ? 'none': ''
+  promptbox.style.display = show ? 'none' : ''
   shades.style.opacity = show ? 0.8 : 1
 }
 
@@ -84,7 +88,7 @@ function refresh(json) {
   lightbox(true)
   legend.html('Generating preview...')
 
-  setTimeout( () => {
+  setTimeout(() => {
     onJson(null, json)
     lightbox(false)
   }, 1000)
@@ -112,7 +116,7 @@ function complete(json) {
   })
 
   var time_took = performance.now() - start_time
-  log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins' )
+  log('Time took', (time_took / 60 / 1000).toFixed(2), 'mins')
 
   // webview.remove()
   // TODO add growl notification here
@@ -126,30 +130,26 @@ const zlib = require('zlib')
 
 let win
 
-  var main_ipc = remote.ipcMain
+var main_ipc = remote.ipcMain
 
-  main_ipc.on('call', function(event, cmd) {
-    var args = Array.prototype.slice.call(arguments, 2)
-    handleIPC(cmd, args)
-  })
+main_ipc.on('call', function(event, cmd) {
+  var args = Array.prototype.slice.call(arguments, 2)
+  handleIPC(cmd, args)
+})
 
 function setupRemoteIPC() {
-  win = new remote.BrowserWindow(
-    DEBUG ? { width: 800, height: 600 } : { show: false }
-  )
-  win.loadURL('file://' + __dirname + '/headless.html');
+  win = new remote.BrowserWindow(DEBUG ? { width: 800, height: 600 } : { show: false })
+  win.loadURL('file://' + __dirname + '/headless.html')
   if (DEBUG) win.openDevTools()
 
   win.webContents.on('did-finish-load', function() {
     // win.webContents.send('ready')
     ready()
   })
-
-
 }
 
 function setupWebViewIPC() {
-  webview.addEventListener("dom-ready", function() {
+  webview.addEventListener('dom-ready', function() {
     if (DEBUG) {
       webview.openDevTools()
     }
@@ -157,12 +157,11 @@ function setupWebViewIPC() {
   })
 
   webview.addEventListener('ipc-message', function(event) {
-
     var args = event.args
     // var cmd = event.channel
     var cmd = args.shift()
     handleIPC(cmd, args)
-  });
+  })
 
   // this triggers ready
   webview.addEventListener('did-finish-load', ready)
@@ -184,15 +183,15 @@ function handleIPC(cmd, args) {
 }
 
 function runNext(f) {
-  setTimeout( f, 10 )
+  setTimeout(f, 10)
 }
 
 function fsipc(filename) {
-  console.time('fsipc');
+  console.time('fsipc')
   cleanup()
   log(filename)
 
-  runNext( () => {
+  runNext(() => {
     try {
       var args = fs.readFileSync(filename)
       args = zlib.inflateSync(args)
@@ -202,8 +201,7 @@ function fsipc(filename) {
     } catch (e) {
       console.error(e.stack)
     }
-    console.timeEnd('fsipc');
-
+    console.timeEnd('fsipc')
   })
 }
 
@@ -227,13 +225,13 @@ function setupIPC() {
 }
 
 function setupLocalStorageIPC() {
-  window.addEventListener('storage', function (e) {
+  window.addEventListener('storage', function(e) {
     if (e.key == 'lsipc') {
       var args = JSON.parse(e.newValue)
       var cmd = args.shift()
       handleIPC(cmd, args)
     }
-  });
+  })
 }
 
 window.onbeforeunload = function(e) {
@@ -241,7 +239,7 @@ window.onbeforeunload = function(e) {
   if (win) win.close()
   // the better method would be to track client from
   // browser.on('closed')
-};
+}
 
 var child
 function setupChildIPC() {
@@ -264,21 +262,19 @@ function setupChildIPC() {
 
   // child.on('error', console.log.bind(console))
 
-
-  child.stdout.on('data', function (data) {
-    console.log('stdout: ' + data);
-  });
+  child.stdout.on('data', function(data) {
+    console.log('stdout: ' + data)
+  })
 
   child.stderr.setEncoding('utf8')
 
-  child.stderr.on('data', function (data) {
-    console.log('stdout: ' + data);
-  });
+  child.stderr.on('data', function(data) {
+    console.log('stdout: ' + data)
+  })
 
-  child.on('close', function (code) {
-    console.log('child process exited with code ' + code);
-  });
-
+  child.on('close', function(code) {
+    console.log('child process exited with code ' + code)
+  })
 }
 
 setupLocalStorageIPC()
@@ -301,7 +297,7 @@ function ready() {
 }
 
 function rerunPage() {
-  remote.getCurrentWindow().reload();
+  remote.getCurrentWindow().reload()
 }
 
 function showPrompt() {
@@ -329,22 +325,22 @@ function newWindow() {
 
 function scanFolder() {
   var dialog = remote.dialog
-  var selection = dialog.showOpenDialog({ properties: ['openDirectory']})
+  var selection = dialog.showOpenDialog({ properties: ['openDirectory'] })
 
   if (selection && selection[0]) {
     selectPath(selection[0])
   }
 
-  console.log(selection);
+  console.log(selection)
   // 'openFile', 'multiSelections'
 }
 
 function readFile() {
   var dialog = remote.dialog
-  var selection = dialog.showOpenDialog({ properties: ['openFile']})
+  var selection = dialog.showOpenDialog({ properties: ['openFile'] })
 
   if (selection && selection[0]) {
-    const file = selection[0];
+    const file = selection[0]
     selectPath(file)
   }
 }
@@ -354,46 +350,44 @@ function scanMemory() {
 }
 
 document.ondragover = document.ondrop = function(e) {
-  e.preventDefault();
+  e.preventDefault()
   // prevent anyhow drag
   return false
-};
+}
 
 function welcomeDialog() {
   shades.style.display == 'none' ? showPrompt() : hidePrompt()
 }
 
 function selectPath(path) {
-  startScan(path);
+  startScan(path)
   return
 }
 
-var promptbox = document.getElementById('promptbox');
-promptbox.ondragover = function () {
-  this.className = 'hover';
-  return false;
-};
-promptbox.ondragleave = promptbox.ondragend = function () {
-  this.className = '';
-  return false;
-};
-promptbox.ondrop = function (e) {
+var promptbox = document.getElementById('promptbox')
+promptbox.ondragover = function() {
+  this.className = 'hover'
+  return false
+}
+promptbox.ondragleave = promptbox.ondragend = function() {
   this.className = ''
-  e.preventDefault();
+  return false
+}
+promptbox.ondrop = function(e) {
+  this.className = ''
+  e.preventDefault()
   var file = e.dataTransfer.files[0]
 
   console.log('file', file)
   // return
-  if (file)
-    return selectPath(file.path);
+  if (file) return selectPath(file.path)
 }
 
 /*** Selection Handling ****/
 
 function openDirectory() {
   let loc = currentPath()
-  if (loc)
-    shell.showItemInFolder(loc.join(PATH_DELIMITER))
+  if (loc) shell.showItemInFolder(loc.join(PATH_DELIMITER))
 }
 
 function openSelection() {
@@ -437,15 +431,15 @@ function trashSelection() {
 /*** Data Loading ****/
 
 function onJson(error, data) {
-  if (error) throw error;
-  fs.writeFileSync(LASTLOAD_FILE, JSON.stringify(data));
-  graphPlugin.generate(data);
+  if (error) throw error
+  fs.writeFileSync(LASTLOAD_FILE, JSON.stringify(data))
+  graphPlugin.generate(data)
 }
 
 function loadLast() {
-  var json = JSON.parse(fs.readFileSync(LASTLOAD_FILE));
+  var json = JSON.parse(fs.readFileSync(LASTLOAD_FILE))
   // complete(json);
-  graphPlugin.generate(json);
+  graphPlugin.generate(json)
 }
 
 function showSunburst(skip) {

@@ -4,7 +4,8 @@
 // Breadcrumbs
 //
 
-let backStack = [], fwdStack = []
+let backStack = [],
+  fwdStack = []
 
 /*
 Simple Navigation Controller
@@ -58,11 +59,10 @@ function updateSelection(s) {
   selection = s
 }
 
-
 var Menu = remote.Menu
 var MenuItem = remote.MenuItem
 
-var contextMenu = new Menu();
+var contextMenu = new Menu()
 var openMenu = new MenuItem({ label: 'Open', click: openSelection })
 var sep = new MenuItem({ type: 'separator' })
 contextMenu.append(new MenuItem({ label: 'Locate', click: showSelection }))
@@ -73,59 +73,68 @@ contextMenu.append(openMenu)
 contextMenu.append(sep)
 contextMenu.append(new MenuItem({ label: 'Delete', click: trashSelection }))
 
-var optionsMenu = new Menu();
-optionsMenu.append(new MenuItem({ label: 'Sort by Size', type: 'checkbox', checked: true }));
-optionsMenu.append(new MenuItem({ label: 'Sort by Name', type: 'checkbox', checked: true }));
+var optionsMenu = new Menu()
+optionsMenu.append(new MenuItem({ label: 'Sort by Size', type: 'checkbox', checked: true }))
+optionsMenu.append(new MenuItem({ label: 'Sort by Name', type: 'checkbox', checked: true }))
 
-window.addEventListener('contextmenu', function (e) {
-  if (!selection) return
-  e.preventDefault();
+window.addEventListener(
+  'contextmenu',
+  function(e) {
+    if (!selection) return
+    e.preventDefault()
 
-  openMenu.enabled = !selection.children
+    openMenu.enabled = !selection.children
 
-  contextMenu.popup(remote.getCurrentWindow());
-}, false);
-
+    contextMenu.popup(remote.getCurrentWindow())
+  },
+  false
+)
 
 // Given a node in a partition layout, return an array of all of its ancestor
 // nodes, highest first, but excluding the root.
 function getAncestors(node) {
   if (!node) return []
-  let path = [];
-  let current = node;
+  let path = []
+  let current = node
   while (current.parent) {
-    path.unshift(current);
-    current = current.parent;
+    path.unshift(current)
+    current = current.parent
   }
 
   let root = current
 
   if (root.name == '/' || root.name.indexOf('/') === -1) {
-    path.unshift(root);
+    path.unshift(root)
   } else {
-    path = root.name.split(PATH_DELIMITER).slice(1).map(d => {
-      return {
-        name: d,
-        depth: -1,
-        root: true
-      }
-    }).concat(path)
+    path = root.name
+      .split(PATH_DELIMITER)
+      .slice(1)
+      .map(d => {
+        return {
+          name: d,
+          depth: -1,
+          root: true
+        }
+      })
+      .concat(path)
   }
 
-  return path;
+  return path
 }
 
 // Update the breadcrumb trail to show the current sequence and percentage.
 function _updateBreadcrumbs(nodeArray) {
-
   // Data join; key function combines name and depth (= position in sequence).
   let g = d3
     .select('#bottom_status')
-      .selectAll("span")
-      .data(nodeArray, function(d) { return d.name + d.depth; });
+    .selectAll('span')
+    .data(nodeArray, function(d) {
+      return d.name + d.depth
+    })
 
   // Add breadcrumb and label for entering nodes.
-  let entering = g.enter()
+  let entering = g
+    .enter()
     .append('span')
     // .style('-webkit-user-select', 'none')
     .style('-webkit-app-region', 'no-drag')
@@ -136,12 +145,10 @@ function _updateBreadcrumbs(nodeArray) {
     })
 
   entering.text(function(d) {
-    return (nodeArray[0] === d ? '' : ' > ' ) +
-      d.name
-      // (nodeArray[nodeArray.length - 1] === d ? ' (' + format(d.value) + ')' : '')
+    return (nodeArray[0] === d ? '' : ' > ') + d.name
+    // (nodeArray[nodeArray.length - 1] === d ? ' (' + format(d.value) + ')' : '')
   })
 
   // Remove exiting nodes.
-  g.exit().remove();
-
+  g.exit().remove()
 }

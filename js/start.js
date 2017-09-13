@@ -22,8 +22,7 @@ function opener() {
 
   var BrowserWindow = electron.BrowserWindow
 
-  var
-    minw = 794,
+  var minw = 794,
     minh = 480,
     height = Math.max(size.height * 0.8, 600) | 0, // 1300, 600
     width = Math.max(height * 6 / 8, 880) | 0 //1600,880
@@ -37,7 +36,7 @@ function opener() {
     // frame: false, // new api to hide
     // transparent: true,
     titleBarStyle: 'hidden', // hidden hiddenInset customButtonsOnHover
-    icon: require('path').join(__dirname, 'Icon.png'),
+    icon: require('path').join(__dirname, 'Icon.png')
   })
 
   mainWindow.loadURL('file://' + __dirname + '/../index.html')

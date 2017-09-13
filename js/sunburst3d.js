@@ -1,146 +1,147 @@
 // Based on http://bl.ocks.org/mbostock/8bee9cf362d56d9cb19f/507166861adc3d52038ba43c934e6073937eb13c
 
-d3_shape = require('d3-shape');
+d3_shape = require('d3-shape')
 
-window.RENDER_3D = false;
+window.RENDER_3D = false
+;(() => {
+  'use strict'
 
-(() => {
-'use strict'
+  var inited = false
 
-var inited = false;
+  var material, scene, chart, arc
+  var canvas3d
 
-var material, scene, chart, arc;
-var canvas3d
+  function init3d() {
+    if (inited) return
+    inited = true
 
-function init3d() {
+    var width = 960,
+      height = 500
 
-	if (inited) return;
-	inited = true;
+    width = window.innerWidth
+    height =
+      window.innerHeight -
+      document.querySelector('header').getBoundingClientRect().height -
+      document.querySelector('footer').getBoundingClientRect().height
 
-	var width = 960,
-	    height = 500;
+    // material = new THREE.MeshNormalMaterial({transparent: true, opacity: 0.9});
 
-	width = window.innerWidth;
-	height = window.innerHeight - document.querySelector('header').getBoundingClientRect().height - document.querySelector('footer').getBoundingClientRect().height;
+    material = new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff, opacity: 0.9 })
+    scene = new THREE.Scene()
 
+    chart = new THREE.Object3D()
+    scene.add(chart)
 
-  // material = new THREE.MeshNormalMaterial({transparent: true, opacity: 0.9});
+    arc = d3_shape.arc()
 
-  material = new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff, opacity: 0.9});
-	scene = new THREE.Scene;
+    canvas3d = document.getElementById('three-canvas')
 
-	chart = new THREE.Object3D();
-	scene.add(chart);
+    var renderer = new THREE.WebGLRenderer({
+      canvas: canvas3d
+    })
+    renderer.setClearColor(new THREE.Color('#fff', 1.0))
+    renderer.setSize(width, height)
 
-	arc = d3_shape.arc()
+    var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
+    camera.position.x = 250
+    camera.position.y = 100
+    camera.position.z = 100
+    camera.lookAt(new THREE.Vector3(20, 15, 0))
 
-	canvas3d = document.getElementById('three-canvas');
+    function animate(elapsed) {
+      chart.rotation.y = elapsed / 1600
+      chart.rotation.z = elapsed / 2300
+      renderer.render(scene, camera)
 
-	var renderer = new THREE.WebGLRenderer({
-		canvas: canvas3d
-	});
-	renderer.setClearColor(new THREE.Color("#fff", 1.0));
-	renderer.setSize(width, height);
+      requestAnimationFrame(animate)
+    }
 
-	var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-	camera.position.x = 250;
-	camera.position.y = 100;
-	camera.position.z = 100;
-	camera.lookAt(new THREE.Vector3(20, 15, 0));
+    animate()
 
-	function animate(elapsed) {
-		chart.rotation.y = elapsed / 1600;
-		chart.rotation.z = elapsed / 2300;
-	  renderer.render(scene, camera);
+    var light = new THREE.PointLight(0xffffff, 0.8)
+    light.position.z = -100
+    scene.add(light)
 
-	  requestAnimationFrame(animate);
-	};
+    var light = new THREE.PointLight(0xffffff, 0.8)
+    light.position.y = 60
+    scene.add(light)
 
-	animate();
+    var light = new THREE.PointLight(0xffffff, 1)
+    light.position.z = 0
+    camera.add(light)
+  }
 
-	var light = new THREE.PointLight( 0xffffff, 0.8 );
-	light.position.z = -100;
-	scene.add( light );
+  function plot3d(data) {
+    setTimeout(() => {
+      canvas3d.style.display = 'block'
+    }, 2000)
 
-	var light = new THREE.PointLight( 0xffffff, 0.8 );
-	light.position.y = 60;
-	scene.add( light );
+    var c
+    // while (c = scene.children[0]) scene.remove(c)
 
-	var light = new THREE.PointLight( 0xffffff, 1 );
-	light.position.z = 0;
-	camera.add( light );
+    var extrudeOptions = {
+      amount: 1,
+      bevelSize: 0,
+      bevelSegments: 1,
+      bevelEnabled: true,
+      curveSegments: 50,
+      steps: 1
+    }
 
-}
+    console.log('PLOTTING ', data)
 
+    data.forEach(function(d) {
+      if (d.depth < 1) return
+      var a = d.x
+      var b = d.x + d.dx
+      var s = Math.min(a, b)
+      var t = Math.max(a, b)
 
-function plot3d(data) {
+      var THICKNESS = 20
+      var RADIUS = 200
+      var HOLE = 20
 
-	setTimeout( () => {
-		canvas3d.style.display = 'block';
-	}, 2000)
+      var r = d.depth * THICKNESS + HOLE
 
-	var c;
-	// while (c = scene.children[0]) scene.remove(c)
+      arc
+        .innerRadius(r) //
+        .outerRadius(r + THICKNESS) // RADIUS - for cake like
+        .cornerRadius(0)
+        .padAngle(0.01)
 
+      var path = new THREE.Shape()
 
-	var extrudeOptions = {
-	  amount: 1,
-	  bevelSize: 0,
-	  bevelSegments: 1,
-	  bevelEnabled: true,
-	  curveSegments: 50,
-	  steps: 1
-	};
+      arc.context({
+        moveTo: function(x, y) {
+          path.moveTo(x, y)
+        },
+        lineTo: function(x, y) {
+          path.lineTo(x, y)
+        },
+        arc: function(x, y, r, a0, a1, ccw) {
+          // path.absarc(x, y, r, a0, a1, ccw);
+          var a
+          if (ccw) (a = a1), (a1 = a0), (a0 = a) // Uh, what?
+          path.absarc(x, y, r, a0, a1, !ccw)
+        },
+        closePath: function() {
+          path.closePath()
+        }
+      })({
+        startAngle: s,
+        endAngle: t
+      })
 
-	console.log('PLOTTING ', data)
+      if (path.curves.length < 3) return
 
-	data.forEach(function(d) {
-		if (d.depth < 1) return;
-		var a = d.x;
-		var b = d.x + d.dx;
-		var s = Math.min(a, b);
-		var t = Math.max(a, b);
+      // var shape = THREE.SceneUtils.createMultiMaterialObject(path.extrude(extrudeOptions), [material]);
 
-		var THICKNESS = 20;
-		var RADIUS = 200;
-		var HOLE = 20;
+      var shape = new THREE.Mesh(path.extrude(extrudeOptions), material)
+      shape.position.z = d.depth * -10
+      chart.add(shape)
+    })
+  }
 
-		var r = d.depth * THICKNESS + HOLE;
-
-		arc.innerRadius(r) //
-    .outerRadius(r + THICKNESS) // RADIUS - for cake like
-    .cornerRadius(0)
-    .padAngle(0.01);
-
-	  var path = new THREE.Shape;
-
-	  arc.context({
-	    moveTo: function(x, y) { path.moveTo(x, y); },
-	    lineTo: function(x, y) { path.lineTo(x, y); },
-	    arc: function(x, y, r, a0, a1, ccw) {
-	    	// path.absarc(x, y, r, a0, a1, ccw);
-	      var a;
-	      if (ccw) a = a1, a1 = a0, a0 = a; // Uh, what?
-	      path.absarc(x, y, r, a0, a1, !ccw);
-	    },
-	    closePath: function() { path.closePath(); }
-	  })({
-			startAngle: s,
-			endAngle: t
-		});
-
-		if (path.curves.length < 3) return;
-
-	  // var shape = THREE.SceneUtils.createMultiMaterialObject(path.extrude(extrudeOptions), [material]);
-
-	  var shape = new THREE.Mesh(path.extrude(extrudeOptions), material);
-	  shape.position.z = d.depth * -10;
-	  chart.add(shape);
-	});
-
-}
-
-	window.plot3d = plot3d;
-	if (RENDER_3D) init3d();
-
+  window.plot3d = plot3d
+  if (RENDER_3D) init3d()
 })()
