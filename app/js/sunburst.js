@@ -346,7 +346,7 @@ function SunBurst() {
       return d3.ascending(a.name, b.name)
     }
     function sizesort(a, b) {
-      return d3.ascending(a.sum, b.sum)
+      return d3.descending(a.sum, b.sum)
     }
 
     partition = d3.layout
@@ -354,7 +354,7 @@ function SunBurst() {
       .value(function(d) {
         return d.size
       })
-      .sort(namesort)
+      .sort(sizesort) // namesort
       .size([2 * Math.PI, radius]) // use r*r for equal area
 
     // Compute the initial layout on the entire tree to sum sizes.
