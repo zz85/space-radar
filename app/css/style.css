@@ -4,13 +4,9 @@ body {
   overflow: none;
 
   /* Use System Fonts */
-  font-family:
-    -apple-system, BlinkMacSystemFont,
-    "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
-    "Helvetica Neue", sans-serif
-    !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+    'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
-
 
 #photon-window {
   z-index: 400;
@@ -23,7 +19,6 @@ path {
 
 circle,
 path {
-
 }
 
 circle {
@@ -57,7 +52,8 @@ line {
   stroke-width: 1.5px;
 }
 
-.string, .regexp {
+.string,
+.regexp {
   color: #f39;
 }
 
@@ -74,8 +70,9 @@ line {
   color: #369;
 }
 
-.class, .special {
-  color: #1181B8;
+.class,
+.special {
+  color: #1181b8;
 }
 
 /* end treemap */
@@ -89,7 +86,7 @@ line {
 #explanation {
   position: absolute;
   /*top: 260px;
-  left: 305px*/;
+  left: 305px*/
   width: 140px;
   height: 140px;
   margin: auto;
@@ -114,8 +111,8 @@ line {
 }
 
 #legend {
-  text-align:center;
-  padding-top:20px;
+  text-align: center;
+  padding-top: 20px;
   position: absolute;
   left: 0;
   right: 0;
@@ -126,15 +123,15 @@ line {
 }
 
 #legend h2 {
-  font-size:1.2em;
-  font-style:inherit;
+  font-size: 1.2em;
+  font-style: inherit;
   margin: 0;
   padding: 0;
   /*text-transform: uppercase;
   font-variant:small-caps;*/
 }
 #legend p {
-  font-size:.9em;
+  font-size: 0.9em;
   margin: 0;
   padding: 0;
 }
@@ -165,19 +162,19 @@ line {
 }
 
 .svg-container {
-    display: inline-block;
-    position: relative;
-    width: 100%;
-    /*padding-bottom: 100%;*/ /* aspect ratio */
-    vertical-align: top;
-    overflow: hidden;
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  /*padding-bottom: 100%;*/ /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
 }
 
 .svg-content-responsive {
-    display: inline-block;
-    position: absolute;
-    /*top: 10px;*/
-    /*left: 0;*/
+  display: inline-block;
+  position: absolute;
+  /*top: 10px;*/
+  /*left: 0;*/
 }
 
 #sequence {
@@ -189,7 +186,6 @@ line {
   /*width: 600px;
   height: 70px;*/
 }
-
 
 #chart {
   position: relative;
@@ -230,7 +226,6 @@ line {
   /*opacity: 0.3;*/
   position: absolute;
   display: none;
-
 }
 
 #promptbox {
@@ -240,7 +235,6 @@ line {
   padding: 20px;
   height: 200px;
 }
-
 
 #bottom_status {
   overflow: hidden;

@@ -44,7 +44,8 @@
   height: 1.5em;
   margin: 0 1.6em;
 }
-.throbber-loader:not(:required):before, .throbber-loader:not(:required):after {
+.throbber-loader:not(:required):before,
+.throbber-loader:not(:required):after {
   background: #dde2e7;
   content: '\x200B';
   display: inline-block;

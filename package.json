@@ -4,7 +4,7 @@
   "description": "Disk Usage Electron App",
   "main": "main.js",
   "scripts": {
-    "format": "prettier app/js/*.js --single-quote --no-semi --print-width=120 --write",
+    "format": "prettier app/js/*.js app/css/*.css --single-quote --no-semi --print-width=120 --write",
     "app": "cd app && npm run app",
     "debug": "cd app && npm run debug",
     "clean": "rm -rf SpaceRadar-darwin-x64",
