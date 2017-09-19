@@ -4,9 +4,10 @@
   "description": "Disk Usage Electron App",
   "main": "main.js",
   "scripts": {
+    "install": "cd app && npm i",
     "format": "prettier app/js/*.js app/css/*.css --single-quote --no-semi --print-width=120 --write",
-    "app": "cd app && npm run app",
-    "debug": "cd app && npm run debug",
+    "app": "electron app",
+    "debug": "DEBUG=1 npm run app",
     "clean": "rm -rf SpaceRadar-darwin-x64",
     "build": "electron-packager app SpaceRadar --platform=darwin --arch=x64 --version=1.7.6 --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
     "build:win": "electron-packager app SpaceRadar --platform=win32 --arch=x64 --version=1.7.6 --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
@@ -26,7 +27,6 @@
   "license": "MIT",
   "devDependencies": {
     "electron-packager": "^5.1.0",
-    "electron-prebuilt": "^0.36.0",
     "publish-release": "^1.1.0",
     "prettier": "^1.6.1"
   }
