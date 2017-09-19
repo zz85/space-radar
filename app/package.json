@@ -1,0 +1,19 @@
+{
+  "name": "space-radar",
+  "version": "5.0.0",
+  "description": "Disk Usage Electron App",
+  "main": "main.js",
+  "scripts": {
+    "app": "electron .",
+    "debug": "DEBUG=1 npm run app"
+  },
+  "devDependencies": {
+  },
+  "dependencies": {
+    "d3": "^3.5.6",
+    "d3-path": "^0.1.5",
+    "d3-shape": "^0.5.1",
+    "photon": "git://github.com/connors/photon.git",
+    "tail-stream": "^0.3.3"
+  }
+}
