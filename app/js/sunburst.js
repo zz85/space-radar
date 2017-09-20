@@ -119,13 +119,14 @@ function SunBurst() {
 
   var partition
 
+  var ADJUSTMENT = - Math.PI / 2
   var arc = d3.svg
     .arc()
     .startAngle(function(d) {
-      return d.x
+      return d.x + ADJUSTMENT
     })
     .endAngle(function(d) {
-      return d.x + d.dx - 0.01 / (d.depth + 0.5)
+      return d.x + d.dx - 0.01 / (d.depth + 0.5) + ADJUSTMENT
     })
     .innerRadius(function(d) {
       return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth - 1)
@@ -224,7 +225,9 @@ function SunBurst() {
     zoom(p.parent, p)
   }
 
-  // Zoom to the specified new root.
+  // Zoom to the specified node
+  // updating the reference new root
+  // uses a previous node for animation
   function zoom(root, p) {
     if (document.documentElement.__transition__) return
 
@@ -346,7 +349,7 @@ function SunBurst() {
       return d3.ascending(a.name, b.name)
     }
     function sizesort(a, b) {
-      return d3.descending(a.sum, b.sum)
+      return d3.ascending(a.sum, b.sum)
     }
 
     partition = d3.layout
