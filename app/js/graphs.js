@@ -2,17 +2,17 @@
 
 var PATH_DELIMITER = '/'
 
+// returns an array of the full path of node
 function keys(d) {
-  var k = [],
-    p = d
-  while (p) k.push(p.name), (p = p.parent)
-  return k.reverse()
+  return getPath(d).map(v => v.name)
 }
 
+// returns a name of the full path of node
 function key(d) {
   return keys(d).join(PATH_DELIMITER)
 }
 
+// builds an array of node till root
 function getPath(d) {
   var path = [d]
   d = d.parent
@@ -23,26 +23,29 @@ function getPath(d) {
   return path
 }
 
+/*
+ * keys - array of pathnames
+ * root - hierarchical data
+ */
 function getNodeFromPath(keys, root) {
-  log('navigateToPath', keys)
-  let name,
-    n = root
-
+  log('getNodeFromPath', keys)
   if (!keys.length) {
     log('warning no keys to navigate to')
-    return n
+    return root
   }
 
-  name = keys.shift()
+  let name
+  let n = root
+  let i = 0
+  name = keys[i++]
 
-  if (!keys.length) {
+  if (i >= keys.length) {
     if (name !== n.name) log('warning, root name dont match!')
     return n
   }
 
-  while ((name = keys.shift())) {
-    log(n.name)
-    let children = n.children.filter(n => {
+  while (i < keys.length && (name = keys[i++])) {
+    const children = n.children.filter(n => {
       return n.name == name
     })
 
@@ -50,7 +53,7 @@ function getNodeFromPath(keys, root) {
     n = children[0]
   }
 
-  log('found n', n, root)
+  log('getNodeFromPath done', keys, n, root)
 
   return n
 }

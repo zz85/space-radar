@@ -119,7 +119,7 @@ function SunBurst() {
 
   var partition
 
-  var ADJUSTMENT = - Math.PI / 2
+  var ADJUSTMENT = -Math.PI / 2
   var arc = d3.svg
     .arc()
     .startAngle(function(d) {
@@ -137,7 +137,7 @@ function SunBurst() {
       return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1
     })
 
-  var realroot,
+  var rootNode,
     currentNode,
     max_level,
     current_level = 0
@@ -177,8 +177,6 @@ function SunBurst() {
   }
 
   function mouseover(d) {
-    lastover = d
-
     updateCore(d)
 
     svg
@@ -204,7 +202,6 @@ function SunBurst() {
   }
 
   function mouseout(d) {
-    lastover = null
     updateSelection(null)
 
     if (path) path.style('opacity', 0.8)
@@ -217,36 +214,44 @@ function SunBurst() {
       p = p.parent
     }
     if (!p.children) return
-    zoom(p, p)
+
+    // zoom(p, p)
+    // if (!document.documentElement.__transition__)
+    Navigation.updatePath(keys(p))
   }
 
   function zoomOut(p) {
     if (!p || !p.parent) return
-    zoom(p.parent, p)
+    // zoom(p.parent, p)
+    // if (!document.documentElement.__transition__)
+    Navigation.updatePath(keys(p.parent))
   }
 
+  let deferred
   // Zoom to the specified node
   // updating the reference new root
   // uses a previous node for animation
-  function zoom(root, p) {
-    if (document.documentElement.__transition__) return
+  function zoom(node, prevNode) {
+    clearTimeout(deferred)
+    if (document.documentElement.__transition__) {
+      deferred = setTimeout(() => zoom(node, prevNode), 100)
+      return
+    }
+    updateBreadcrumbs(node)
 
-    updateNavigation(keys(root))
-    updateBreadcrumbs(root)
-
-    core_center.html(format(root.sum))
-    core_top.html(root.name)
+    core_center.html(format(node.sum))
+    core_top.html(node.name)
 
     max_level = 0
     current_level = 0
 
-    var tmp = root.parent
+    var tmp = node.parent
     while (tmp) {
       current_level++
       tmp = tmp.parent
     }
 
-    currentNode = root
+    currentNode = node
     // console.log('current_level', current_level)
 
     // Rescale outside angles to match the new layout.
@@ -255,7 +260,7 @@ function SunBurst() {
       outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI])
 
     function insideArc(d) {
-      var pkey = key(p),
+      var pkey = key(prevNode),
         dkey = key(d)
       return pkey > dkey
         ? { depth: d.depth - 1, x: 0, dx: 0 }
@@ -267,21 +272,23 @@ function SunBurst() {
     }
 
     center
-      .datum(root)
+      .datum(node)
       .on('mouseover', mouseover)
       .on('mouseout', mouseout)
 
     // When zooming in, arcs enter from the outside and exit to the inside.
     // Entering outside arcs start from the old layout.
-    if (root === p) (enterArc = outsideArc), (exitArc = insideArc), outsideAngle.range([p.x, p.x + p.dx])
+    if (node === prevNode)
+      (enterArc = outsideArc), (exitArc = insideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
 
-    path = path.data(partition.nodes(root).slice(1), function(d) {
+    path = path.data(partition.nodes(node).slice(1), function(d) {
       return key(d)
     })
 
     // When zooming out, arcs enter from the inside and exit to the outside.
     // Exiting outside arcs transition to the new layout.
-    if (root !== p) (enterArc = insideArc), (exitArc = outsideArc), outsideAngle.range([p.x, p.x + p.dx])
+    if (node !== prevNode)
+      (enterArc = insideArc), (exitArc = outsideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
 
     FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level)
 
@@ -294,7 +301,7 @@ function SunBurst() {
           .exit()
           .transition()
           .style('fill-opacity', function(d) {
-            return d.depth === 1 + (root === p) ? 1 : 0
+            return d.depth === 1 + (node === prevNode) ? 1 : 0
           })
           .attrTween('d', function(d) {
             return arcTween.call(this, exitArc(d))
@@ -305,7 +312,7 @@ function SunBurst() {
           .enter()
           .append('path')
           .style('fill-opacity', function(d) {
-            return d.depth === 2 - (root === p) ? 1 : 0
+            return d.depth === 2 - (node === prevNode) ? 1 : 0
           })
           .style('fill', function(d) {
             return fill(d)
@@ -329,21 +336,17 @@ function SunBurst() {
 
   function redraw(node) {
     node = node || currentNode
-    if (node) zoom(node, node)
+    zoom(node, node)
   }
 
   var jsoned = false
 
-  var lastover
-
-  function generateSunburst(r) {
-    var root = r
-
+  function generateSunburst(root) {
     var oldLineage
     if (currentNode) oldLineage = keys(currentNode)
 
     currentNode = root
-    realroot = r
+    rootNode = root
 
     function namesort(a, b) {
       return d3.ascending(a.name, b.name)
@@ -427,23 +430,8 @@ function SunBurst() {
     if (jsoned) {
       // this attempts to place you in the same view after you refresh the data
       if (oldLineage) {
-        var n = root
-        var name = oldLineage.shift()
-
-        if (n.name != name) return redraw()
-
-        while ((name = oldLineage.shift())) {
-          var children = n.children.filter(function(n) {
-            return n.name == name
-          })
-
-          if (children.length != 1) {
-            return redraw(n)
-          }
-
-          n = children[0]
-        }
-        if (n) return redraw(n)
+        const node = getNodeFromPath(oldLineage, root)
+        return redraw(node)
       }
 
       updateCore(root)
@@ -541,15 +529,15 @@ function SunBurst() {
           .remove()
 
         partition = null
-        realroot = currentNode = null
+        rootNode = currentNode = null
         path = center = null
 
         jsoned = false
       }
     },
     navigateTo: function(keys) {
-      var n = getNodeFromPath(keys, realroot)
-      zoom(n, n)
+      var n = getNodeFromPath(keys, rootNode)
+      zoom(n, currentNode)
     }
   }
 }

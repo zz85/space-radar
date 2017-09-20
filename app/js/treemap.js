@@ -598,8 +598,9 @@ function TreeMap() {
     mouseclicked = false
 
     if (found.length) {
-      let d = found[hover.length - 1]
-      navigateTo(d.children ? d : d.parent)
+      const d = found[hover.length - 1]
+      const to = d.children ? d : d.parent
+      Navigation.updatePath(keys(to))
     }
 
     full_repaint = false
@@ -619,7 +620,6 @@ function TreeMap() {
 
     zoom(d)
 
-    updateNavigation(keys(d))
     updateBreadcrumbs(currentNode)
   }
 

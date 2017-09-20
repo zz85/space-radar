@@ -68,19 +68,19 @@
       </div>
 
       <div class="btn-group">
-        <button class="btn btn-default btn-large" onclick="graphPlugin.showLess()">
+        <button class="btn btn-default btn-large" onclick="PluginManager.showLess()">
           <span class="icon icon-minus"></span>
           <!-- Show Less -->
         </button>
         <!-- icon-text -->
         <!-- icon-down-circled icon-up-circled icon-down icon-progress-2 icon-progress-1 -squared -circled -->
-        <button class="btn btn-default btn-large" onclick="graphPlugin.showMore()">
+        <button class="btn btn-default btn-large" onclick="PluginManager.showMore()">
           <span class="icon icon-plus"></span>
           <!-- Show More -->
         </button>
       </div>
 
-      <button class="btn btn-default btn-large" onclick="graphPlugin.navigateUp()">
+      <button class="btn btn-default btn-large" onclick="PluginManager.navigateUp()">
         <span class="icon icon-up-circled"></span>
       </button>
 
@@ -178,18 +178,18 @@
 </div> <!-- end window-content -->
 <footer class="toolbar toolbar-footer">
 
-  <div class="toolbar-actions">
+  <div class="toolbar-actions" style="display: flex;">
     <div class="btn-group">
-      <button class="btn btn-default" onclick="navigateBack()">
+      <button class="btn btn-default" onclick="Navigation.back()">
         <span class="icon icon-left-bold"></span>
         <!-- icon-left-bold icon-left-circled icon-left -->
       </button>
-      <button class="btn btn-default" onclick="navigateForward()">
+      <button class="btn btn-default" onclick="Navigation.forward()">
         <span class="icon icon-right-bold"></span>
       </button>
     </div>
 
-    <span id="bottom_status" style="font-size:11px; padding-left: 8px"><!-- Welcome to Space Radar --></span>
+    <span id="bottom_status" style="flex: 1; align-self: center; font-size:11px; padding-left: 8px; white-space: nowrap; overflow: auto;"><!-- Welcome to Space Radar --></span>
     <button class="btn btn-default pull-right" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
 
     <!--
@@ -226,6 +226,7 @@
 <script src="js/radar.js"></script>
 <script src="js/menu.js"></script>
 <script src="js/breadcrumbs.js"></script>
+<script src="js/router.js"></script>
 
 </body>
 </html>

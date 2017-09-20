@@ -4,49 +4,6 @@
 // Breadcrumbs
 //
 
-let backStack = [],
-  fwdStack = []
-
-/*
-Simple Navigation Controller
-- toolbar gives intent to graph plugin via graph.navigateTo(bla)
-- when the graph navigates to a new path, it calls updateNavigation
-- (global)
-*/
-
-function clearNavigation() {
-  backStack = []
-  fwdStack = []
-}
-
-function currentPath() {
-  let n = backStack[backStack.length - 1]
-  return n
-}
-
-function updateNavigation(path) {
-  let n = currentPath()
-  if (!n || n !== path) {
-    backStack.push(path)
-    if (fwdStack.length) fwdStack = []
-  }
-}
-
-function navigateBack() {
-  if (backStack.length < 2) return
-  let n = backStack.pop()
-  log('navigateBack', n)
-  fwdStack.push(n)
-  graphPlugin.navigateTo(currentPath())
-}
-
-function navigateForward() {
-  if (!fwdStack.length) return
-  let n = fwdStack.pop()
-  backStack.push(n)
-  graphPlugin.navigateTo(n)
-}
-
 var selection = null
 
 function updateBreadcrumbs(d) {
@@ -141,7 +98,7 @@ function _updateBreadcrumbs(nodeArray) {
     .style('cursor', 'pointer')
     .on('click', d => {
       log('navigate', d)
-      graphPlugin.navigateTo(keys(d))
+      Navigation.updatePath(keys(d))
     })
 
   entering.text(function(d) {

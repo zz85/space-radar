@@ -22,7 +22,7 @@ var hue = d3.scale.category10() // colour hash
 function startScan(path) {
   cleanup()
   hidePrompt()
-  clearNavigation()
+  State.clearNavigation()
   legend.style('display', 'block')
   log('start', path)
   start_time = performance.now()
@@ -99,7 +99,7 @@ function cleanup() {
   // we have a possibility of running out of memory here, we could force a garbage collection to compact memory a little if neede!
   mempoller.cancel()
   lightbox(true)
-  graphPlugin.cleanup()
+  PluginManager.cleanup()
 
   // memory()
 }
@@ -258,7 +258,7 @@ promptbox.ondrop = function(e) {
 /*** Selection Handling ****/
 
 function openDirectory() {
-  let loc = currentPath()
+  let loc = Navigator.currentPath()
   if (loc) shell.showItemInFolder(loc.join(PATH_DELIMITER))
 }
 
@@ -305,13 +305,13 @@ function trashSelection() {
 function onJson(error, data) {
   if (error) throw error
   fs.writeFileSync(LASTLOAD_FILE, JSON.stringify(data))
-  graphPlugin.generate(data)
+  PluginManager.generate(data)
 }
 
 function loadLast() {
   var json = JSON.parse(fs.readFileSync(LASTLOAD_FILE))
   // complete(json);
-  graphPlugin.generate(json)
+  PluginManager.generate(json)
 }
 
 function showSunburst(skip) {
@@ -320,13 +320,7 @@ function showSunburst(skip) {
   d3.select('.svg-container').style('display', 'inline-block')
   d3.select('canvas').style('display', 'none')
 
-  graphPlugin = sunburstGraph
-
-  if (!skip) {
-    loadLast()
-    graphPlugin.resize()
-    graphPlugin.navigateTo(currentPath())
-  }
+  PluginManager.activate(sunburstGraph)
 }
 
 function showTreemap(skip) {
@@ -335,37 +329,9 @@ function showTreemap(skip) {
   d3.select('.svg-container').style('display', 'none')
   d3.select('canvas').style('display', 'inline-block')
 
-  graphPlugin = treemapGraph
-
-  if (!skip) {
-    loadLast()
-    graphPlugin.resize()
-    graphPlugin.navigateTo(currentPath())
-  }
+  PluginManager.activate(treemapGraph)
 }
 
-var graphPlugin
-
-/*****************
- * Graph Plugins
- * .resize()
- * .generate(json)
- * .showMore()
- * .showLess()
- * .navigateUp()
- *  TODO
- * .cleanup()
- * .navigateTo(keys)
- */
-
-var treemapGraph = TreeMap()
-var sunburstGraph = SunBurst()
-
-graphPlugin = sunburstGraph
-
-showSunburst(true)
-// showTreemap(true)
-
 d3.select(window).on('resize', function() {
-  graphPlugin.resize()
+  PluginManager.resize()
 })
