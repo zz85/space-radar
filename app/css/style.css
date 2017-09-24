@@ -38,6 +38,7 @@ circle:hover {
 
 /* treemap */
 
+/*
 rect {
   fill: none;
   pointer-events: all;
@@ -74,6 +75,7 @@ line {
 .special {
   color: #1181b8;
 }
+*/
 
 /* end treemap */
 
@@ -159,6 +161,13 @@ line {
   stroke: #999;
   stroke-width: 2px;
   opacity: 1;
+}
+
+#flame-graph {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: top;
 }
 
 .svg-container {

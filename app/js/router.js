@@ -60,24 +60,36 @@ global.Navigation = new NavigationController()
  */
 
 // plugins
-var treemapGraph = TreeMap()
-var sunburstGraph = SunBurst()
+const treemapGraph = TreeMap()
+const sunburstGraph = SunBurst()
+const flamegraphGraph = new FlameGraph()
 
 Navigation.on('navigationchanged', path => {
   PluginManager.navigateTo(path)
 })
 
-let activatedGraph
+const activatedGraphs = new Set()
+let width, height
+
+function calculateDimensions() {
+  width = innerWidth
+  height =
+    innerHeight -
+    document.querySelector('header').getBoundingClientRect().height -
+    document.querySelector('footer').getBoundingClientRect().height
+}
 
 window.PluginManager = {
   resize: () => {
-    activatedGraph.resize()
+    calculateDimensions()
+    activatedGraphs.forEach(activatedGraph => activatedGraph.resize())
   },
 
   generate: json => {
     this.data = json
     console.trace('generate', json)
-    activatedGraph.generate(json)
+
+    activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
     Navigation.updatePath([json.name])
   },
 
@@ -97,7 +109,8 @@ window.PluginManager = {
         str += child.name + '\t' + format(child.value) + '\n'
       })
     log(str)
-    activatedGraph.navigateTo(path)
+
+    activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path))
   },
 
   navigateUp: () => {
@@ -108,26 +121,43 @@ window.PluginManager = {
     }
   },
 
-  showLess: () => activatedGraph.showLess(),
-  showMore: () => activatedGraph.showMore(),
+  showLess: () => activatedGraphs.forEach(activatedGraph => activatedGraph.showLess()),
+  showMore: () => activatedGraphs.forEach(activatedGraph => activatedGraph.showMore()),
 
   cleanup: () => {
-    activatedGraph.cleanup()
+    activatedGraphs.forEach(activatedGraph => activatedGraph.cleanup())
   },
 
   activate: graph => {
-    activatedGraph = graph
+    activatedGraphs.add(graph)
 
     if (this.data) {
-      loadLast()
-      PluginManager.resize()
+      // loadLast()
+      PluginManager.generate(this.data)
       PluginManager.navigateTo(Navigation.currentPath())
     }
+
+    PluginManager.resize()
+  },
+
+  switch: graph => {
+    PluginManager.deactivateAll()
+    PluginManager.activate(graph)
+  },
+
+  deactivate: graph => {
+    graph.cleanup()
+    activatedGraphs.delete(graph)
+  },
+
+  deactivateAll: () => {
+    activatedGraphs.forEach(graph => PluginManager.deactivate(graph))
   }
 }
 
-showSunburst()
-// showTreemap(true)
+// showFlamegraph()
+// showSunburst()
+// showTreemap()
 
 global.State = {
   clearNavigation: () => Navigation.clear()

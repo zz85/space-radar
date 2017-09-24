@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/throbber.css" type="text/css">
 <link rel="stylesheet" href="css/breadcrumb.css" type="text/css">
 <link rel="stylesheet" href="node_modules/photon/dist/css/photon.css">
+<link rel="stylesheet" type="text/css" href="node_modules/d3-flame-graph/dist/d3.flameGraph.css"/>
 
 <!-- <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview> -->
 
@@ -145,11 +146,21 @@
   <!-- <div class="Aligner-item Aligner-item--bottom">…</div> -->
 </div>
 
+<!--
+
+  Graph Charting Plugins HERE
+
+-->
+
 <canvas id="canvas"></canvas>
 
 <canvas id="three-canvas" style="display: none; z-index:1000; position:absolute; opacity: 0.5;"></canvas>
 
 <div class="svg-container">
+</div>
+
+<div id="flame-chart">
+
 </div>
 
 <div id="loading">
@@ -221,6 +232,7 @@
 <script src="js/sunburst.js"></script>
 <script src="js/sunburst3d.js"></script>
 <script src="js/treemap.js"></script>
+<script src="js/flamegraph.js"></script>
 <script src="js/duFromFile.js"></script>
 <script src="js/ipc.js"></script>
 <script src="js/radar.js"></script>

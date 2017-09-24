@@ -73,21 +73,14 @@ function SunBurst() {
 
   var len = Math.min(window.innerWidth, window.innerHeight)
 
-  var width = innerWidth,
-    height = innerHeight,
-    radius = len * 0.45
+  var radius = len * 0.45
 
   function calcDimensions() {
-    width = innerWidth
-    height =
-      innerHeight -
-      document.querySelector('header').getBoundingClientRect().height -
-      document.querySelector('footer').getBoundingClientRect().height
     radius = len * 0.45
     log(innerHeight, height)
   }
 
-  calcDimensions()
+  // calcDimensions()
 
   var LEVELS = 11,
     INNER_LEVEL = 7,
@@ -108,14 +101,14 @@ function SunBurst() {
 
   var svg = svg_container
     .append('svg')
-    .attr('width', width)
-    .attr('height', height)
+    // .attr('width', width)
+    // .attr('height', height)
     // .attr("preserveAspectRatio", "xMinYMin meet")
     // .attr("viewBox", "0 0 " + width + " " + height)
     //class to make it responsive
     // .classed("svg-content-responsive", true)
     .append('g')
-    .attr('transform', 'translate(' + width / 2 + ',' + (height / 2 + 10) + ')')
+  // .attr('transform', 'translate(' + width / 2 + ',' + (height / 2 + 10) + ')')
 
   var partition
 
@@ -360,7 +353,7 @@ function SunBurst() {
       .value(function(d) {
         return d.size
       })
-      .sort(sizesort) // namesort
+      // .sort(sizesort) // namesort
       .size([2 * Math.PI, radius]) // use r*r for equal area
 
     // Compute the initial layout on the entire tree to sum sizes.
@@ -514,7 +507,7 @@ function SunBurst() {
       redraw()
     },
     navigateUp: function() {
-      zoomOut(currentNode)
+      // zoomOut(currentNode)
     },
     cleanup: function() {
       if (path) {
