@@ -39,7 +39,6 @@ function SunBurst() {
     - Labels
     - Pie Magnifier
     - Absolute or relative file size intensity
-    - Back / Fwd paths
 
   - Perf
     - Streaming partition datastructures
@@ -50,9 +49,9 @@ function SunBurst() {
     - Spotlike style
     - Mac Preview style (or integrate Preview)
     - Auto update (or use Electron Builder)
-    - Import Es6 Modules
 
   DONE
+   - Back / Fwd paths
    - Custom levels rendering
    - percentage as root of inner core
    - threshold - hide small files
@@ -97,18 +96,14 @@ function SunBurst() {
     .clamp(true)
     .range([90, 20])
 
-  var svg_container = d3.select('body').select('.svg-container')
+  let svg_container, svg
 
-  var svg = svg_container
-    .append('svg')
-    // .attr('width', width)
-    // .attr('height', height)
-    // .attr("preserveAspectRatio", "xMinYMin meet")
-    // .attr("viewBox", "0 0 " + width + " " + height)
-    //class to make it responsive
-    // .classed("svg-content-responsive", true)
-    .append('g')
-  // .attr('transform', 'translate(' + width / 2 + ',' + (height / 2 + 10) + ')')
+  function initDom() {
+    svg_container = d3.select('body').select('#sunburst-chart')
+    svg = svg_container.append('svg').append('g')
+  }
+
+  initDom()
 
   var partition
 
@@ -209,15 +204,13 @@ function SunBurst() {
     if (!p.children) return
 
     // zoom(p, p)
-    // if (!document.documentElement.__transition__)
-    Navigation.updatePath(keys(p))
+    if (!document.documentElement.__transition__) Navigation.updatePath(keys(p))
   }
 
   function zoomOut(p) {
     if (!p || !p.parent) return
     // zoom(p.parent, p)
-    // if (!document.documentElement.__transition__)
-    Navigation.updatePath(keys(p.parent))
+    if (!document.documentElement.__transition__) Navigation.updatePath(keys(p.parent))
   }
 
   let deferred
@@ -225,9 +218,12 @@ function SunBurst() {
   // updating the reference new root
   // uses a previous node for animation
   function zoom(node, prevNode) {
-    clearTimeout(deferred)
     if (document.documentElement.__transition__) {
-      deferred = setTimeout(() => zoom(node, prevNode), 100)
+      if (deferred) return
+      deferred = setTimeout(() => {
+        zoom(node, prevNode)
+        deferred = clearTimeout(deferred)
+      }, 100)
       return
     }
     updateBreadcrumbs(node)
@@ -328,6 +324,7 @@ function SunBurst() {
   }
 
   function redraw(node) {
+    if (!rootNode) return
     node = node || currentNode
     zoom(node, node)
   }
@@ -527,8 +524,11 @@ function SunBurst() {
 
         jsoned = false
       }
+
+      deferred = clearTimeout(deferred)
     },
     navigateTo: function(keys) {
+      if (!rootNode) return
       var n = getNodeFromPath(keys, rootNode)
       zoom(n, currentNode)
     }

@@ -86,16 +86,25 @@ window.PluginManager = {
   },
 
   generate: json => {
-    this.data = json
     console.trace('generate', json)
 
+    const loaded = this.data
+    this.data = json
+
     activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
-    Navigation.updatePath([json.name])
+    if (!loaded) {
+      Navigation.updatePath([json.name])
+    }
   },
 
   navigateTo: path => {
     console.log('navigateTo', path)
 
+    activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path))
+    PluginManager.resize()
+
+    if (!this.data) return
+    //
     const current = getNodeFromPath(path, this.data)
     let str = '----------\n'
     ;(current._children || current.children)
@@ -109,8 +118,6 @@ window.PluginManager = {
         str += child.name + '\t' + format(child.value) + '\n'
       })
     log(str)
-
-    activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path))
   },
 
   navigateUp: () => {
@@ -134,10 +141,9 @@ window.PluginManager = {
     if (this.data) {
       // loadLast()
       PluginManager.generate(this.data)
-      PluginManager.navigateTo(Navigation.currentPath())
     }
-
-    PluginManager.resize()
+    // yooos
+    PluginManager.navigateTo(Navigation.currentPath())
   },
 
   switch: graph => {
@@ -155,8 +161,8 @@ window.PluginManager = {
   }
 }
 
+showSunburst()
 // showFlamegraph()
-// showSunburst()
 // showTreemap()
 
 global.State = {

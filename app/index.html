@@ -92,11 +92,15 @@
 
       <!-- Large button group -->
       <div class="btn-group pull-right">
-        <button class="btn btn-large btn-default active" id="sunburst_button" onclick="showSunburst()">
+        <button class="btn btn-large btn-default active mode_buttons" id="sunburst_button" onclick="showSunburst()">
           <span class="icon icon-cd"></span> <!-- icon-cd  icon-chart-pie icon-database icon-rss"-->
         </button>
 
-        <button class="btn btn-default btn-large" id="treemap_button" onclick="showTreemap()">
+        <button class="btn btn-large btn-default mode_buttons" id="flamegraph_button" onclick="showFlamegraph()">
+          <span class="icon icon-rss"></span>
+        </button>
+
+        <button class="btn btn-default btn-large mode_buttons" id="treemap_button" onclick="showTreemap()">
           <span class="icon icon-layout"></span> <!-- icon-map  icon-layout icon-sweden -->
         </button>
       </div>
@@ -156,11 +160,15 @@
 
 <canvas id="three-canvas" style="display: none; z-index:1000; position:absolute; opacity: 0.5;"></canvas>
 
-<div class="svg-container">
+<div id="sunburst-chart" class="svg-container">
+  <div id="explanation">
+    <span id="core_top"><!-- Loading... --></span><br/>
+    <span id="core_center"></span><br/>
+    <span id="core_tag"></span>
+  </div>
 </div>
 
-<div id="flame-chart">
-
+<div id="flame-chart" class="svg-container">
 </div>
 
 <div id="loading">
@@ -172,13 +180,6 @@
 
 <div id="legend">
 </div>
-
-<div id="explanation">
-  <span id="core_top"><!-- Loading... --></span><br/>
-  <span id="core_center"></span><br/>
-  <span id="core_tag"></span>
-</div>
-
 
   <div id="sequence">
     <div class="breadcrumb flat">
@@ -232,6 +233,7 @@
 <script src="js/sunburst.js"></script>
 <script src="js/sunburst3d.js"></script>
 <script src="js/treemap.js"></script>
+<script src="js/chart.js"></script>
 <script src="js/flamegraph.js"></script>
 <script src="js/duFromFile.js"></script>
 <script src="js/ipc.js"></script>

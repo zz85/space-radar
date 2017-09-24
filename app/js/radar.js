@@ -314,32 +314,27 @@ function loadLast() {
   PluginManager.generate(json)
 }
 
-function showFlamegraph() {
-  hideAll()
-  document.getElementById('flame-chart').style.display = 'inline-block'
-  PluginManager.switch(flamegraphGraph)
-}
-
 function hideAll() {
+  // toggle button states
+  ;[...document.querySelectorAll('.mode_buttons')].forEach(button => button.classList.remove('active'))
+
   // hide sunburst
-  sunburst_button.classList.remove('active')
-  d3.select('.svg-container').style('display', 'none')
+  d3.select('#sunburst-chart').style('display', 'none')
 
   // hide treemap
   treemap_button.classList.remove('active')
 
-  document.getElementById('flame-chart').style.display = 'none'
-
   // hide treemap canvas
   d3.select('canvas').style('display', 'none')
 
-  //
+  // hide flamegraph
+  document.getElementById('flame-chart').style.display = 'none'
 }
 
 function showSunburst() {
   hideAll()
   sunburst_button.classList.add('active')
-  d3.select('.svg-container').style('display', 'inline-block')
+  d3.select('#sunburst-chart').style('display', 'inline-block')
 
   PluginManager.switch(sunburstGraph)
 }
@@ -350,6 +345,13 @@ function showTreemap() {
   d3.select('canvas').style('display', 'inline-block')
 
   PluginManager.switch(treemapGraph)
+}
+
+function showFlamegraph() {
+  hideAll()
+  flamegraph_button.classList.add('active')
+  document.getElementById('flame-chart').style.display = 'inline-block'
+  PluginManager.switch(flamegraphGraph)
 }
 
 d3.select(window).on('resize', function() {
