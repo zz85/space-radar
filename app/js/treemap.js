@@ -389,9 +389,8 @@ function TreeMap() {
 
   d3
     .select(canvas)
-    .on('mousemove', function() {
-      mousex = d3.event.offsetX
-      mousey = d3.event.offsetY
+    .on('mousemove', function(...a) {
+      ;[mousex, mousey] = d3.mouse(canvas)
       drawThenCancel()
       // console.log(d3.event.offsetX, d3.event.offsetY)
       // console.log(d3.event.clientX, d3.event.clientY)
@@ -403,12 +402,11 @@ function TreeMap() {
       mousex = -1
       mousey = -1
     })
-
-  d3.select(canvas).on('click', function() {
-    // console.log('click')
-    mouseclicked = true
-    drawThenCancel()
-  })
+    .on('click', function() {
+      // console.log('click')
+      mouseclicked = true
+      drawThenCancel()
+    })
 
   function gx(d) {
     return xd(d.x)

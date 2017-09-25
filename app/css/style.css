@@ -83,6 +83,11 @@ line {
   fill: yellow;
 }
 
+/* flame graph tool tip */
+.d3-flame-graph-tip {
+  z-index: 1000;
+}
+
 /* legend */
 
 #explanation {

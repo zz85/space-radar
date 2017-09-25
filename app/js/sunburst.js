@@ -97,10 +97,16 @@ function SunBurst() {
     .range([90, 20])
 
   let svg_container, svg
+  let explanation, core_top, core_center, core_tag
 
   function initDom() {
     svg_container = d3.select('body').select('#sunburst-chart')
     svg = svg_container.append('svg').append('g')
+
+    explanation = d3.select('#explanation')
+    core_top = d3.select('#core_top')
+    core_center = d3.select('#core_center')
+    core_tag = d3.select('#core_tag')
   }
 
   initDom()

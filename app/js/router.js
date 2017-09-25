@@ -95,19 +95,17 @@ window.PluginManager = {
     if (!loaded) {
       Navigation.updatePath([json.name])
     }
+    PluginManager.resize()
   },
 
   navigateTo: path => {
     console.log('navigateTo', path)
 
-    activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path))
-    PluginManager.resize()
-
     if (!this.data) return
     //
     const current = getNodeFromPath(path, this.data)
     let str = '----------\n'
-    ;(current._children || current.children)
+    ;(current._children || current.children || [])
       .sort((a, b) => {
         if (a.value < b.value) return 1
         if (a.value > b.value) return -1
@@ -118,6 +116,8 @@ window.PluginManager = {
         str += child.name + '\t' + format(child.value) + '\n'
       })
     log(str)
+
+    activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
   },
 
   navigateUp: () => {
