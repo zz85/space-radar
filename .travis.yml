@@ -4,13 +4,13 @@ node_js:
 
 before_install:
 - npm install
-- npm run install
-- npm run build
-- npm run zip
 
-after_success: npm run everything
+after_success:
+- "echo 'install success'"
 
-before_deploy: "echo 'ready?'"
+before_deploy:
+- "echo 'ready?'"
+- npm run everything
 
 deploy:
   provider: releases
