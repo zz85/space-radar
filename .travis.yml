@@ -2,7 +2,15 @@ language: node_js
 node_js:
 - '6'
 
-before_deploy: "echo 'ready?' && npm install && npm everything"
+before_install:
+- npm install
+- npm run install
+- npm run build
+- npm run zip
+
+after_success: npm run everything
+
+before_deploy: "echo 'ready?'"
 
 deploy:
   provider: releases
@@ -13,3 +21,7 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    all_branches: true
+
+after_deploy:
+- "echo 'builds relased!'"
