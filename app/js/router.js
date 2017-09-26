@@ -104,18 +104,7 @@ window.PluginManager = {
     if (!this.data) return
     //
     const current = getNodeFromPath(path, this.data)
-    let str = '----------\n'
-    ;(current._children || current.children || [])
-      .sort((a, b) => {
-        if (a.value < b.value) return 1
-        if (a.value > b.value) return -1
-        return 0
-      })
-      .slice(0, 5)
-      .forEach(child => {
-        str += child.name + '\t' + format(child.value) + '\n'
-      })
-    log(str)
+    displayCurrent(path, current)
 
     activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
   },
@@ -159,6 +148,66 @@ window.PluginManager = {
   deactivateAll: () => {
     activatedGraphs.forEach(graph => PluginManager.deactivate(graph))
   }
+}
+
+function displayCurrent(path, current) {
+  const navs = [elm('h5', { class: 'nav-group-title' }, `${path.join('/')} ${format(current.value)}`)]
+
+  let str = '----------\n'
+  const nodes = current._children || current.children || []
+
+  const INITIAL_LOAD = 10
+
+  nodes
+    .sort((a, b) => {
+      if (a.value < b.value) return 1
+      if (a.value > b.value) return -1
+      return 0
+    })
+    .slice(0, INITIAL_LOAD)
+    .forEach(child => {
+      str += child.name + '\t' + format(child.value) + '\n'
+
+      navs.push(
+        elm('span', { class: 'nav-group-item', href: '#' }, [
+          elm('span', { class: 'icon icon-record', style: '#fc605b' }),
+          child.name,
+          elm('span', { class: '', style: 'float:right;' }, format(child.value))
+        ])
+      )
+    })
+
+  const remaining = nodes.length - INITIAL_LOAD
+  if (remaining > 0) {
+    navs.push(
+      elm('span', { class: 'nav-group-item', href: '#' }, [
+        elm('span', { class: 'icon icon-record', style: '#fc605b' }),
+        `and ${remaining} other items....`
+      ])
+    )
+  }
+
+  log(str)
+  ;[...sidebar.childNodes].forEach(v => v.remove())
+  const nav = elm('nav', { class: 'nav-group' }, navs)
+  sidebar.appendChild(nav)
+}
+
+function elm(tag, attrs, children) {
+  const el = document.createElement(tag)
+  for (const k in attrs) {
+    el.setAttribute(k, attrs[k])
+  }
+
+  if (!children) return el
+  children = Array.isArray(children) ? children : [children]
+  for (let child of children) {
+    if (typeof child === 'string') {
+      child = document.createTextNode(child)
+    }
+    el.appendChild(child)
+  }
+  return el
 }
 
 showSunburst()

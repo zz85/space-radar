@@ -15,8 +15,8 @@
     require('d3-selection'),
     require('d3-tip'),
     require('d3-ease'),
-    require('d3-drag'),
-    require('d3-zoom'),
+    // require('d3-drag'),
+    // require('d3-zoom'),
   )
 
 </script>
@@ -108,7 +108,8 @@
         </button>
 
         <button class="btn btn-large btn-default mode_buttons" id="flamegraph_button" onclick="showFlamegraph()">
-          <span class="icon icon-rss"></span>
+          <span class="icon icon-water"></span>
+          <!-- icon-flow-tree icon-water icon-chart-area -->
         </button>
 
         <button class="btn btn-default btn-large mode_buttons" id="treemap_button" onclick="showTreemap()">
@@ -162,16 +163,109 @@
 </div>
 
 <!--
+<div class="pane-group">
+  <div class="pane pane-sm sidebar">
+    <ul class="list-group">
+        <li class="list-group-header">
+          <input class="form-control" type="text" placeholder="Search for someone">
+        </li>
+        <li class="list-group-item">
+          <img class="img-circle media-object pull-left" src="/assets/img/avatar.jpg" width="32" height="32">
+          <div class="media-body">
+            <strong>List item title</strong>
+            <p>Lorem ipsum dolor sit amet.</p>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <img class="img-circle media-object pull-left" src="/assets/img/avatar2.png" width="32" height="32">
+          <div class="media-body">
+            <strong>List item title</strong>
+            <p>Lorem ipsum dolor sit amet.</p>
+          </div>
+        </li>
+        ...
+      </ul>
+      <nav class="nav-group">
+        <h5 class="nav-group-title">Favorites</h5>
+        <a class="nav-group-item active">
+          <span class="icon icon-home"></span>
+          connors
+        </a>
+        <span class="nav-group-item">
+          <span class="icon icon-download"></span>
+          Downloads
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-folder"></span>
+          Documents
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-signal"></span>
+          AirPlay
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-print"></span>
+          Applications
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-cloud"></span>
+          Desktop
+        </span>
+      </nav>
+      <nav class="nav-group">
+          <h5 class="nav-group-title">Tags</h5>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#fc605b"></span>
+            Red
+          </span>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#fdbc40"></span>
+            Orange
+          </span>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#34c84a"></span>
+            Green
+          </span>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#57acf5"></span>
+            Blue
+          </span>
+        </nav>
+        <nav class="nav-group">
+            <h5 class="nav-group-title">Devices</h5>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+          </nav>
+    </div>
+  </div>
+-->
+
+
+<!--
 
   Graph Charting Plugins HERE
 
 -->
 
-<canvas id="canvas"></canvas>
+<canvas id="canvas" class="graph-container"></canvas>
 
-<canvas id="three-canvas" style="display: none; z-index:1000; position:absolute; opacity: 0.5;"></canvas>
+<canvas id="three-canvas" class="graph-container" style="display: none; z-index:1000; position:absolute; opacity: 0.5;"></canvas>
 
-<div id="sunburst-chart" class="svg-container">
+<div id="sunburst-chart" class="svg-container graph-container">
   <div id="explanation">
     <span id="core_top"><!-- Loading... --></span><br/>
     <span id="core_center"></span><br/>
@@ -179,8 +273,32 @@
   </div>
 </div>
 
-<div id="flame-chart" class="svg-container">
+<div id="flame-chart" class="svg-container graph-container">
 </div>
+
+
+<div id="sidebar" style="z-index: 100; position: absolute; top: 0; right: 0; width: 300px;">
+    <nav class="nav-group">
+        <h5 class="nav-group-title">Tags</h5>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#fc605b"></span>
+          Red
+        </span>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#fdbc40"></span>
+          Orange
+        </span>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#34c84a"></span>
+          Green
+        </span>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#57acf5"></span>
+          Blue
+        </span>
+      </nav>
+</div>
+
 
 <div id="loading">
   Refreshing...

@@ -100,7 +100,7 @@ function scanner() {
 
     const refreshTask = new TaskChecker(function(next) {
       log('refresh...')
-      // ipc_transfer('refresh', json)
+      ipc_transfer('refresh', json)
       REFRESH_INTERVAL *= 3
       next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
     }, REFRESH_INTERVAL)

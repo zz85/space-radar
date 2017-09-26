@@ -312,18 +312,16 @@ function loadLast() {
 function hideAll() {
   // toggle button states
   ;[...document.querySelectorAll('.mode_buttons')].forEach(button => button.classList.remove('active'))
+  ;[...document.querySelectorAll('.graph-container')].forEach(el => (el.style.display = 'none'))
 
-  // hide sunburst
-  d3.select('#sunburst-chart').style('display', 'none')
+  // // hide sunburst
+  // d3.select('#sunburst-chart').style('display', 'none')
 
-  // hide treemap
-  treemap_button.classList.remove('active')
+  // // hide treemap canvas
+  // d3.select('canvas').style('display', 'none')
 
-  // hide treemap canvas
-  d3.select('canvas').style('display', 'none')
-
-  // hide flamegraph
-  document.getElementById('flame-chart').style.display = 'none'
+  // // hide flamegraph
+  // document.getElementById('flame-chart').style.display = 'none'
 }
 
 function showSunburst() {
