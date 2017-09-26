@@ -3,7 +3,7 @@ node_js:
 - '6'
 
 before_install:
-- npm install
+- "echo 'before install'"
 
 after_success:
 - "echo 'install success'"
@@ -20,6 +20,7 @@ deploy:
   file: builds/*
   skip_cleanup: true
   on:
+    repo: zz85/space-radar
     tags: true
     all_branches: true
 
