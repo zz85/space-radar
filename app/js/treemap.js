@@ -598,7 +598,7 @@ function TreeMap() {
     if (found.length) {
       const d = found[hover.length - 1]
       const to = d.children ? d : d.parent
-      Navigation.updatePath(keys(to))
+      State.navigateTo(keys(to))
     }
 
     full_repaint = false

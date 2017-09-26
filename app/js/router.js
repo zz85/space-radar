@@ -17,6 +17,7 @@ class NavigationController extends EventEmitter {
   }
 
   updatePath(path) {
+    if (!path.length) return
     if (this.currentPath().join('/') === path.join('/')) return
     let n = this.currentPath()
     if (!n || n !== path) {
@@ -49,6 +50,14 @@ class NavigationController extends EventEmitter {
 
 global.Navigation = new NavigationController()
 
+global.State = {
+  navigateTo: path => Navigation.updatePath(path),
+  clearNavigation: () => Navigation.clear(),
+  highlightPath: path => {
+    PluginManager.highlightPath(path)
+  }
+}
+
 /*****************
  * Graph Plugins
  * .generate(json)
@@ -58,17 +67,6 @@ global.Navigation = new NavigationController()
  * .showMore()
  * .showLess()
  */
-
-// plugins
-const treemapGraph = TreeMap()
-const sunburstGraph = SunBurst()
-const flamegraphGraph = new FlameGraph()
-
-class ListView extends Chart {
-  navigateTo(path, current) {
-    displayCurrent(path, current)
-  }
-}
 
 Navigation.on('navigationchanged', path => {
   PluginManager.navigateTo(path)
@@ -99,7 +97,7 @@ window.PluginManager = {
 
     activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
     if (!loaded) {
-      Navigation.updatePath([json.name])
+      State.navigateTo([json.name])
     }
     PluginManager.resize()
   },
@@ -110,16 +108,23 @@ window.PluginManager = {
     if (!this.data) return
     //
     const current = getNodeFromPath(path, this.data)
-    // displayCurrent(path, current)
 
     activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
+  },
+
+  highlightPath: path => {
+    console.log('highlightPath', path)
+    const current = path && path.length ? getNodeFromPath(path, this.data) : null
+    activatedGraphs.forEach(activatedGraph => {
+      if (activatedGraph.highlightPath) activatedGraph.highlightPath(path, current, this.data)
+    })
   },
 
   navigateUp: () => {
     var current = Navigation.currentPath()
     if (current.length > 1) {
       current.pop()
-      Navigation.updatePath(current)
+      State.navigateTo(current)
     }
   },
 
@@ -151,77 +156,18 @@ window.PluginManager = {
   }
 }
 
-function displayCurrent(path, current) {
-  const navs = [elm('h5', { class: 'nav-group-title' }, `${path.join('/')} ${format(current.value)}`)]
+// chart plugins
+const treemapGraph = TreeMap()
+const sunburstGraph = SunBurst()
+const flamegraphGraph = new FlameGraph()
 
-  let str = '----------\n'
-  const nodes = current._children || current.children || []
+// common
+const listview = new ListView()
+const breadcrumbs = new Breadcumbs()
 
-  const INITIAL_LOAD = 10
-
-  nodes
-    .sort((a, b) => {
-      if (a.value < b.value) return 1
-      if (a.value > b.value) return -1
-      return 0
-    })
-    .slice(0, INITIAL_LOAD)
-    .forEach(child => {
-      str += child.name + '\t' + format(child.value) + '\n'
-
-      navs.push(
-        elm('span', { class: 'nav-group-item', href: '#' }, [
-          elm('span', { class: 'icon icon-record', style: `color: ${fill(child)};` }),
-          child.name,
-          elm('span', { class: '', style: 'float:right;' }, format(child.value))
-        ])
-      )
-    })
-
-  const remaining = nodes.length - INITIAL_LOAD
-  if (remaining > 0) {
-    navs.push(
-      elm('span', { class: 'nav-group-item', href: '#' }, [
-        elm('span', { class: 'icon icon-record' }),
-        `and ${remaining} other items....`
-      ])
-    )
-  }
-
-  log(str)
-  ;[...sidebar.childNodes].forEach(v => v.remove())
-  const nav = elm('nav', { class: 'nav-group' }, navs)
-  sidebar.appendChild(nav)
-}
-
-function elm(tag, attrs, children) {
-  const el = document.createElement(tag)
-  for (const k in attrs) {
-    el.setAttribute(k, attrs[k])
-  }
-
-  if (!children) return el
-  children = Array.isArray(children) ? children : [children]
-  for (let child of children) {
-    if (typeof child === 'string') {
-      child = document.createTextNode(child)
-    }
-    el.appendChild(child)
-  }
-  return el
-}
-
-const listview = new ListView();
-const breadcrumbs = new Breadcumbs();
-
-PluginManager.activate(listview);
-PluginManager.activate(breadcrumbs);
+PluginManager.activate(listview)
+PluginManager.activate(breadcrumbs)
 
 showSunburst()
 // showFlamegraph()
 // showTreemap()
-
-
-global.State = {
-  clearNavigation: () => Navigation.clear()
-}

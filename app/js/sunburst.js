@@ -160,11 +160,25 @@ function SunBurst() {
     core_tag.html(percent + '<br/>')
     // + '<br/>' + format(currentNode.value)
     // + ' (' + percent + ')<br/>'
-
-    updateBreadcrumbs(d)
   }
 
   function mouseover(d) {
+    State.highlightPath(keys(d))
+  }
+
+  function mouseout() {
+    State.highlightPath()
+  }
+
+  function highlightPath(_path, d) {
+    if (d) {
+      _mouseover(d)
+    } else {
+      _mouseout(d)
+    }
+  }
+
+  function _mouseover(d) {
     updateCore(d)
 
     svg
@@ -185,13 +199,9 @@ function SunBurst() {
         }
       })
       .style('opacity', 1)
-
-    updateSelection(d)
   }
 
-  function mouseout(d) {
-    updateSelection(null)
-
+  function _mouseout(d) {
     if (path) path.style('opacity', 0.8)
 
     if (currentNode) updateCore(currentNode)
@@ -204,21 +214,19 @@ function SunBurst() {
     if (!p.children) return
 
     // zoom(p, p)
-    Navigation.updatePath(keys(p))
+    State.navigateTo(keys(p))
   }
 
   function zoomOut(p) {
     if (!p || !p.parent) return
     // zoom(p.parent, p)
-    Navigation.updatePath(keys(p.parent))
+    State.navigateTo(keys(p.parent))
   }
 
   // Zoom to the specified node
   // updating the reference new root
   // uses a previous node for animation
   function zoom(node, prevNode) {
-    updateBreadcrumbs(node)
-
     core_center.html(format(node.sum))
     core_top.html(node.name)
 
@@ -261,8 +269,7 @@ function SunBurst() {
     if (node === prevNode)
       (enterArc = outsideArc), (exitArc = insideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
 
-    const flatten_nodes = partition.nodes(node).slice(1);
-
+    const flatten_nodes = partition.nodes(node).slice(1)
 
     // When zooming out, arcs enter from the inside and exit to the outside.
     // Exiting outside arcs transition to the new layout.
@@ -273,52 +280,46 @@ function SunBurst() {
 
     var transition_time = d3.event && d3.event.altKey ? 7500 : 750
 
-    path = svg.selectAll('path')
-      .data(flatten_nodes, key)
+    path = svg.selectAll('path').data(flatten_nodes, key)
 
-    // d3
-    //   .transition()
-      // .each(() => {
-        // exit
-        path
-          .exit()
-          .transition()
-          .duration(transition_time)
-          .style('fill-opacity', function(d) {
-            return d.depth === 1 + (node === prevNode) ? 1 : 0
-          })
-          .attrTween('d', function(d) {
-            return arcTween.call(this, exitArc(d))
-          })
-          .remove()
+    // exit
+    path
+      .exit()
+      .transition()
+      .duration(transition_time)
+      .style('fill-opacity', function(d) {
+        return d.depth === 1 + (node === prevNode) ? 1 : 0
+      })
+      .attrTween('d', function(d) {
+        return arcTween.call(this, exitArc(d))
+      })
+      .remove()
 
-        // enter
-        path
-          .enter()
-          .append('path')
-          .attr('class', 'area')
-          .style('fill', fill)
-          .style('fill-opacity', (d) => {
-            // return 1
-            return d.depth === 2 - (node === prevNode) ? 1 : 0
-          })
-          .on('click', zoomIn)
-          .each(function(d) {
-            this._current = enterArc(d)
-          })
-          .on('mouseover', mouseover)
-          .on('mouseout', mouseout)
-
-        // update
-        .merge(path)
-          .attr('d', arc)
-          .transition()
-          .duration(transition_time)
-          .style('fill-opacity', 1)
-          .attrTween('d', function(d) {
-            return arcTween.call(this, updateArc(d))
-          })
-      // })
+    // enter
+    path
+      .enter()
+      .append('path')
+      .attr('class', 'area')
+      .style('fill', fill)
+      .style('fill-opacity', d => {
+        // return 1
+        return d.depth === 2 - (node === prevNode) ? 1 : 0
+      })
+      .on('click', zoomIn)
+      .each(function(d) {
+        this._current = enterArc(d)
+      })
+      .on('mouseover', mouseover)
+      .on('mouseout', mouseout)
+      // update
+      .merge(path)
+      .attr('d', arc)
+      .transition()
+      .duration(transition_time)
+      .style('fill-opacity', 1)
+      .attrTween('d', function(d) {
+        return arcTween.call(this, updateArc(d))
+      })
   }
 
   function redraw(node) {
@@ -434,26 +435,6 @@ function SunBurst() {
 
     center.append('title').text('zoom out')
 
-    // path = svg
-    //   .selectAll('path')
-    //   .data(partition.nodes(root).slice(1))
-    //   .enter()
-    //   .append('path')
-    //   .attr('d', arc)
-    //   .attr('class', 'area')
-    //   .style('fill', fill)
-    //   .each(function(d) {
-    //     this._current = updateArc(d)
-    //   })
-    //   .on('click', zoomIn)
-    //   .on('mouseover', mouseover)
-    //   .on('mouseout', mouseout)
-    // .style("visibility", function(d) {
-    //   var ref = currentNode || root
-    //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
-    //   return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'display' : 'none'
-    // })
-
     if (RENDER_3D) plot3d(partition.nodes(root))
     redraw()
   }
@@ -504,12 +485,12 @@ function SunBurst() {
 
         jsoned = false
       }
-
     },
     navigateTo: function(keys) {
       if (!rootNode) return
       var n = getNodeFromPath(keys, rootNode)
       zoom(n, currentNode)
-    }
+    },
+    highlightPath: highlightPath
   }
 }

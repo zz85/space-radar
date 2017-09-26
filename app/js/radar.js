@@ -323,8 +323,7 @@ function hideAll() {
 }
 
 function deactivateCharts() {
-  [sunburstGraph, treemapGraph, flamegraphGraph].forEach(chart =>
-    PluginManager.deactivate(chart));
+  ;[sunburstGraph, treemapGraph, flamegraphGraph].forEach(chart => PluginManager.deactivate(chart))
 }
 
 function showSunburst() {

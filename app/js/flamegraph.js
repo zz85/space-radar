@@ -47,7 +47,7 @@ class FlameGraph extends Chart {
           console.log('movingTo', movingTo, route)
         }
         this.currentPath = movingTo
-        Navigation.updatePath(getNodePath(e.data))
+        State.navigateTo(getNodePath(e.data))
       }
     })
   }

@@ -7,19 +7,31 @@
 var selection = null
 
 function updateBreadcrumbs(d) {
-  // if (d) {
-  //   _updateBreadcrumbs(getAncestors(d))
-  // }
+  console.trace('highlightPath remove me')
+  State.highlightPath(keys(d))
 }
 
 function updateSelection(s) {
+  // TODO fix this
   selection = s
 }
 
 class Breadcumbs extends Chart {
   navigateTo(_path, d) {
+    if (!d) return
+
+    this.trail = getAncestors(d)
+    _updateBreadcrumbs(this.trail)
+  }
+
+  highlightPath(_path, d) {
     if (d) {
       _updateBreadcrumbs(getAncestors(d))
+      updateSelection(d)
+    } else {
+      console.log('meh', d)
+      _updateBreadcrumbs(this.trail)
+      updateSelection(null)
     }
   }
 }
@@ -28,9 +40,9 @@ var Menu = remote.Menu
 var MenuItem = remote.MenuItem
 
 var contextMenu = new Menu()
-var openMenu = new MenuItem({ label: 'Open', click: openSelection })
+var openMenu = new MenuItem({ label: 'Open File', click: openSelection })
 var sep = new MenuItem({ type: 'separator' })
-contextMenu.append(new MenuItem({ label: 'Locate', click: showSelection }))
+contextMenu.append(new MenuItem({ label: 'Open Directory', click: showSelection }))
 contextMenu.append(sep)
 contextMenu.append(openMenu)
 
@@ -106,7 +118,7 @@ function _updateBreadcrumbs(nodeArray) {
     .style('cursor', 'pointer')
     .on('click', d => {
       log('navigate', d)
-      Navigation.updatePath(keys(d))
+      State.navigateTo(keys(d))
     })
 
   entering.text(function(d) {

@@ -217,7 +217,7 @@ line {
   right: 0;
   width: 150px;
   transition: width 0.6s;
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 #sidebar:hover {
