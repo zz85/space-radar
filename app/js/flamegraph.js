@@ -76,8 +76,8 @@ class FlameGraph extends Chart {
     if (path.join('/') === this.currentPath) return console.log('abort draw')
     console.log('FlameGraph navigateTo')
     this.data = root
-    if (node) {
-      // this.graph.zoomTo(node)
+    if (node && node !== root) {
+      this.graph.zoomTo(node)
     }
     this.draw()
   }
