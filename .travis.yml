@@ -4,13 +4,6 @@ node_js:
 
 before_install:
   - "echo 'before install'"
-  - sudo dpkg --add-architecture i386
-  - wget -nc https://dl.winehq.org/wine-builds/Release.key
-  - sudo apt-key add Release.key
-  - sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
-  - sudo apt update
-  - sudo apt-get -qq update
-  - sudo apt install -y wine-stable winehq-stable
 
 install:
 - "echo 'install'"
@@ -24,6 +17,12 @@ after_success:
 
 before_deploy:
 - "echo 'ready?'"
+- sudo dpkg --add-architecture i386
+- wget -nc https://dl.winehq.org/wine-builds/Release.key
+- sudo apt-key add Release.key
+- sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
+- sudo apt-get -qq update
+- sudo apt install -y wine-stable winehq-stable
 - npm install
 - npm run everything
 
