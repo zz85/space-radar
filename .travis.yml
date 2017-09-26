@@ -10,7 +10,7 @@ before_install:
   - sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
   - sudo apt update
   - sudo apt-get -qq update
-  - sudo apt install wine-stable winehq-stable
+  - sudo apt install -y wine-stable winehq-stable
 
 install:
 - "echo 'install'"

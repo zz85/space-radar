@@ -16,7 +16,7 @@
     "zip:linux": "mkdir -p builds && zip -ryX builds/SpaceRadar-linux-x64.zip SpaceRadar-linux-x64",
     "zip:win": "mkdir -p builds && zip -ryX builds/SpaceRadar-win32-x64.zip SpaceRadar-win32-x64",
     "publish": "publish-release SpaceRadar-darwin-x64/SpaceRadar-darwin-x64.zip",
-    "everything": "npm run install && npm run clean && npm run build && npm run build:linux && npm run build:win && npm run zip && zip:linux && zip:win"
+    "everything": "npm run install && npm run clean && npm run build && npm run build:linux && npm run build:win && npm run zip &&  npm run zip:linux && npm run zip:win"
   },
   "keywords": [
     "space",
