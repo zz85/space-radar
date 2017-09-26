@@ -32,7 +32,7 @@
   "author": "Joshua Koo",
   "license": "MIT",
   "devDependencies": {
-    "electron-packager": "^5.1.0",
+    "electron-packager": "9.1.0",
     "publish-release": "^1.1.0",
     "prettier": "^1.6.1"
   },
