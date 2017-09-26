@@ -7,13 +7,21 @@
 var selection = null
 
 function updateBreadcrumbs(d) {
-  if (d) {
-    _updateBreadcrumbs(getAncestors(d))
-  }
+  // if (d) {
+  //   _updateBreadcrumbs(getAncestors(d))
+  // }
 }
 
 function updateSelection(s) {
   selection = s
+}
+
+class Breadcumbs extends Chart {
+  navigateTo(_path, d) {
+    if (d) {
+      _updateBreadcrumbs(getAncestors(d))
+    }
+  }
 }
 
 var Menu = remote.Menu

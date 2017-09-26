@@ -64,6 +64,12 @@ const treemapGraph = TreeMap()
 const sunburstGraph = SunBurst()
 const flamegraphGraph = new FlameGraph()
 
+class ListView extends Chart {
+  navigateTo(path, current) {
+    displayCurrent(path, current)
+  }
+}
+
 Navigation.on('navigationchanged', path => {
   PluginManager.navigateTo(path)
 })
@@ -104,7 +110,7 @@ window.PluginManager = {
     if (!this.data) return
     //
     const current = getNodeFromPath(path, this.data)
-    displayCurrent(path, current)
+    // displayCurrent(path, current)
 
     activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
   },
@@ -128,16 +134,11 @@ window.PluginManager = {
     activatedGraphs.add(graph)
 
     if (this.data) {
-      // loadLast()
+      // this.data = _loadLast()
       PluginManager.generate(this.data)
     }
     // yooos
     PluginManager.navigateTo(Navigation.currentPath())
-  },
-
-  switch: graph => {
-    PluginManager.deactivateAll()
-    PluginManager.activate(graph)
   },
 
   deactivate: graph => {
@@ -170,7 +171,7 @@ function displayCurrent(path, current) {
 
       navs.push(
         elm('span', { class: 'nav-group-item', href: '#' }, [
-          elm('span', { class: 'icon icon-record', style: '#fc605b' }),
+          elm('span', { class: 'icon icon-record', style: `color: ${fill(child)};` }),
           child.name,
           elm('span', { class: '', style: 'float:right;' }, format(child.value))
         ])
@@ -181,7 +182,7 @@ function displayCurrent(path, current) {
   if (remaining > 0) {
     navs.push(
       elm('span', { class: 'nav-group-item', href: '#' }, [
-        elm('span', { class: 'icon icon-record', style: '#fc605b' }),
+        elm('span', { class: 'icon icon-record' }),
         `and ${remaining} other items....`
       ])
     )
@@ -210,9 +211,16 @@ function elm(tag, attrs, children) {
   return el
 }
 
+const listview = new ListView();
+const breadcrumbs = new Breadcumbs();
+
+PluginManager.activate(listview);
+PluginManager.activate(breadcrumbs);
+
 showSunburst()
 // showFlamegraph()
 // showTreemap()
+
 
 global.State = {
   clearNavigation: () => Navigation.clear()

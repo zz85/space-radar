@@ -209,6 +209,25 @@ line {
   stroke: #fff;
 }
 
+/* Side bar */
+#sidebar {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  transition: width 0.6s;
+  background: rgba(0,0,0,0.05);
+}
+
+#sidebar:hover {
+  width: 400px;
+}
+
+.nav-group-item:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 /* Center aligned Flex Box */
 
 .Aligner {

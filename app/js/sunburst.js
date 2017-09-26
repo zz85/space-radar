@@ -90,12 +90,6 @@ function SunBurst() {
     OUTER_RADIUS = radius - CORE_RADIUS,
     FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL)
 
-  var luminance = d3.scale
-    .sqrt()
-    .domain([0, 1e9])
-    .clamp(true)
-    .range([90, 20])
-
   let svg_container, svg
   let explanation, core_top, core_center, core_tag
 
@@ -210,28 +204,19 @@ function SunBurst() {
     if (!p.children) return
 
     // zoom(p, p)
-    if (!document.documentElement.__transition__) Navigation.updatePath(keys(p))
+    Navigation.updatePath(keys(p))
   }
 
   function zoomOut(p) {
     if (!p || !p.parent) return
     // zoom(p.parent, p)
-    if (!document.documentElement.__transition__) Navigation.updatePath(keys(p.parent))
+    Navigation.updatePath(keys(p.parent))
   }
 
-  let deferred
   // Zoom to the specified node
   // updating the reference new root
   // uses a previous node for animation
   function zoom(node, prevNode) {
-    if (document.documentElement.__transition__) {
-      if (deferred) return
-      deferred = setTimeout(() => {
-        zoom(node, prevNode)
-        deferred = clearTimeout(deferred)
-      }, 100)
-      return
-    }
     updateBreadcrumbs(node)
 
     core_center.html(format(node.sum))
@@ -276,9 +261,8 @@ function SunBurst() {
     if (node === prevNode)
       (enterArc = outsideArc), (exitArc = insideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
 
-    path = path.data(partition.nodes(node).slice(1), function(d) {
-      return key(d)
-    })
+    const flatten_nodes = partition.nodes(node).slice(1);
+
 
     // When zooming out, arcs enter from the inside and exit to the outside.
     // Exiting outside arcs transition to the new layout.
@@ -287,14 +271,19 @@ function SunBurst() {
 
     FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level)
 
-    var transition = d3.event && d3.event.altKey ? 7500 : 750
-    d3
-      .transition()
-      .duration(transition)
-      .each(function() {
+    var transition_time = d3.event && d3.event.altKey ? 7500 : 750
+
+    path = svg.selectAll('path')
+      .data(flatten_nodes, key)
+
+    // d3
+    //   .transition()
+      // .each(() => {
+        // exit
         path
           .exit()
           .transition()
+          .duration(transition_time)
           .style('fill-opacity', function(d) {
             return d.depth === 1 + (node === prevNode) ? 1 : 0
           })
@@ -303,30 +292,33 @@ function SunBurst() {
           })
           .remove()
 
+        // enter
         path
           .enter()
           .append('path')
-          .style('fill-opacity', function(d) {
+          .attr('class', 'area')
+          .style('fill', fill)
+          .style('fill-opacity', (d) => {
+            // return 1
             return d.depth === 2 - (node === prevNode) ? 1 : 0
-          })
-          .style('fill', function(d) {
-            return fill(d)
           })
           .on('click', zoomIn)
           .each(function(d) {
             this._current = enterArc(d)
           })
-          .attr('class', 'area')
           .on('mouseover', mouseover)
           .on('mouseout', mouseout)
 
-        path
+        // update
+        .merge(path)
+          .attr('d', arc)
           .transition()
+          .duration(transition_time)
           .style('fill-opacity', 1)
           .attrTween('d', function(d) {
             return arcTween.call(this, updateArc(d))
           })
-      })
+      // })
   }
 
   function redraw(node) {
@@ -353,9 +345,7 @@ function SunBurst() {
 
     partition = d3.layout
       .partition()
-      .value(function(d) {
-        return d.size
-      })
+      .value(d => d.size)
       // .sort(sizesort) // namesort
       .size([2 * Math.PI, radius]) // use r*r for equal area
 
@@ -444,22 +434,20 @@ function SunBurst() {
 
     center.append('title').text('zoom out')
 
-    path = svg
-      .selectAll('path')
-      .data(partition.nodes(root).slice(1))
-      .enter()
-      .append('path')
-      .attr('d', arc)
-      .attr('class', 'area')
-      .style('fill', function(d) {
-        return fill(d)
-      })
-      .each(function(d) {
-        this._current = updateArc(d)
-      })
-      .on('click', zoomIn)
-      .on('mouseover', mouseover)
-      .on('mouseout', mouseout)
+    // path = svg
+    //   .selectAll('path')
+    //   .data(partition.nodes(root).slice(1))
+    //   .enter()
+    //   .append('path')
+    //   .attr('d', arc)
+    //   .attr('class', 'area')
+    //   .style('fill', fill)
+    //   .each(function(d) {
+    //     this._current = updateArc(d)
+    //   })
+    //   .on('click', zoomIn)
+    //   .on('mouseover', mouseover)
+    //   .on('mouseout', mouseout)
     // .style("visibility", function(d) {
     //   var ref = currentNode || root
     //   // return d.sum / ref.sum * 100 > HIDE_THRESHOLD ? 'visible' : 'hidden'
@@ -468,20 +456,6 @@ function SunBurst() {
 
     if (RENDER_3D) plot3d(partition.nodes(root))
     redraw()
-  }
-
-  function fill(d) {
-    var p = d
-    while (p.depth > 1) p = p.parent
-    // var c = d3.lab(hue(p.sum));
-    // var c = d3.lab(hue(p.count));
-    // var c = d3.lab(hue(p.key));
-    var c = d3.lab(hue(p.name))
-    // var c = d3.lab(hue(p._children));
-    // var c = d3.lab(hue(p.children ? p.children.length : 0));
-
-    c.l = luminance(d.sum)
-    return c
   }
 
   function arcTween(b) {
@@ -531,7 +505,6 @@ function SunBurst() {
         jsoned = false
       }
 
-      deferred = clearTimeout(deferred)
     },
     navigateTo: function(keys) {
       if (!rootNode) return
