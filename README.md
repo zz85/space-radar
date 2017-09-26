@@ -1,6 +1,6 @@
 Space Radar Electron
 ====
-SpaceRadar is a space visualizer that allows interactive Sunburst and Treemap charting of your disk space and memory
+SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts.
 
 Downloads
 ==
@@ -14,6 +14,7 @@ Features
 - cross platform (at least on Mac OS X and Windows)
 - allow drilldown of directories
 - breadcrumbs and navigation
+- opens files and directories
 - analyze disk contents from a remote server (see section [Reading from a file](#reading-file))
 
 Screenshots
@@ -58,6 +59,9 @@ Whats New
 V5
 - Import from DU file
 - Upgrade electron
+- Flamegraphs (BETA)
+- Directory Listview
+- Update libs - Electron, D3
 
 V4
 - Treemap view

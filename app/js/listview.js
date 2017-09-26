@@ -81,4 +81,8 @@ class ListView extends Chart {
     const nav = elm('nav', { class: 'nav-group' }, navs)
     sidebar.appendChild(nav)
   }
+
+  highlightPath() {
+      // TODO
+  }
 }

@@ -29,7 +29,6 @@ class Breadcumbs extends Chart {
       _updateBreadcrumbs(getAncestors(d))
       updateSelection(d)
     } else {
-      console.log('meh', d)
       _updateBreadcrumbs(this.trail)
       updateSelection(null)
     }

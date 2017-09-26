@@ -113,7 +113,6 @@ window.PluginManager = {
   },
 
   highlightPath: path => {
-    console.log('highlightPath', path)
     const current = path && path.length ? getNodeFromPath(path, this.data) : null
     activatedGraphs.forEach(activatedGraph => {
       if (activatedGraph.highlightPath) activatedGraph.highlightPath(path, current, this.data)

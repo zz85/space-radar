@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+- '6'
+
+before_deploy: "echo 'ready?' && npm install && npm everything"
+
+deploy:
+  provider: releases
+  api_key:
+    secure: PTg+2qVbrA+3/PQfiLA7YC0QvSeLRqaM+OAodH3LkLw7o1kc/BjgdAcAqySlWLPe1BbxdcdRNwfDF/IjGaM6P7RNlHKrlIvPCxBwHEuwxKVkX0cX2cIXiGnhIE7yJ3zLKVThBbxvjsaMuwi8StD7L9N0liN8lMwMV1VV6Ul4GnhXeoccAuhDO/y7vU4wjZDdYK4BOkHxKHFs9b0+ASGiNbjGPyy0w3TVBnmALk/6fxd9Xi4iqXvapxj3Zcp8X5tK7K2j40BAjI3u7UPbbzvzR1LtknMcvF88xKYUNG4s69tU+V/v8pP8MrDtRqwRq6bg4rPbpcE/56z8DV9GryZLHQy2M8+aLYXeUekedEPtXDHZXCas4i4GkO5nHdVfnMB0ld0d8ov94jhA0EYyGoi4m5HWi2y9nZMVJrGh+1twX8pv/UJ5rjM38aeN7hd1JIe0e4tKY/nAlUtDSC4ZAjzYr6FZZmCI2k3cWfUFqTLumFX+vo2viWbVaBpplmQZ8FzBtKE7Bl+Qtlk2FfAT01084DRwbFNaMGxlaabWMZ9I1+QsKCKbvPT6IgNCbGUZiuzutmlweQQlIyk0vh6TTtMEfsAPZgLvfaXbl7lN7ksInPupFxKNRPrESyAWX/hjgGyV1cByxA/9GffTmFZJQxq38+NkGGlonyU4erjhKnbaerc=
+  file_glob: true
+  file: builds/*
+  skip_cleanup: true
+  on:
+    tags: true
