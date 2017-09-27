@@ -306,7 +306,7 @@ function TreeMap() {
       let trans = (g.__transition__ = {
         timeStart: now,
         timeEnd: end,
-        ease: linear,
+        ease: d3.easeCubic,
         props: {}
       })
 
@@ -396,9 +396,10 @@ function TreeMap() {
       // console.log(d3.event.clientX, d3.event.clientY)
     })
     .on('mouseout', function() {
-      updateBreadcrumbs(currentNode)
       mouseovered = null
-      updateSelection(mouseovered)
+      State.highlightPath(null);
+      // State.highlightPath(keys(currentNode));
+
       mousex = -1
       mousey = -1
     })
@@ -590,8 +591,7 @@ function TreeMap() {
     if (BENCH) console.timeEnd('canvas draw')
     if (hover.length) mouseovered = hover[hover.length - 1]
     if (mouseovered) {
-      updateBreadcrumbs(mouseovered)
-      updateSelection(mouseovered)
+      State.highlightPath(hover.map(v => v.name));
     }
     mouseclicked = false
 
@@ -617,8 +617,6 @@ function TreeMap() {
     currentNode = d
 
     zoom(d)
-
-    updateBreadcrumbs(currentNode)
   }
 
   function navigateUp() {
@@ -656,7 +654,6 @@ function TreeMap() {
   // Export plugin interface
   return {
     generate: generateTreemap,
-    navigateUp: navigateUp,
     showLess: showLess,
     showMore: showMore,
     resize: onResize,

@@ -340,6 +340,7 @@ function showTreemap() {
   treemap_button.classList.add('active')
   d3.select('canvas').style('display', 'inline-block')
 
+  deactivateCharts()
   PluginManager.activate(treemapGraph)
 }
 
@@ -347,6 +348,8 @@ function showFlamegraph() {
   hideAll()
   flamegraph_button.classList.add('active')
   document.getElementById('flame-chart').style.display = 'inline-block'
+
+  deactivateCharts()
   PluginManager.activate(flamegraphGraph)
 }
 

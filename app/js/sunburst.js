@@ -464,9 +464,6 @@ function SunBurst() {
       LEVELS--
       redraw()
     },
-    navigateUp: function() {
-      // zoomOut(currentNode)
-    },
     cleanup: function() {
       if (path) {
         // do some GC()!!!
