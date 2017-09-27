@@ -28,7 +28,6 @@ function getPath(d) {
  * root - hierarchical data
  */
 function getNodeFromPath(keys, root) {
-  log('getNodeFromPath', keys)
   if (!keys.length) {
     log('warning no keys to navigate to')
     return root
@@ -52,8 +51,6 @@ function getNodeFromPath(keys, root) {
     if (!children[0]) return n
     n = children[0]
   }
-
-  log('getNodeFromPath done', keys, n, root)
 
   return n
 }

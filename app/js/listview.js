@@ -30,7 +30,7 @@ class ListView extends Chart {
       })
     ]
 
-    let str = '----------\n'
+    // let str = '----------\n'
     const nodes = current._children || current.children || []
 
     const INITIAL_LOAD = 10
@@ -43,7 +43,7 @@ class ListView extends Chart {
       })
       .slice(0, INITIAL_LOAD)
       .forEach(child => {
-        str += child.name + '\t' + format(child.value) + '\n'
+        // str += child.name + '\t' + format(child.value) + '\n'
 
         navs.push(
           elm(
@@ -54,7 +54,7 @@ class ListView extends Chart {
             },
             [
               elm('span', { class: 'icon icon-record', style: `color: ${fill(child)};` }),
-              child.name,
+              child.name || '',
               elm('span', { class: '', style: 'float:right;' }, format(child.value))
             ],
             {
@@ -76,13 +76,13 @@ class ListView extends Chart {
       )
     }
 
-    log(str)
+    // log(str)
     ;[...sidebar.childNodes].forEach(v => v.remove())
     const nav = elm('nav', { class: 'nav-group' }, navs)
     sidebar.appendChild(nav)
   }
 
   highlightPath() {
-      // TODO
+    // TODO
   }
 }

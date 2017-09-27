@@ -140,9 +140,12 @@ window.PluginManager = {
     if (this.data) {
       // this.data = _loadLast()
       PluginManager.generate(this.data)
+      PluginManager.navigateTo(Navigation.currentPath())
     }
-    // yooos
-    PluginManager.navigateTo(Navigation.currentPath())
+  },
+
+  loadLast: () => {
+    PluginManager.generate(_loadLast())
   },
 
   deactivate: graph => {

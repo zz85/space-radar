@@ -17,24 +17,6 @@ function TreeMap() {
 
   let textHeight
 
-  var luminance = d3.scale
-    .linear() // .sqrt()
-    .domain([0, 11])
-    .clamp(true)
-    .range([75, 96])
-
-  var o = d3.scale
-    .linear()
-    .range(['purple', 'orange']) // steelblue", "brown pink orange green", "blue
-    .domain([1e2, 1e9])
-    .interpolate(d3.interpolateLab) // interpolateHcl
-
-  o = d3.scale
-    .linear()
-    .range(['white', 'black']) // steelblue", "brown pink orange green", "blue
-    .domain([0, 12])
-    .interpolate(d3.interpolateLab)
-
   var drawer = new TimeoutRAFTask(draw),
     canceller = new TimeoutTask(function() {
       // stop draw task after 500ms
@@ -125,7 +107,7 @@ function TreeMap() {
     canvas.style.width = width + 'px'
     canvas.style.height = height + 'px'
 
-    ctx.font = '8px Tahoma' // Tahoma Arial serif
+    ctx.font = '10px Tahoma' // Tahoma Arial serif
     ctx.textBaseline = 'top'
     ctx.textAlign = 'left'
     var metrics = ctx.measureText('M')
@@ -355,7 +337,7 @@ function TreeMap() {
     // mktreemap()
     display(rootNode, true)
 
-    if (oldPath) navigateToPath(oldPath)
+    // if (oldPath) navigateToPath(oldPath)
   }
 
   function navigateToPath(keys) {
@@ -397,7 +379,7 @@ function TreeMap() {
     })
     .on('mouseout', function() {
       mouseovered = null
-      State.highlightPath(null);
+      State.highlightPath(null)
       // State.highlightPath(keys(currentNode));
 
       mousex = -1
@@ -426,15 +408,6 @@ function TreeMap() {
   }
 
   var full_repaint = true
-
-  var _color_cache = new Map()
-  function color_cache(x) {
-    if (!_color_cache.has(x)) {
-      _color_cache.set(x, o(x))
-    }
-
-    return _color_cache.get(x)
-  }
 
   function draw(next) {
     if (BENCH) console.time('canvas draw')
@@ -540,13 +513,15 @@ function TreeMap() {
       ctx.beginPath()
       ctx.rect(x, y, w, h)
 
-      let c = color_cache(d.depth)
+      let c = fill(d)
       ctx.fillStyle = c
 
       if (isPointInRect(mousex, mousey, x, y, w, h)) {
         if (mouseovered == d) {
-          ctx.fillStyle = 'yellow'
+          // ctx.fillStyle = 'yellow'
           ctx.globalAlpha = 1
+        } else {
+          ctx.globalAlpha = 0.8
         }
 
         if (d.depth <= currentDepth + TREEMAP_LEVELS) {
@@ -591,7 +566,7 @@ function TreeMap() {
     if (BENCH) console.timeEnd('canvas draw')
     if (hover.length) mouseovered = hover[hover.length - 1]
     if (mouseovered) {
-      State.highlightPath(hover.map(v => v.name));
+      State.highlightPath(hover.map(v => v.name))
     }
     mouseclicked = false
 
@@ -619,9 +594,9 @@ function TreeMap() {
     zoom(d)
   }
 
-  function navigateUp() {
-    navigateTo(currentNode.parent)
-  }
+  // function navigateUp() {
+  //   navigateTo(currentNode.parent)
+  // }
 
   // breath first expansion
   function walk(node, a, maxDepth) {
@@ -638,6 +613,7 @@ function TreeMap() {
     return a
   }
 
+  // repaint
   function zoom(d) {
     if (zooming || !d) return
     zooming = true
@@ -660,6 +636,7 @@ function TreeMap() {
     cleanup: function() {
       // TODO
     },
-    navigateTo: navigateToPath
+    navigateTo: navigateToPath,
+    highlightPath: () => {}
   }
 }
