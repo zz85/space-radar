@@ -17,6 +17,8 @@ class FlameGraph extends Chart {
   constructor() {
     super()
 
+    this.chart = d3.select('#flame-chart')
+
     this.graph = flameGraph()
       .height(400)
       .width(460)
@@ -66,26 +68,28 @@ class FlameGraph extends Chart {
     if (!this.data) return
     console.log('FlameGraph draw')
 
-    d3
-      .select('#flame-chart')
-      .datum(this.data)
-      .call(this.graph)
+    this.chart.datum(this.data).call(this.graph)
   }
 
   navigateTo(path, node, root) {
     if (path.join('/') === this.currentPath) return console.log('abort draw')
     console.log('FlameGraph navigateTo')
     this.data = root
+    this.draw()
     if (node && node !== root) {
       this.graph.zoomTo(node)
     }
-    this.draw()
   }
 
   generate(data) {
     console.log('FlameGraph generate')
+    computeNodeSize(data)
     this.data = data
     this.draw()
+  }
+
+  cleanup() {
+    this.chart.empty()
   }
 }
 

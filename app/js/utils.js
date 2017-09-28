@@ -133,7 +133,7 @@ TimeoutTask.prototype.run = function() {
 }
 
 /*
- * An abstraction Timer Task that runs
+ * An abstraction Timer Task that scheduled
  * in a RAF fashion
  */
 function TimeoutRAFTask(task, onrun) {

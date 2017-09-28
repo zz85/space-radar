@@ -337,7 +337,7 @@ function TreeMap() {
     // mktreemap()
     display(rootNode, true)
 
-    // if (oldPath) navigateToPath(oldPath)
+    if (oldPath) navigateToPath(oldPath)
   }
 
   function navigateToPath(keys) {
@@ -566,7 +566,7 @@ function TreeMap() {
     if (BENCH) console.timeEnd('canvas draw')
     if (hover.length) mouseovered = hover[hover.length - 1]
     if (mouseovered) {
-      State.highlightPath(hover.map(v => v.name))
+      State.highlightPath(keys(mouseovered))
     }
     mouseclicked = false
 

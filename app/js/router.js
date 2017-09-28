@@ -83,6 +83,11 @@ function calculateDimensions() {
     document.querySelector('footer').getBoundingClientRect().height
 }
 
+/**
+ * Activate - adds to graph plugin, runs generate data
+ * Generate - loads data, then navigates to path
+ * Navigate - gotos path
+ */
 window.PluginManager = {
   resize: () => {
     calculateDimensions()
@@ -96,10 +101,12 @@ window.PluginManager = {
     this.data = json
 
     activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
+    PluginManager.resize()
     if (!loaded) {
       State.navigateTo([json.name])
+    } else {
+      PluginManager.navigateTo(Navigation.currentPath())
     }
-    PluginManager.resize()
   },
 
   navigateTo: path => {
@@ -140,7 +147,8 @@ window.PluginManager = {
     if (this.data) {
       // this.data = _loadLast()
       PluginManager.generate(this.data)
-      PluginManager.navigateTo(Navigation.currentPath())
+
+      // PluginManager.navigateTo(Navigation.currentPath())
     }
   },
 

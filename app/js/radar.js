@@ -299,12 +299,20 @@ function trashSelection() {
 
 function onJson(error, data) {
   if (error) throw error
-  fs.writeFileSync(LASTLOAD_FILE, JSON.stringify(data))
-  PluginManager.generate(data)
+
+  const jsonStr = JSON.stringify(data)
+  const before = Buffer.byteLength(jsonStr)
+  const zJsonStr = zlib.deflateSync(jsonStr)
+  const after = Buffer.byteLength(zJsonStr)
+  console.log('ONJSON', before, after, ((before - after) / after).toFixed(2))
+
+  fs.writeFileSync(LASTLOAD_FILE, zJsonStr)
+  // PluginManager.generate(data)
+  PluginManager.loadLast()
 }
 
 function _loadLast() {
-  return JSON.parse(fs.readFileSync(LASTLOAD_FILE))
+  return JSON.parse(zlib.inflateSync(fs.readFileSync(LASTLOAD_FILE)))
 }
 
 function hideAll() {

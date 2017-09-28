@@ -24,47 +24,63 @@ function elm(tag, attrs, children, props) {
 
 class ListView extends Chart {
   navigateTo(path, current) {
+    this.path = path
+    this.current = current
+
+    const nodes = current._children || current.children || []
+    this.nodes = nodes.slice().sort((a, b) => {
+      if (a.value < b.value) return 1
+      if (a.value > b.value) return -1
+      return 0
+    })
+
+    this.draw(this.path, this.current)
+  }
+
+  draw(path, current) {
+    const INITIAL_LOAD = 10
+
     const navs = [
       elm('h5', { class: 'nav-group-title' }, `${path.join('/')} ${format(current.value)}`, {
         onclick: () => State.navigateTo(path.slice(0, -1))
       })
     ]
 
+    const highlighted = this.highlightedPath
+
+    const check_path =
+      highlighted && highlighted.length > path.length && !path.some((p, i) => p !== highlighted[i])
+        ? highlighted[path.length]
+        : null
+
     // let str = '----------\n'
-    const nodes = current._children || current.children || []
+    const nodes = this.nodes
+    nodes.slice(0, INITIAL_LOAD).forEach(child => {
+      // str += child.name + '\t' + format(child.value) + '\n'
 
-    const INITIAL_LOAD = 10
-
-    nodes
-      .sort((a, b) => {
-        if (a.value < b.value) return 1
-        if (a.value > b.value) return -1
-        return 0
-      })
-      .slice(0, INITIAL_LOAD)
-      .forEach(child => {
-        // str += child.name + '\t' + format(child.value) + '\n'
-
-        navs.push(
-          elm(
-            'span',
-            {
-              class: 'nav-group-item',
-              href: '#'
+      navs.push(
+        elm(
+          'span',
+          {
+            class: `nav-group-item${check_path == child.name ? ' active' : ''}`,
+            href: '#'
+          },
+          [
+            elm('span', { class: 'icon icon-record', style: `color: ${fill(child)};` }),
+            child.name || '',
+            elm('span', { class: '', style: 'float:right;' }, format(child.value))
+          ],
+          {
+            onmousedown: () => {
+              console.log('click', child)
+              child.children && State.navigateTo([...path, child.name])
             },
-            [
-              elm('span', { class: 'icon icon-record', style: `color: ${fill(child)};` }),
-              child.name || '',
-              elm('span', { class: '', style: 'float:right;' }, format(child.value))
-            ],
-            {
-              onclick: () => child.children && State.navigateTo([...path, child.name]),
-              onmouseenter: () => State.highlightPath([...path, child.name]),
-              onmouseleave: () => State.highlightPath()
-            }
-          )
+            onmouseenter: () => State.highlightPath([...path, child.name]),
+            onmouseleave: () => State.highlightPath()
+          }
         )
-      })
+      )
+    })
 
     const remaining = nodes.length - INITIAL_LOAD
     if (remaining > 0) {
@@ -82,7 +98,14 @@ class ListView extends Chart {
     sidebar.appendChild(nav)
   }
 
-  highlightPath() {
-    // TODO
+  highlightPath(path) {
+    this.highlightedPath = path
+    this.draw(this.path, this.current)
+  }
+
+  cleanup() {
+    this.path = null
+    this.current = null
+    this.highlightedPath = null
   }
 }

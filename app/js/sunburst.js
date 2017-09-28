@@ -105,8 +105,6 @@ function SunBurst() {
 
   initDom()
 
-  var partition
-
   var ADJUSTMENT = -Math.PI / 2
   var arc = d3.svg
     .arc()
@@ -332,57 +330,18 @@ function SunBurst() {
 
   function generateSunburst(root) {
     var oldLineage
-    if (currentNode) oldLineage = keys(currentNode)
+    // if (currentNode) oldLineage = keys(currentNode)
 
     currentNode = root
     rootNode = root
 
-    function namesort(a, b) {
-      return d3.ascending(a.name, b.name)
-    }
-    function sizesort(a, b) {
-      return d3.ascending(a.sum, b.sum)
-    }
-
-    partition = d3.layout
-      .partition()
+    partition
       .value(d => d.size)
-      // .sort(sizesort) // namesort
+      .sort(namesort) // namesort countsort sizesort
       .size([2 * Math.PI, radius]) // use r*r for equal area
 
-    // Compute the initial layout on the entire tree to sum sizes.
-    // Also compute the full name and fill color for each node,
-    // and stash the children so they can be restored as we descend.
-    console.time('compute1')
-    partition
-      .value(d => {
-        // if (Math.random() < 0.01) console.log('value1')
-        return 1
-      })
-      .nodes(root)
-      .forEach(d => {
-        d.count = d.value
-      })
-    console.timeEnd('compute1')
-
-    console.time('compute2')
-    partition
-      .value(d => {
-        // if (Math.random() < 0.01) console.log('value2')
-        return d.size
-      })
-      .nodes(root)
-      // .filter(function(d) {
-      //   return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
-      // })
-      .forEach(function(d) {
-        d._children = d.children
-        d.sum = d.value
-        // d.key = key(d);
-        // d.fill = fill(d);
-      })
-
-    console.timeEnd('compute2')
+    computeNodeCount(root)
+    computeNodeSize(root)
 
     console.log('ROOT SIZE', format(root.value))
     console.time('compute3')
@@ -398,32 +357,28 @@ function SunBurst() {
         }
         if (!d._children) return null
 
-        var children = []
-        d._children.forEach(c => {
-          var ref = root
-          if (c.sum / ref.sum * 100 > HIDE_THRESHOLD) children.push(c)
-        })
-
+        const children = d._children.filter(c => c.sum / root.sum * 100 > HIDE_THRESHOLD)
         return children
         // return depth < LEVELS ? d._children : null;
       })
       .value(function(d) {
         // decide count or sum
+        // max_level = Math.max(d.depth, max_level)
         return USE_COUNT ? d.count : d.sum
       })
 
     console.timeEnd('compute3')
 
-    if (jsoned) {
-      // this attempts to place you in the same view after you refresh the data
-      if (oldLineage) {
-        const node = getNodeFromPath(oldLineage, root)
-        return redraw(node)
-      }
+    // if (jsoned) {
+    //   // this attempts to place you in the same view after you refresh the data
+    //   if (oldLineage) {
+    //     const node = getNodeFromPath(oldLineage, root)
+    //     return redraw(node)
+    //   }
 
-      updateCore(root)
-      return redraw()
-    }
+    //   updateCore(root)
+    //   return redraw()
+    // }
     jsoned = true
 
     center = svg
@@ -470,13 +425,12 @@ function SunBurst() {
         path.remove()
         center.remove()
 
-        d3
-          .select('#sequence')
-          .select('div')
-          .selectAll('a')
-          .remove()
+        // d3
+        //   .select('#sequence')
+        //   .select('div')
+        //   .selectAll('a')
+        //   .remove()
 
-        partition = null
         rootNode = currentNode = null
         path = center = null
 

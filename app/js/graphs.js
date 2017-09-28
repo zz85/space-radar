@@ -39,7 +39,9 @@ function getNodeFromPath(keys, root) {
   name = keys[i++]
 
   if (i >= keys.length) {
-    if (name !== n.name) log('warning, root name dont match!')
+    if (name !== n.name) {
+      log('warning, root name dont match!')
+    }
     return n
   }
 
