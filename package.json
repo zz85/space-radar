@@ -1,6 +1,6 @@
 {
   "name": "space-radar",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "Disk Usage Electron App",
   "main": "main.js",
   "scripts": {
@@ -35,6 +35,5 @@
     "electron-packager": "9.1.0",
     "prettier": "^1.6.1"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
