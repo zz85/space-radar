@@ -217,16 +217,16 @@ function TreeMap() {
     var enter = fake_svg.data(nnn)
     console.timeEnd('fake_svg')
 
-    enter.forEach(rectB)
+    enter.forEach(rectDrawNoAnimate)
 
     // Update the domain only after entering new elements.
     xd.domain([d.x, d.x + d.dx])
     yd.domain([d.y, d.y + d.dy])
 
-    console.time('forEach')
+    console.time('rectDrawAnimate')
     // we resize the graphical objects
-    fake_svg.objects.forEach(rect)
-    console.timeEnd('forEach')
+    fake_svg.objects.forEach(rectDrawAnimate)
+    console.timeEnd('rectDrawAnimate')
 
     console.time('sort')
     fake_svg.sort(function sort(a, b) {
@@ -238,15 +238,15 @@ function TreeMap() {
     drawThenCancel()
   }
 
-  function rect(g) {
-    rectC(g, true)
+  function rectDrawAnimate(g) {
+    rectDraw(g, true)
   }
 
-  function rectB(g) {
-    rectC(g, false)
+  function rectDrawNoAnimate(g) {
+    rectDraw(g, false)
   }
 
-  function rectC(g, animate) {
+  function rectDraw(g, animate) {
     var d = g.__data__
 
     let x = xd(d.x)
@@ -355,7 +355,8 @@ function TreeMap() {
   var mouseclicked,
     mousex,
     mousey,
-    mouseovered = null
+    mouseovered = null,
+    highlightNode = null
 
   function showMore() {
     TREEMAP_LEVELS++
@@ -472,12 +473,12 @@ function TreeMap() {
 
     // now draw the elements if needed
     dom.forEach(function draw(g) {
-      let d = g.__data__
+      let data = g.__data__
 
-      if (d.depth < currentDepth) return
+      if (data.depth < currentDepth) return
 
-      var l = d.parent == mouseovered ? 1 : 0
-      if (d.depth > TREEMAP_LEVELS + currentDepth + l) {
+      var l = data.parent === mouseovered ? 1 : 0
+      if (data.depth > TREEMAP_LEVELS + currentDepth + l) {
         return
       }
 
@@ -490,7 +491,7 @@ function TreeMap() {
       let w = g.w
       let h = g.h
 
-      let depthDiff = d.depth - currentDepth
+      let depthDiff = data.depth - currentDepth
 
       if (USE_GAP) {
         // this is buggy
@@ -502,7 +503,8 @@ function TreeMap() {
         h -= gap * 2
       }
 
-      ctx.globalAlpha = 0.8
+      if (mouseovered || highlightNode) ctx.globalAlpha = 0.4
+      else ctx.globalAlpha = 0.95
       // ctx.globalAlpha = opacity
 
       if (w < 0.5 || h < 0.5) {
@@ -512,24 +514,39 @@ function TreeMap() {
 
       ctx.beginPath()
       ctx.rect(x, y, w, h)
+      ctx.fillStyle = fill(data)
 
-      let c = fill(d)
-      ctx.fillStyle = c
+      let inHighlight = false
+      if (highlightNode) {
+        let p = data
+        while (p.depth > highlightNode.depth) {
+          p = p.parent
+        }
+        inHighlight = p === highlightNode
+      }
 
-      if (isPointInRect(mousex, mousey, x, y, w, h)) {
-        if (mouseovered == d) {
-          // ctx.fillStyle = 'yellow'
+      const inRect = isPointInRect(mousex, mousey, x, y, w, h)
+
+      if (inHighlight) {
+        // ctx.fillStyle = 'red'
+        ctx.globalAlpha = 1
+      } else if (inRect) {
+        if (mouseovered === data) {
+          // ctx.fillStyle = 'blue'
           ctx.globalAlpha = 1
         } else {
-          ctx.globalAlpha = 0.8
+          // ctx.fillStyle = 'yellow'
+          ctx.globalAlpha = 0.5
         }
+      }
 
-        if (d.depth <= currentDepth + TREEMAP_LEVELS) {
-          hover.push(d)
+      if (inRect) {
+        if (data.depth <= currentDepth + TREEMAP_LEVELS) {
+          hover.push(data)
         }
 
         if (mouseclicked) {
-          found.push(d)
+          found.push(data)
         }
       }
       // else if (!full_repaint) {
@@ -552,7 +569,7 @@ function TreeMap() {
         // draw text only on areas > 100 units squared
         ctx.clip()
         ctx.fillStyle = '#333'
-        ctx.fillText(d.name + ' ' + format(d.value), x + 3, y)
+        ctx.fillText(data.name + ' ' + format(data.value), x + 3, y)
 
         // TODO center on box if not directory
       }
@@ -590,6 +607,7 @@ function TreeMap() {
     console.log('navigate to', d)
     currentDepth = d.depth
     currentNode = d
+    highlightNode = null
 
     zoom(d)
   }
@@ -635,8 +653,13 @@ function TreeMap() {
     resize: onResize,
     cleanup: function() {
       // TODO
+      rootNode = null
+      currentNode = null
     },
     navigateTo: navigateToPath,
-    highlightPath: () => {}
+    highlightPath: (path, node) => {
+      highlightNode = node
+      drawThenCancel()
+    }
   }
 }

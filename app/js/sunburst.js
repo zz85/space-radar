@@ -412,6 +412,13 @@ function SunBurst() {
       redraw()
     },
     cleanup: function() {
+      // if (rootNode) {
+      //   partition
+      //   .nodes(rootNode)
+      //   .forEach(function(d) {
+      //     d.children = d._children // revert children
+      //   })
+
       if (path) {
         // do some GC()!!!
         path.remove()

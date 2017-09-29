@@ -152,8 +152,10 @@ TimeoutRAFTask.prototype.run = function() {
   if (this.task) {
     var self = this
     this.cancel()
-    this.task(function() {
-      self.id = requestAnimationFrame(self.run.bind(self))
+
+    // schdules to be ran on request animation frame
+    this.id = requestAnimationFrame(() => {
+      this.task(() => this.run())
     })
   }
 }
