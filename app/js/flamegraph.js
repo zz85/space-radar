@@ -77,13 +77,23 @@ class FlameGraph extends Chart {
     this.data = root
     this.draw()
     if (node && node !== root) {
-      this.graph.zoomTo(node)
+      console.log('Zoom to node')
+      this.graph.zoomTo({ data: node })
     }
   }
 
   generate(data) {
     console.log('FlameGraph generate')
-    computeNodeSize(data)
+
+    // TODO. This may cause hangups!!!
+    // partition = d3.layout.partition()
+    //   partition
+    //     .value(d => d.size)
+    //     .sort(namesort) // namesort countsort sizesort
+
+    // computeNodeSize(data)
+    // setNodeFilter(data)
+
     this.data = data
     this.draw()
   }

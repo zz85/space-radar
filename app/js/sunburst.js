@@ -352,23 +352,12 @@ function SunBurst() {
     // Now redefine the value function to use the previously-computed sum.
 
     max_level = 0
-    partition
-      .children(function(d, depth) {
-        max_level = Math.max(depth, max_level)
-        if (depth >= LEVELS) {
-          return null
-        }
-        if (!d._children) return null
 
-        const children = d._children.filter(c => c.sum / root.sum * 100 > HIDE_THRESHOLD)
-        return children
-        // return depth < LEVELS ? d._children : null;
-      })
-      .value(function(d) {
-        // decide count or sum
-        // max_level = Math.max(d.depth, max_level)
-        return USE_COUNT ? d.count : d.sum
-      })
+    setNodeFilter(root).value(function(d) {
+      // decide count or sum
+      max_level = Math.max(d.depth, max_level)
+      return USE_COUNT ? d.count : d.sum
+    })
 
     console.timeEnd('compute3')
 

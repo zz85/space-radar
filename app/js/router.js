@@ -162,10 +162,9 @@ class SpacePluginManager {
     this.activatedGraphs.add(graph)
 
     if (this.data) {
-      // this.data = _loadLast()
+      // make data immutable for now
+      this.data = _loadLast()
       this.generate(this.data)
-
-      // this.navigateTo(Navigation.currentPath())
     }
   }
 

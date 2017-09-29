@@ -36,6 +36,22 @@ function computeNodeSize(data) {
   console.timeEnd('computeNodeSize')
 }
 
+function setNodeFilter(data) {
+  const LEVELS = 11,
+    HIDE_THRESHOLD = 0.1
+
+  return partition.children(function(d, depth) {
+    if (depth >= LEVELS) {
+      return null
+    }
+    if (!d._children) return null
+
+    const children = d._children.filter(c => c.sum / data.sum * 100 > HIDE_THRESHOLD)
+    return children
+    // return depth < LEVELS ? d._children : null;
+  })
+}
+
 function namesort(a, b) {
   return d3.ascending(a.name, b.name)
 }
