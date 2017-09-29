@@ -307,8 +307,8 @@ function onJson(error, data) {
   console.log('ONJSON', before, after, ((before - after) / after).toFixed(2))
 
   fs.writeFileSync(LASTLOAD_FILE, zJsonStr)
-  // PluginManager.generate(data)
-  PluginManager.loadLast()
+  PluginManager.generate(data)
+  // PluginManager.loadLast()
 }
 
 function _loadLast() {

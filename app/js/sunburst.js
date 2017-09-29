@@ -105,7 +105,8 @@ function SunBurst() {
 
   initDom()
 
-  var ADJUSTMENT = -Math.PI / 2
+  const ADJUSTMENT = -Math.PI / 2
+
   var arc = d3.svg
     .arc()
     .startAngle(function(d) {
@@ -335,6 +336,8 @@ function SunBurst() {
     currentNode = root
     rootNode = root
 
+    partition = d3.layout.partition()
+
     partition
       .value(d => d.size)
       .sort(namesort) // namesort countsort sizesort
@@ -343,14 +346,14 @@ function SunBurst() {
     computeNodeCount(root)
     computeNodeSize(root)
 
-    console.log('ROOT SIZE', format(root.value))
+    console.log('Root count', root.count, 'ROOT size', format(root.value))
+
     console.time('compute3')
     // Now redefine the value function to use the previously-computed sum.
 
     max_level = 0
     partition
       .children(function(d, depth) {
-        // console.log('children');
         max_level = Math.max(depth, max_level)
         if (depth >= LEVELS) {
           return null

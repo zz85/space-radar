@@ -2,21 +2,26 @@
  * Process data
  */
 
-const partition = d3.layout.partition()
+let partition
+
+function one() {
+  return 1
+}
 
 function computeNodeCount(data) {
-  console.time('compute1')
+  console.time('computeNodeCount')
   partition
-    .value(d => 1)
+    .value(one)
     .nodes(data)
     .forEach(d => {
       d.count = d.value
     })
-  console.timeEnd('compute1')
+
+  console.timeEnd('computeNodeCount')
 }
 
 function computeNodeSize(data) {
-  console.time('compute2')
+  console.time('computeNodeSize')
   partition
     .value(d => d.size)
     .nodes(data)
@@ -28,7 +33,7 @@ function computeNodeSize(data) {
       d.sum = d.value
     })
 
-  console.timeEnd('compute2')
+  console.timeEnd('computeNodeSize')
 }
 
 function namesort(a, b) {

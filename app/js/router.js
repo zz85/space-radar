@@ -52,7 +52,10 @@ global.Navigation = new NavigationController()
 
 global.State = {
   navigateTo: path => Navigation.updatePath(path),
-  clearNavigation: () => Navigation.clear(),
+  clearNavigation: () => {
+    Navigation.clear()
+    PluginManager.clear()
+  },
   highlightPath: path => {
     PluginManager.highlightPath(path)
   }
@@ -72,7 +75,6 @@ Navigation.on('navigationchanged', path => {
   PluginManager.navigateTo(path)
 })
 
-const activatedGraphs = new Set()
 let width, height
 
 function calculateDimensions() {
@@ -88,83 +90,100 @@ function calculateDimensions() {
  * Generate - loads data, then navigates to path
  * Navigate - gotos path
  */
-window.PluginManager = {
-  resize: () => {
-    calculateDimensions()
-    activatedGraphs.forEach(activatedGraph => activatedGraph.resize())
-  },
+class SpacePluginManager {
+  constructor() {
+    const activatedGraphs = new Set()
+    this.activatedGraphs = activatedGraphs
+  }
 
-  generate: json => {
+  resize() {
+    calculateDimensions()
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.resize())
+  }
+
+  clear() {
+    this.data = null
+    // TODO run clear on graphs?
+  }
+
+  generate(json) {
     console.trace('generate', json)
 
     const loaded = this.data
     this.data = json
 
-    activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
-    PluginManager.resize()
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
+    this.resize()
     if (!loaded) {
       State.navigateTo([json.name])
     } else {
-      PluginManager.navigateTo(Navigation.currentPath())
+      this.navigateTo(Navigation.currentPath())
     }
-  },
+  }
 
-  navigateTo: path => {
+  navigateTo(path) {
     console.log('navigateTo', path)
 
     if (!this.data) return
     //
     const current = getNodeFromPath(path, this.data)
 
-    activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
-  },
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
+  }
 
-  highlightPath: path => {
+  highlightPath(path) {
     const current = path && path.length ? getNodeFromPath(path, this.data) : null
-    activatedGraphs.forEach(activatedGraph => {
+    this.activatedGraphs.forEach(activatedGraph => {
       if (activatedGraph.highlightPath) activatedGraph.highlightPath(path, current, this.data)
     })
-  },
+  }
 
-  navigateUp: () => {
+  navigateUp() {
     var current = Navigation.currentPath()
     if (current.length > 1) {
       current.pop()
       State.navigateTo(current)
     }
-  },
+  }
 
-  showLess: () => activatedGraphs.forEach(activatedGraph => activatedGraph.showLess()),
-  showMore: () => activatedGraphs.forEach(activatedGraph => activatedGraph.showMore()),
+  showLess() {
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.showLess())
+  }
 
-  cleanup: () => {
-    activatedGraphs.forEach(activatedGraph => activatedGraph.cleanup())
-  },
+  showMore() {
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.showMore())
+  }
 
-  activate: graph => {
-    activatedGraphs.add(graph)
+  cleanup() {
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.cleanup())
+  }
+
+  activate(graph) {
+    this.activatedGraphs.add(graph)
 
     if (this.data) {
       // this.data = _loadLast()
-      PluginManager.generate(this.data)
+      this.generate(this.data)
 
-      // PluginManager.navigateTo(Navigation.currentPath())
+      // this.navigateTo(Navigation.currentPath())
     }
-  },
+  }
 
-  loadLast: () => {
-    PluginManager.generate(_loadLast())
-  },
+  loadLast() {
+    this.generate(_loadLast())
+  }
 
-  deactivate: graph => {
+  deactivate(graph) {
     graph.cleanup()
-    activatedGraphs.delete(graph)
-  },
+    this.activatedGraphs.delete(graph)
+  }
 
-  deactivateAll: () => {
-    activatedGraphs.forEach(graph => PluginManager.deactivate(graph))
+  deactivateAll() {
+    this.activatedGraphs.forEach(graph => this.deactivate(graph))
   }
 }
+
+global.PluginManager = new SpacePluginManager()
 
 // chart plugins
 const treemapGraph = TreeMap()
