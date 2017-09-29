@@ -1,38 +1,39 @@
 {
   "name": "space-radar",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "Disk Usage Electron App",
   "main": "main.js",
   "scripts": {
-    "test": "standard",
-    "app": "electron .",
-    "clean": "rm -rf SpaceRadar-darwin-x64",
-    "build": "electron-packager . SpaceRadar --platform=darwin --arch=x64 --version=0.34.3 --ignore=experiments --ignore='node_modules/(electron-packager|electron-prebuilt|standard|publish-release)' --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
-    "build:win": "electron-packager . SpaceRadar --platform=win32 --arch=x64 --version=0.34.3 --ignore=experiments --ignore=node_modules/electron-packager --ignore=node_modules/electron-prebuilt --ignore=node_modules/standard --ignore=node_modules/publish-release --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
-    "build:linux": "electron-packager . SpaceRadar --platform=linux --arch=x64 --version=0.36.10 --ignore=experiments --ignore=node_modules/electron-packager --ignore=node_modules/electron-prebuilt --ignore=node_modules/standard --ignore=node_modules/publish-release --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
-    "zip": "cd SpaceRadar-darwin-x64 && zip -ryX SpaceRadar-darwin-x64.zip SpaceRadar.app",
-    "publish": "publish-release SpaceRadar-darwin-x64/SpaceRadar-darwin-x64.zip",
-    "everything": "npm run clean && npm run build && npm run zip && npm run publish"
+    "install": "cd app && npm i",
+    "format": "prettier app/js/*.js app/css/*.css --single-quote --no-semi --print-width=120 --write",
+    "app": "electron app",
+    "debug": "DEBUG=1 npm run app",
+    "clean": "rm -rf SpaceRadar-darwin-x64 SpaceRadar-linux-x64 SpaceRadar-win32-x64 builds",
+    "build": "electron-packager app SpaceRadar --platform=darwin --arch=x64 --version=1.7.8 --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
+    "build:win": "electron-packager app SpaceRadar --platform=win32 --arch=x64 --version=1.7.8 --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
+    "build:linux": "electron-packager app SpaceRadar --platform=linux --arch=x64 --version=1.7.8 --version-string.CompanyName=zz85 --version-string.ProductName=SpaceRadar --icon=Icon.icns",
+    "zip": "mkdir -p builds && cd SpaceRadar-darwin-x64 && zip -ryX ../builds/SpaceRadar-darwin-x64.zip SpaceRadar.app",
+    "zip:linux": "mkdir -p builds && zip -ryX builds/SpaceRadar-linux-x64.zip SpaceRadar-linux-x64",
+    "zip:win": "mkdir -p builds && zip -ryX builds/SpaceRadar-win32-x64.zip SpaceRadar-win32-x64",
+    "everything": "npm run install && npm run clean && npm run build && npm run build:linux && npm run build:win && npm run zip &&  npm run zip:linux && npm run zip:win"
   },
   "keywords": [
-    "Sunburst",
-    "d3",
+    "space",
+    "memory",
     "disk",
     "usage",
-    "visualization"
+    "visualization",
+    "sunburst",
+    "treemap",
+    "flamecharts",
+    "d3"
   ],
   "author": "Joshua Koo",
   "license": "MIT",
   "devDependencies": {
-    "electron-packager": "^5.1.0",
-    "electron-prebuilt": "^0.36.0",
-    "publish-release": "^1.1.0",
-    "standard": "^5.3.1"
+    "electron": "^1.7.8",
+    "electron-packager": "9.1.0",
+    "prettier": "^1.6.1"
   },
-  "dependencies": {
-    "d3": "^3.5.6",
-    "d3-path": "^0.1.5",
-    "d3-shape": "^0.5.1",
-    "photon": "git://github.com/connors/photon.git"
-  }
+  "dependencies": {}
 }

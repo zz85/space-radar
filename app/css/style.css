@@ -4,13 +4,9 @@ body {
   overflow: none;
 
   /* Use System Fonts */
-  font-family:
-    -apple-system, BlinkMacSystemFont,
-    "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
-    "Helvetica Neue", sans-serif
-    !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+    'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
-
 
 #photon-window {
   z-index: 400;
@@ -23,7 +19,6 @@ path {
 
 circle,
 path {
-
 }
 
 circle {
@@ -43,6 +38,7 @@ circle:hover {
 
 /* treemap */
 
+/*
 rect {
   fill: none;
   pointer-events: all;
@@ -57,7 +53,8 @@ line {
   stroke-width: 1.5px;
 }
 
-.string, .regexp {
+.string,
+.regexp {
   color: #f39;
 }
 
@@ -74,9 +71,11 @@ line {
   color: #369;
 }
 
-.class, .special {
-  color: #1181B8;
+.class,
+.special {
+  color: #1181b8;
 }
+*/
 
 /* end treemap */
 
@@ -84,12 +83,17 @@ line {
   fill: yellow;
 }
 
+/* flame graph tool tip */
+.d3-flame-graph-tip {
+  z-index: 1000;
+}
+
 /* legend */
 
 #explanation {
   position: absolute;
   /*top: 260px;
-  left: 305px*/;
+  left: 305px*/
   width: 140px;
   height: 140px;
   margin: auto;
@@ -114,8 +118,8 @@ line {
 }
 
 #legend {
-  text-align:center;
-  padding-top:20px;
+  text-align: center;
+  padding-top: 20px;
   position: absolute;
   left: 0;
   right: 0;
@@ -126,15 +130,15 @@ line {
 }
 
 #legend h2 {
-  font-size:1.2em;
-  font-style:inherit;
+  font-size: 1.2em;
+  font-style: inherit;
   margin: 0;
   padding: 0;
   /*text-transform: uppercase;
   font-variant:small-caps;*/
 }
 #legend p {
-  font-size:.9em;
+  font-size: 0.9em;
   margin: 0;
   padding: 0;
 }
@@ -164,20 +168,27 @@ line {
   opacity: 1;
 }
 
+#flame-graph {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: top;
+}
+
 .svg-container {
-    display: inline-block;
-    position: relative;
-    width: 100%;
-    /*padding-bottom: 100%;*/ /* aspect ratio */
-    vertical-align: top;
-    overflow: hidden;
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  /*padding-bottom: 100%;*/ /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
 }
 
 .svg-content-responsive {
-    display: inline-block;
-    position: absolute;
-    /*top: 10px;*/
-    /*left: 0;*/
+  display: inline-block;
+  position: absolute;
+  /*top: 10px;*/
+  /*left: 0;*/
 }
 
 #sequence {
@@ -190,13 +201,31 @@ line {
   height: 70px;*/
 }
 
-
 #chart {
   position: relative;
 }
 
 #chart path {
   stroke: #fff;
+}
+
+/* Side bar */
+#sidebar {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  transition: width 0.6s;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+#sidebar:hover {
+  width: 400px;
+}
+
+.nav-group-item:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Center aligned Flex Box */
@@ -230,7 +259,6 @@ line {
   /*opacity: 0.3;*/
   position: absolute;
   display: none;
-
 }
 
 #promptbox {
@@ -240,7 +268,6 @@ line {
   padding: 20px;
   height: 200px;
 }
-
 
 #bottom_status {
   overflow: hidden;

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Space Radar</title>
+</head>
+<body>
+
+<script>
+  var d3 = require('d3')
+  Object.assign(d3,
+    require('d3-hierarchy'),
+    require('d3-scale'),
+    require('d3-selection'),
+    require('d3-tip'),
+    require('d3-ease'),
+  )
+
+</script>
+<link rel="stylesheet" href="css/style.css" type="text/css">
+<link rel="stylesheet" href="css/throbber.css" type="text/css">
+<link rel="stylesheet" href="css/breadcrumb.css" type="text/css">
+<link rel="stylesheet" href="node_modules/photonkit/dist/css/photon.css" ype="text/css">
+<link rel="stylesheet" type="text/css" href="node_modules/d3-flame-graph/dist/d3.flameGraph.css"/>
+
+<!-- <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview> -->
+
+<div class="window" id="photon-window">
+
+  <header class="toolbar toolbar-header">
+    <h1 class="title">Space Radar</h1>
+
+    <div class="toolbar-actions">
+      <button class="btn btn-default btn-large" onclick="newWindow()">
+        <span class="icon icon-popup icon-text"></span>
+        Open
+      </button>
+
+      <div class="btn-group">
+        <button class="btn btn-default btn-large" onclick="scanRoot()">
+          <span class="icon icon-drive icon-text"></span>
+          Scan Drive
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="scanFolder()">
+          <span class="icon icon-folder icon-text"></span>
+          Scan Folder
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="readFile()">
+          <span class="icon icon-folder icon-text"></span>
+          Load DU file
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="scanMemory()">
+          <span class="icon icon-target icon-text"></span>
+          Scan Memory
+        </button>
+
+        <!--
+        TODO
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-archive icon-text"></span>
+          Root
+        </button>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-home icon-text"></span>
+          Home
+        </button>
+
+        <button class="btn btn-default btn-large">
+          <span class="icon icon-picture icon-text"></span>
+          Photos
+        </button>
+        -->
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-default btn-large" onclick="PluginManager.showLess()">
+          <span class="icon icon-minus"></span>
+          <!-- Show Less -->
+        </button>
+        <!-- icon-text -->
+        <!-- icon-down-circled icon-up-circled icon-down icon-progress-2 icon-progress-1 -squared -circled -->
+        <button class="btn btn-default btn-large" onclick="PluginManager.showMore()">
+          <span class="icon icon-plus"></span>
+          <!-- Show More -->
+        </button>
+      </div>
+
+      <button class="btn btn-default btn-large" onclick="PluginManager.navigateUp()">
+        <span class="icon icon-up-circled"></span>
+      </button>
+
+
+<!--       <button class="btn btn-default btn-dropdown pull-right btn-large">
+        <span class="icon icon-cd"></span>
+      </button> -->
+
+      <!-- Large button group -->
+      <div class="btn-group pull-right">
+        <button class="btn btn-large btn-default active mode_buttons" id="sunburst_button" onclick="showSunburst()">
+          <span class="icon icon-cd"></span> <!-- icon-cd  icon-chart-pie icon-database icon-rss"-->
+        </button>
+
+        <button class="btn btn-large btn-default mode_buttons" id="flamegraph_button" onclick="showFlamegraph()">
+          <span class="icon icon-water"></span>
+          <!-- icon-flow-tree icon-water icon-chart-area -->
+        </button>
+
+        <button class="btn btn-default btn-large mode_buttons" id="treemap_button" onclick="showTreemap()">
+          <span class="icon icon-layout"></span> <!-- icon-map  icon-layout icon-sweden -->
+        </button>
+      </div>
+      <div></div> <!-- thin padding -->
+    </div>
+  </header>
+
+  <!-- Your app's content goes inside .window-content -->
+  <div class="window-content" style="overflow-y: hidden;">
+
+<div id="shades" class="Aligner">
+  <!-- <div class="Aligner-item Aligner-item--top">…</div> -->
+  <div class="Aligner-item">
+    <div id="promptbox">
+      <h4>Scan Space</h4>
+      <p>
+      Pick one of the following to scan,
+      or drag a target folder here.
+      </p>
+
+      <div class="">
+        <button class="btn btn-default btn-large" onclick="scanRoot()">
+          <span class="icon icon-drive icon-text"></span>
+          Scan Drive
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="scanFolder()">
+          <span class="icon icon-folder icon-text"></span>
+          Scan Folder
+        </button>
+
+        <br \>
+
+        <button class="btn btn-default btn-large" onclick="readFile()">
+          <span class="icon icon-folder icon-text"></span>
+          Load DU file
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="scanMemory()">
+          <span class="icon icon-target icon-text"></span>
+          Scan Memory
+        </button>
+
+        <button class="btn btn-default btn-large" onclick="hidePrompt(); State.clearNavigation(); PluginManager.loadLast();">
+          <span class="icon icon-back icon-text"></span>
+          Last loaded
+        </button>
+      </div>
+
+    </div>
+  </div>
+  <!-- <div class="Aligner-item Aligner-item--bottom">…</div> -->
+</div>
+
+<!--
+<div class="pane-group">
+  <div class="pane pane-sm sidebar">
+    <ul class="list-group">
+        <li class="list-group-header">
+          <input class="form-control" type="text" placeholder="Search for someone">
+        </li>
+        <li class="list-group-item">
+          <img class="img-circle media-object pull-left" src="/assets/img/avatar.jpg" width="32" height="32">
+          <div class="media-body">
+            <strong>List item title</strong>
+            <p>Lorem ipsum dolor sit amet.</p>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <img class="img-circle media-object pull-left" src="/assets/img/avatar2.png" width="32" height="32">
+          <div class="media-body">
+            <strong>List item title</strong>
+            <p>Lorem ipsum dolor sit amet.</p>
+          </div>
+        </li>
+        ...
+      </ul>
+      <nav class="nav-group">
+        <h5 class="nav-group-title">Favorites</h5>
+        <a class="nav-group-item active">
+          <span class="icon icon-home"></span>
+          connors
+        </a>
+        <span class="nav-group-item">
+          <span class="icon icon-download"></span>
+          Downloads
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-folder"></span>
+          Documents
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-signal"></span>
+          AirPlay
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-print"></span>
+          Applications
+        </span>
+        <span class="nav-group-item">
+          <span class="icon icon-cloud"></span>
+          Desktop
+        </span>
+      </nav>
+      <nav class="nav-group">
+          <h5 class="nav-group-title">Tags</h5>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#fc605b"></span>
+            Red
+          </span>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#fdbc40"></span>
+            Orange
+          </span>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#34c84a"></span>
+            Green
+          </span>
+          <span class="nav-group-item" href="#">
+            <span class="icon icon-record" style="color:#57acf5"></span>
+            Blue
+          </span>
+        </nav>
+        <nav class="nav-group">
+            <h5 class="nav-group-title">Devices</h5>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+            <span class="nav-group-item">
+              <span class="icon icon-drive"></span>
+              Backup disk
+            </span>
+          </nav>
+    </div>
+  </div>
+-->
+
+
+<!--
+
+  Graph Charting Plugins HERE
+
+-->
+
+<canvas id="canvas" class="graph-container"></canvas>
+
+<canvas id="three-canvas" class="graph-container" style="display: none; z-index:1000; position:absolute; opacity: 0.5;"></canvas>
+
+<div id="sunburst-chart" class="svg-container graph-container">
+  <div id="explanation">
+    <span id="core_top"><!-- Loading... --></span><br/>
+    <span id="core_center"></span><br/>
+    <span id="core_tag"></span>
+  </div>
+</div>
+
+<div id="flame-chart" class="svg-container graph-container">
+</div>
+
+
+<div id="sidebar">
+    <nav class="nav-group">
+        <h5 class="nav-group-title">Tags</h5>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#fc605b"></span>
+          Red
+        </span>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#fdbc40"></span>
+          Orange
+        </span>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#34c84a"></span>
+          Green
+        </span>
+        <span class="nav-group-item" href="#">
+          <span class="icon icon-record" style="color:#57acf5"></span>
+          Blue
+        </span>
+      </nav>
+</div>
+
+
+<div id="loading">
+  Refreshing...
+  <div class="throbber-loader">
+    Loading…
+  </div>
+</div>
+
+<div id="legend">
+</div>
+
+  <div id="sequence">
+    <div class="breadcrumb flat">
+    </div>
+  </div>
+
+
+</div> <!-- end window-content -->
+<footer class="toolbar toolbar-footer">
+
+  <div class="toolbar-actions" style="display: flex;">
+    <div class="btn-group">
+      <button class="btn btn-default" onclick="Navigation.back()">
+        <span class="icon icon-left-bold"></span>
+        <!-- icon-left-bold icon-left-circled icon-left -->
+      </button>
+      <button class="btn btn-default" onclick="Navigation.forward()">
+        <span class="icon icon-right-bold"></span>
+      </button>
+    </div>
+
+    <span id="bottom_status" style="flex: 1; align-self: center; font-size:11px; padding-left: 8px; white-space: nowrap; overflow: auto;"><!-- Welcome to Space Radar --></span>
+    <button class="btn btn-default pull-right" id="dir_opener" onclick="openDirectory()">Locate Directory</button>
+
+    <!--
+    TODO
+    <button class="btn btn-default">Default</button>
+    <button class="btn btn-primary">Primary</button>
+    <button class="btn btn-positive">Positive</button>
+    <button class="btn btn-negative">Negative</button>
+    <button class="btn btn-warning">Warning</button>
+
+
+    <button class="btn btn-default pull-right">
+      Cancel
+    </button>
+
+    <button class="btn btn-primary pull-right">
+      Kill Process
+    </button>
+ -->
+  </div>
+</footer>
+</div> <!-- end window -->
+
+<script src="js/utils.js"></script>
+<script src="js/mem.js"></script>
+<script src="js/graphs.js"></script>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/colors.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/listview.js"></script>
+<script src="js/data.js"></script>
+<script src="js/sunburst.js"></script>
+<script src="js/sunburst3d.js"></script>
+<script src="js/treemap.js"></script>
+<script src="js/flamegraph.js"></script>
+<script src="js/duFromFile.js"></script>
+<script src="js/ipc.js"></script>
+<script src="js/radar.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/breadcrumbs.js"></script>
+<script src="js/router.js"></script>
+
+</body>
+</html>

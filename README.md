@@ -1,8 +1,21 @@
 Space Radar Electron
 ====
-Space Radar Electron is a space visualizer that allows interactive Sunburst and Treemap charting of your disk space and memory.
+SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts.
 
-This project started as quick prototype for me to test drive [atom electron](http://electron.atom.io) (& some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+Downloads
+==
+Download Mac and Windows at the [releases page](https://github.com/zz85/space-radar-electron/releases)
+
+Features
+==
+- space visualizations using sunburst and treemap charts
+- previews visualization as disk is being scanned
+- fast (completes disk scanner faster than du)
+- cross platform (at least on Mac OS X and Windows)
+- allow drilldown of directories
+- breadcrumbs and navigation
+- opens files and directories
+- analyze disk contents from a remote server (see section [Reading from a file](#reading-file))
 
 Screenshots
 ==
@@ -12,17 +25,6 @@ Screenshots
 
 ![screenshot 2015-11-09 04 45 36](https://cloud.githubusercontent.com/assets/314997/11022581/33822b50-869d-11e5-9fe6-2db6b7a81505.png)
 
-Downloads
-==
-Download Mac and Windows at the [releases page](https://github.com/zz85/space-radar-electron/releases)
-
-Features
-==
-- previews visualization as disk is being scanned
-- cross platform (at least on Mac OS X and Windows)
-- allow drilldown of directories
-- breadcrumbs and navigation
-- analyze disk contents from a remote server (see section [Reading from a file](#reading-file))
 
 Reading from a file <a id="reading-file"></a>
 ==
@@ -46,11 +48,20 @@ Futher Explorations
 - More efficient scanning process
 - 3D visualization
 
+History
+==
+
+This project started as quick prototype for me to test drive [atom electron](http://electron.atom.io) (& some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+
+
 Whats New
 ==
 V5
 - Import from DU file
--
+- Upgrade electron
+- Flamegraphs (BETA)
+- Directory Listview
+- Update libs - Electron, D3
 
 V4
 - Treemap view
@@ -89,7 +100,7 @@ Development
 Run
 
 ```
-DEBUG=true electron .
+npm run debug
 ```
 
 or
@@ -98,10 +109,10 @@ or
 npm run app
 ```
 
-Check that you have depdencies installed, otherwise run (this may take awhile for electron binaries)
+Check that dependencies are installed, otherwise run (this may take awhile for electron binaries)
 
 ```
-npm install
+npm run install
 ```
 
 Thanks
