@@ -34,17 +34,33 @@ function byProp(d) {
   return d.color
 }
 
-const ext = /\.\w+$/
+const ext_reg = /\.\w+$/
 
 const tmpExtensions = new Set()
+const randExt = {}
 
 function byExtension(d, def) {
-  const m = ext.exec(d.name)
-  if (m) {
-    // 777544
-    if (m in extension_map_256_dark) { // 160
-      tmpExtensions.add(m)
-      const { r, g, b } = extension_map_256_dark[m];
+  const m = ext_reg.exec(d.name)
+  const ext = m && m[0]
+  if (ext) {
+    /*
+    // TODO use hashes for exploration!
+    if (!randExt[ext]) {
+      randExt[ext] = {
+        r: Math.random() * 256 | 0,
+        g: Math.random() * 256 | 0,
+        b: Math.random() * 256 | 0
+      }
+    }
+    const { r, g, b } = randExt[ext];
+    return d3.lab(d3.rgb(r, g, b))
+    */
+
+    // 3786
+    if (ext in extension_map_256_dark) { // 160
+      // 92
+      tmpExtensions.add(ext)
+      const { r, g, b } = extension_map_256_dark[ext];
       return d3.lab(d3.rgb(r, g, b))
     }
   }
@@ -124,7 +140,7 @@ function colorByTypes(data) {
       b += color.b * weight
     }
 
-    l *= 1.1 // adjusts as it diffuses the directory
+    l *= 1.05 // adjusts as it diffuses the directory
     // darker - saturated cores, lighter - whiter cores
     l = Math.max(Math.min(98, l), 2)
 
