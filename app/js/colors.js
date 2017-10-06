@@ -314,44 +314,31 @@ function colorByTypes(data) {
 
     const { children } = node
     const len = children && children.length
-    if (!children || !len ) {
+    if (!children || !len) {
       node.color = d3.lab(80, 0, 0)
       return
     }
 
-    const v = (node.sum || node.value || node.size);
-    if (!v) {
-      node.color = d3.lab(50, 0, 0)
-      return
-    }
+    const v = node.size
+    // if (!v) {
+    //   node.color = d3.lab(50, 0, 0)
+    //   return
+    // }
 
     let l = 0
     let a = 0
     let b = 0
 
-    /*
     for (let i = 0; i < len; i++) {
-      const c = children[i].color
-      l += c.l
-      a += c.a
-      b += c.b
-    }
-
-    // weighted by average
-    l /= len
-    a /= len
-    b /= len
-    */
-
-    // weighted by sizes
-    for (let i = 0; i < len; i++) {
-      const child = children[i];
+      const child = children[i]
       const color = child.color
-      if (!v) console.log('warn', node);
-      const weight = child.sum / v
-      l += (color.l * weight)
-      a += (color.a * weight)
-      b += (color.b * weight)
+      if (!v) console.log('warn', node)
+      const weight = v
+        ? child.size / v // weighted by size
+        : 1 / len // weighted by count
+      l += color.l * weight
+      a += color.a * weight
+      b += color.b * weight
     }
 
     node.color = d3.lab(l, a, b)
