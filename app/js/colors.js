@@ -150,7 +150,7 @@ function colorByTypes(data) {
       b += color.b * weight
     }
 
-    l *= 1.05 // adjusts as it diffuses the directory
+    l *= 1.02 // adjusts as it diffuses the directory
     // darker - saturated cores, lighter - whiter cores
     l = Math.max(Math.min(98, l), 2)
 

@@ -231,6 +231,7 @@ function SunBurst() {
 
     max_level = 0
     current_level = 0
+    setNodeFilter(node)
 
     var tmp = node.parent
     while (tmp) {
