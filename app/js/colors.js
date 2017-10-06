@@ -27,15 +27,22 @@ const fill =
   // size
   // fillByParentName
   // colorByParent
-  byExtension
+  // byExtension
+  byProp
 
-function byExtension(d) {
-  const m = d.name.match(/\.\w+$/)
+function byProp(d) {
+  return d.color
+}
+
+const ext = /\.\w+$/
+
+function byExtension(d, def) {
+  const m = ext.exec(d.name)
   if (m && m in extension_map) {
     return extension_map[m]
   }
 
-  return '#ddd'
+  return def ? null : d3.rgb(0, 0, 0)
 }
 
 function size(d) {
@@ -77,7 +84,10 @@ function color_cache(x) {
 const color_reg = /(\.\w+)\W+00;38;5;(\d+)/
 const extension_map = {}
 
+// https://github.com/seebi/dircolors-solarized
 const SOLARIZED = {}
+// SOLARIZED HEX     16/8 TERMCOL  XTERM/HEX   L*A*B      sRGB        HSB
+// --------- ------- ---- -------  ----------- ---------- ----------- -----------
 ;`
 base03    #002b36  8/4 brblack  234 #1c1c1c 15 -12 -12   0  43  54 193 100  21
 base02    #073642  0/4 black    235 #262626 20 -12 -12   7  54  66 192  90  26
@@ -100,9 +110,9 @@ green     #859900  2/2 green     64 #5f8700 60 -20  65 133 153   0  68 100  60
   .forEach(v => {
     const parts = v.split(/\W+/)
     if (parts.length < 4) return
-    SOLARIZED[parts[5]] = '#' + parts[6]
-
-    // '#' + parts[1];
+    // SOLARIZED[parts[5]] = '#' + parts[6]
+    // SOLARIZED[parts[5]] = '#' + parts[1];
+    SOLARIZED[parts[5]] = d3.lab(parts[7], parts[8], parts[9])
   })
 
 // https://github.com/seebi/dircolors-solarized/blob/master/dircolors.256dark
@@ -293,3 +303,68 @@ const DIRCOLORS = `
   })
 
 console.log(extension_map, SOLARIZED)
+
+function colorByTypes(data) {
+  childrenFirst(data, node => {
+    const color = byExtension(node, true)
+    if (color) {
+      node.color = color
+      return
+    }
+
+    const { children } = node
+    const len = children && children.length
+    if (!children || !len ) {
+      node.color = d3.lab(80, 0, 0)
+      return
+    }
+
+    const v = (node.sum || node.value || node.size);
+    if (!v) {
+      node.color = d3.lab(50, 0, 0)
+      return
+    }
+
+    let l = 0
+    let a = 0
+    let b = 0
+
+    /*
+    for (let i = 0; i < len; i++) {
+      const c = children[i].color
+      l += c.l
+      a += c.a
+      b += c.b
+    }
+
+    // weighted by average
+    l /= len
+    a /= len
+    b /= len
+    */
+
+    // weighted by sizes
+    for (let i = 0; i < len; i++) {
+      const child = children[i];
+      const color = child.color
+      if (!v) console.log('warn', node);
+      const weight = child.sum / v
+      l += (color.l * weight)
+      a += (color.a * weight)
+      b += (color.b * weight)
+    }
+
+    node.color = d3.lab(l, a, b)
+  })
+}
+
+function childrenFirst(data, func) {
+  const { children } = data
+  if (children) {
+    children.forEach(v => {
+      childrenFirst(v, func)
+    })
+  }
+
+  func(data)
+}

@@ -346,6 +346,10 @@ function SunBurst() {
     computeNodeCount(root)
     computeNodeSize(root)
 
+    console.time('color')
+    colorByTypes(root)
+    console.timeEnd('color')
+
     console.log('Root count', root.count, 'ROOT size', format(root.value))
 
     console.time('compute3')
