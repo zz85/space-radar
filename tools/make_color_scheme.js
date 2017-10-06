@@ -12,6 +12,7 @@ const extension_map = {}
 
 // https://github.com/seebi/dircolors-solarized
 const SOLARIZED = {}
+const NAMES = {}
 
 // SOLARIZED HEX     16/8 TERMCOL  XTERM/HEX   L*A*B      sRGB        HSB
 // --------- ------- ---- -------  ----------- ---------- ----------- -----------
@@ -38,12 +39,18 @@ green     #859900  2/2 green     64 #5f8700 60 -20  65 133 153   0  68 100  60
     const parts = v.split(/\W+/)
     if (parts.length < 4) return
     SOLARIZED[parts[5]] = {
-        l: parts[7],
-        a: parts[8],
-        b: parts[9],
-        r: parts[10],
-        g: parts[11],
-        b: parts[12],
+      l: parts[7],
+      a: parts[8],
+      b: parts[9],
+      r: parts[10],
+      g: parts[11],
+      b: parts[12]
+    }
+
+    NAMES[parts[0]] = {
+      r: parts[10],
+      g: parts[11],
+      b: parts[12]
     }
   })
 
@@ -234,4 +241,5 @@ const DIRCOLORS = `
     }
   })
 
-console.log(extension_map)
+// console.log(extension_map)
+console.log(NAMES)

@@ -201,8 +201,7 @@ function SunBurst() {
   }
 
   function _mouseout(d) {
-    if (path) svg
-      .selectAll('path').style('opacity', 0.8)
+    if (path) svg.selectAll('path').style('opacity', 0.8)
 
     if (currentNode) updateCore(currentNode)
   }

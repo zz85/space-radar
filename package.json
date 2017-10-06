@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "install": "cd app && npm i",
-    "format": "prettier app/js/*.js app/css/*.css --single-quote --no-semi --print-width=120 --write",
+    "format": "prettier app/js/*.js app/css/*.css tools/*.js --single-quote --no-semi --print-width=120 --write",
     "app": "electron app",
     "debug": "DEBUG=1 npm run app",
     "clean": "rm -rf SpaceRadar-darwin-x64 SpaceRadar-linux-x64 SpaceRadar-win32-x64 builds",
