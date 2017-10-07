@@ -7,6 +7,10 @@
 // https://github.com/IonicaBizau/github-colors
 // https://www.google.com.sg/search?q=color+file+types+schemes+visualization&source=lnms&tbm=isch&sa=X&ved=0ahUKEwjPhbWKpNvWAhXDOo8KHb05BfMQ_AUICigB&biw=1403&bih=804
 
+// https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
+// https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit
+// https://misc.flogisoft.com/bash/tip_colors_and_formatting
+
 const color_reg = /([*\.\w]+)\W+00;38;5;(\d+)/
 const extension_map = {}
 

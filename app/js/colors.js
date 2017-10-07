@@ -1,8 +1,34 @@
-var size_luminance = d3.scale
-  .sqrt()
+// 1K 1e3
+// 1MB 1e6
+// 1GB 1e9
+// 1TB 1e12
+// 1PB 1e15
+
+const size_scales = [0, 1e3, 1e5, 1e6, 1e8, 1e9, 1e12, 1e14, 1e15]
+const color_range = d3.scale
+  .linear()
+  .range(['blue', 'red'])
+  .interpolate(d3.interpolateLab)
+
+// .range(['purple', 'orange']) // "steelblue", "brown pink orange green", "blue"
+// .interpolate(d3.interpolateLab) // interpolateHcl
+
+const hue = d3.scale.category10() // colour hash
+
+const size_color_range = color_range.ticks(size_scales.length - 1).map(v => color_range(v))
+const linear = d3.scale.linear()
+
+const size_scale_colors = d3.scale
+  .linear()
+  .domain(size_scales)
+  .clamp(true)
+  .range(size_color_range)
+
+const size_luminance = d3.scale
+  .linear()
   .domain([0, 1e9])
   .clamp(true)
-  .range([90, 20])
+  .range([90, 50])
 
 const depth_luminance = d3.scale
   .linear() // .sqrt()
@@ -10,27 +36,22 @@ const depth_luminance = d3.scale
   .clamp(true)
   .range([75, 96])
 
-const colorScale = d3.scale
-// .linear()
-// .range(['purple', 'orange']) // "steelblue", "brown pink orange green", "blue"
-// .domain([1e2, 1e9])
-// .interpolate(d3.interpolateLab) // interpolateHcl
-
 const greyScale = d3.scale
   .linear()
   // .range(['white', 'black'])
   .range(['black', 'white'])
   .domain([0, 12])
-  .interpolate(d3.interpolateLab)
+  .clamp(true)
 
-const fill =
-  // size
-  // fillByParentName
-  // colorByParent
-  // byExtension
-  byProp
+let fill = colorByProp
+// colorByProp // filetypes
+// colorBySize // size
+// colorByParentName colorful
+// colorByParent // children
+// byExtension
 
-function byProp(d) {
+function colorByProp(d) {
+  // using color prop
   return d.color
 }
 
@@ -78,33 +99,37 @@ function byExtension(d, def) {
   return def ? null : d3.rgb(0, 0, 0)
 }
 
-function size(d) {
-  // const c = d3.lab(hue(d.name))
-  const c = greyScale(d.depth)
+function colorBySize(d) {
+  const c = d3.lab(size_scale_colors(d.value))
   c.l = size_luminance(d.value)
   return c
 }
 
 function colorByParent(d) {
-  let p = d
-  while (p.depth > 1) p = p.parent
-  // var c = d3.lab(hue(p.sum)); // size
-  // var c = d3.lab(hue(p.count));
-  // var c = d3.lab(hue(p.name))
+  const p = getParent(d)
+  // const c = d3.lab(hue(p.sum)); // size
+  // const c = d3.lab(hue(p.count)); // number
+  // // var c = d3.lab(hue(p.name)) // parent name
   const c = d3.lab(hue(p.children ? p.children.length : 0))
   // c.l = luminance(d.value)
   c.l = depth_luminance(d.depth)
-
   return c
 }
 
-function fillByParentName(d) {
-  let p = d
-  while (p.depth > 1) p = p.parent
+function colorByParentName(d) {
+  const p = getParent(d)
+  const c = d3.lab(hue(p.name))
   c.l = size_luminance(d.sum || d.value)
   return c
 }
 
+function getParent(d) {
+  let p = d
+  while (p.depth > 1) p = p.parent
+  return p
+}
+
+/*
 const _color_cache = new Map()
 function color_cache(x) {
   if (!_color_cache.has(x)) {
@@ -113,6 +138,7 @@ function color_cache(x) {
 
   return _color_cache.get(x)
 }
+*/
 
 function colorByTypes(data) {
   childrenFirst(data, node => {
@@ -150,9 +176,9 @@ function colorByTypes(data) {
       b += color.b * weight
     }
 
-    l *= 1.02 // adjusts as it diffuses the directory
     // darker - saturated cores, lighter - whiter cores
-    l = Math.max(Math.min(98, l), 2)
+    // l *= 1.03 // adjusts as it diffuses the directory
+    // l = Math.max(Math.min(98, l), 2)
 
     node.color = d3.lab(l, a, b)
   })
@@ -558,3 +584,7 @@ const extension_map_ansi_dark = {
   '.enc': { r: '38', g: '139', b: '210' },
   '.sqlite': { r: '38', g: '139', b: '210' }
 }
+
+// More color references
+// https://github.com/d3/d3-scale-chromatic
+// http://bl.ocks.org/emmasaunders/52fa83767df27f1fc8b3ee2c6d372c74

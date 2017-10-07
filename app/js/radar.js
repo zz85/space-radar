@@ -12,7 +12,6 @@ var current_size = 0,
   start_time
 
 var legend = d3.select('#legend')
-var hue = d3.scale.category10() // colour hash
 
 function startScan(path) {
   cleanup()

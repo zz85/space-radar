@@ -332,6 +332,8 @@ function TreeMap() {
       oldPath = keys(currentNode)
     }
 
+    colorByTypes(rootNode)
+
     currentNode = rootNode
     currentDepth = 0
     // mktreemap()
