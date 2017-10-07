@@ -357,6 +357,6 @@ const ANSI_LIGHT = `
     }
   })
 
-console.log(types)
+console.log(types, types.size)
 console.log('----------------------')
 console.log(extension_map)

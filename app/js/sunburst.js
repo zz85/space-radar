@@ -1,4 +1,8 @@
 'use strict'
+var rootNode,
+  currentNode,
+  max_level,
+  current_level = 0
 
 function SunBurst() {
   function onResize() {
@@ -123,11 +127,6 @@ function SunBurst() {
       // return Math.sqrt(d.y + d.dy); // ROOT
       return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1
     })
-
-  var rootNode,
-    currentNode,
-    max_level,
-    current_level = 0
 
   var circular_meter = svg.append('g')
   // TODO make a tiny border around the rim of center to show the percentage of current space
