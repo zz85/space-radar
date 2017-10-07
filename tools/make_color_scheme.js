@@ -43,9 +43,9 @@ green     #859900  2/2 green     64 #5f8700 60 -20  65 133 153   0  68 100  60
     const parts = v.split(/\W+/)
     if (parts.length < 4) return
     SOLARIZED[parts[5]] = {
-      l: parts[7],
-      a: parts[8],
-      b: parts[9],
+      //   l: parts[7],
+      //   a: parts[8],
+      //   b: parts[9],
       r: parts[10],
       g: parts[11],
       b: parts[12]
@@ -245,5 +245,5 @@ const DIRCOLORS = `
     }
   })
 
-// console.log(extension_map)
-console.log(NAMES)
+console.log(extension_map)
+// console.log(NAMES)
