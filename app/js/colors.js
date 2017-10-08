@@ -43,12 +43,187 @@ const greyScale = d3.scale
   .domain([0, 12])
   .clamp(true)
 
-let fill = colorByProp
+let colorScheme = global[localStorage.color_extension_scheme] || schemeLsColor
+let fill = global[localStorage.color_mode] || colorByProp
 // colorByProp // filetypes
 // colorBySize // size
 // colorByParentName colorful
 // colorByParent // children
 // byExtension
+;(() => {
+  const remote = require('electron').remote
+  const { app, Menu, MenuItem } = remote
+
+  const template = [
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteandmatchstyle' },
+        { role: 'delete' },
+        { role: 'selectall' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forcereload' },
+        { role: 'toggledevtools' },
+        { type: 'separator' },
+        { role: 'resetzoom' },
+        { role: 'zoomin' },
+        { role: 'zoomout' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      role: 'window',
+      submenu: [{ role: 'minimize' }, { role: 'close' }]
+    },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'Learn More',
+          click() {
+            require('electron').shell.openExternal('https://electron.atom.io')
+          }
+        }
+      ]
+    }
+  ]
+
+  if (process.platform === 'darwin') {
+    template.unshift({
+      label: app.getName(),
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services', submenu: [] },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideothers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    })
+
+    // Edit menu
+    template[1].submenu.push(
+      { type: 'separator' },
+      {
+        label: 'Speech',
+        submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }]
+      }
+    )
+
+    // Window menu
+    template[3].submenu = [
+      { role: 'close' },
+      { role: 'minimize' },
+      { role: 'zoom' },
+      { type: 'separator' },
+      { role: 'front' }
+    ]
+  }
+
+  function switchColorMode(type) {
+    fill = global[type]
+    localStorage.color_mode = type
+    PluginManager.navigateTo(Navigation.currentPath())
+
+    if (PluginManager.data)
+      State.showWorking(done => {
+        PluginManager.cleanup()
+        PluginManager.loadLast()
+        done()
+      })
+  }
+
+  function switchColorScheme(scheme) {
+    localStorage.color_extension_scheme = scheme
+    colorScheme = global[scheme]
+    switchColorMode('colorByProp')
+  }
+
+  template.push({
+    label: 'Color Options',
+    submenu: [
+      // { type: 'radio', label: 'Color by Extension', click: () => { switchColorMode('colorByProp') } },
+      {
+        label: 'Color by Extension',
+        submenu: [
+          {
+            type: 'radio',
+            label: 'LS Colors',
+            click: () => switchColorScheme('schemeLsColor')
+          },
+          {
+            type: 'radio',
+            label: 'Solarized Colors Ansi',
+            click: () => switchColorScheme('schemeAnsi')
+          },
+          {
+            type: 'radio',
+            label: 'Solarized Colors 256',
+            click: () => switchColorScheme('scheme256')
+          },
+          {
+            type: 'radio',
+            label: 'Hashed',
+            click: () => switchColorScheme('schemeHue')
+          }
+        ]
+      },
+      {
+        type: 'radio',
+        label: 'Colorful Parents',
+        click: () => {
+          switchColorMode('colorByParentName')
+        }
+      }, //
+      {
+        type: 'radio',
+        label: 'Color By Size (Blue - Red)',
+        click: () => {
+          switchColorMode('colorBySize')
+        }
+      }, //
+      {
+        type: 'radio',
+        label: 'Color By Size (Black - White)',
+        click: () => {
+          switchColorMode('colorBySizeBw')
+        }
+      }, //
+      {
+        type: 'radio',
+        label: 'Shades of Parents',
+        click: () => {
+          switchColorMode('colorByParent')
+        }
+      }, //
+      { type: 'separator' }
+      // black and white
+    ]
+  })
+
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
+
+  // var contextMenu = new Menu()
+  // var openMenu = new MenuItem({ label: 'Color by Filetypes', click: () => {} })
+  // contextMenu.append(openMenu)
+  // Menu.setApplicationMenu(contextMenu)
+})()
 
 function colorByProp(d) {
   // using color prop
@@ -60,38 +235,44 @@ const ext_reg = /\.\w+$/
 const tmpExtensions = new Set()
 const randExt = {}
 
+function schemeHue(ext) {
+  if (!randExt[ext]) {
+    // use hashes for exploration!
+    randExt[ext] = hue(ext)
+    // d3.rgb({
+    //   r: Math.random() * 256 | 0,
+    //   g: Math.random() * 256 | 0,
+    //   b: Math.random() * 256 | 0
+    // })
+  }
+  return d3.lab(randExt[ext])
+}
+
+function schemeAnsi(ext) {
+  if (ext in extension_map_ansi_dark) {
+    const { r, g, b } = extension_map_ansi_dark[ext]
+    return d3.lab(d3.rgb(r, g, b))
+  }
+}
+
+function schemeLsColor(ext) {
+  if (ext in LS_COLORS) {
+    return d3.lab(LS_COLORS[ext])
+  }
+}
+
+function scheme256(ext) {
+  if (ext in extension_map_256_dark) {
+    const { r, g, b } = extension_map_256_dark[ext]
+    return d3.lab(d3.rgb(r, g, b))
+  }
+}
+
 function byExtension(d, def) {
   const m = ext_reg.exec(d.name)
   const ext = m && m[0]
   if (ext) {
-    /*
-    if (!randExt[ext]) {
-      // use hashes for exploration!
-      randExt[ext] = hue(ext)
-      // d3.rgb({
-      //   r: Math.random() * 256 | 0,
-      //   g: Math.random() * 256 | 0,
-      //   b: Math.random() * 256 | 0
-      // })
-    }
-    return d3.lab(randExt[ext])
-    */
-
-    // 92 extension_map_256_dark
-    // 141 extension_map_ansi_dark
-    /*
-    // 3786
-    if (ext in extension_map_ansi_dark) { // 160
-      tmpExtensions.add(ext)
-      const { r, g, b } = extension_map_ansi_dark[ext];
-      return d3.lab(d3.rgb(r, g, b))
-    }
-    */
-
-    if (ext in LS_COLORS) {
-      tmpExtensions.add(ext)
-      return d3.lab(LS_COLORS[ext])
-    }
+    return colorScheme(ext)
   }
 
   return def ? null : d3.rgb(0, 0, 0)
@@ -102,6 +283,14 @@ function colorBySize(d) {
   c.l = size_luminance(d.value)
   return c
 }
+
+function colorBySizeBw(d) {
+  const c = d3.lab()
+  c.l = size_luminance(d.value)
+  return c
+}
+
+// TODO file size using domain on screen
 
 function colorByParent(d) {
   const p = getParent(d)
