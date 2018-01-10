@@ -13,6 +13,9 @@ const color_range = d3.scale
 // .range(['purple', 'orange']) // "steelblue", "brown pink orange green", "blue"
 // .interpolate(d3.interpolateLab) // interpolateHcl
 
+// TODO fix lab deopt.
+// https://github.com/colorjs/color-space
+
 const hue = d3.scale.category10() // colour hash
 
 const size_color_range = color_range.ticks(size_scales.length - 1).map(v => color_range(v))
@@ -327,50 +330,52 @@ function color_cache(x) {
 }
 */
 
+function colorWalkNode(node) {
+  const color = byExtension(node, true)
+  if (color) {
+    node.color = color
+    return
+  }
+
+  const { children } = node
+  const len = children && children.length
+  if (!children || !len) {
+    node.color = d3.lab(80, 0, 0)
+    return
+  }
+
+  // size is orignal size, sum is calculated including all descendents
+  const v = node.sum
+  // if (!v) {
+  //   node.color = d3.lab(50, 0, 0)
+  //   return
+  // }
+
+  let l = 0
+  let a = 0
+  let b = 0
+
+  for (let i = 0; i < len; i++) {
+    const child = children[i]
+    const color = child.color
+    const weight = v
+      ? child.sum / v // weighted by size
+      : 1 / len // weighted by count
+
+    l = l + color.l * weight
+    a = a + color.a * weight
+    b = b + color.b * weight
+  }
+
+  // darker - saturated cores, lighter - whiter cores
+  l = l * 1.03 // adjusts as it diffuses the directory
+  l = Math.max(Math.min(98, l), 2)
+
+  node.color = d3.lab(l, a, b)
+}
+
 function colorByTypes(data) {
-  childrenFirst(data, node => {
-    const color = byExtension(node, true)
-    if (color) {
-      node.color = color
-      return
-    }
-
-    const { children } = node
-    const len = children && children.length
-    if (!children || !len) {
-      node.color = d3.lab(80, 0, 0)
-      return
-    }
-
-    // size is orignal size, sum is calculated including all descendents
-    const v = node.sum
-    // if (!v) {
-    //   node.color = d3.lab(50, 0, 0)
-    //   return
-    // }
-
-    let l = 0
-    let a = 0
-    let b = 0
-
-    for (let i = 0; i < len; i++) {
-      const child = children[i]
-      const color = child.color
-      const weight = v
-        ? child.sum / v // weighted by size
-        : 1 / len // weighted by count
-
-      l += color.l * weight
-      a += color.a * weight
-      b += color.b * weight
-    }
-
-    // darker - saturated cores, lighter - whiter cores
-    l *= 1.03 // adjusts as it diffuses the directory
-    l = Math.max(Math.min(98, l), 2)
-
-    node.color = d3.lab(l, a, b)
-  })
+  childrenFirst(data, colorWalkNode)
 }
 
 function childrenFirst(data, func) {
