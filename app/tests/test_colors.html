@@ -1,9 +1,29 @@
 <html>
 <body>
 
-<script src="../js/file_extensions.js"></script>
-
 <script>
+
+// using data from https://github.com/dyne/file-extension-list
+
+/*
+dirs = fs.readdirSync('./')
+extension_categories = {}
+dirs.forEach(cat => { d = fs.readFileSync(cat, 'utf-8'); extension_categories[cat] = d.split('\n').join(',') })
+*/
+
+var extension_categories_11 = {
+    archive: '7z,a,apk,ar,bz2,cab,cpio,deb,dmg,egg,gz,iso,jar,lha,mar,pea,rar,rpm,s7z,shar,tar,tbz2,tgz,tlz,war,whl,xpi,zip,zipx,deb,rpm,xz,pak,crx,exe,msi,bin',
+    audio: 'aac,aiff,ape,au,flac,gsm,it,m3u,m4a,mid,mod,mp3,mpa,pls,ra,s3m,sid,wav,wma,xm',
+    code: 'c,cc,class,clj,cpp,cs,cxx,el,go,h,java,lua,m,m4,php,pl,po,py,rb,rs,sh,swift,vb,vcxproj,xcodeproj,xml,diff,patch',
+    font: 'eot,otf,ttf,woff,woff2',
+    image: '3dm,3ds,max,bmp,dds,gif,jpg,jpeg,png,psd,xcf,tga,thm,tif,tiff,yuv,ai,eps,ps,svg,dwg,dxf,gpx,kml,kmz,webp',
+    sheet: 'ods,xls,xlsx,csv,ics,vcf',
+    slide: 'ppt,odp',
+    text: 'doc,docx,ebook,log,md,msg,odt,org,pages,pdf,rtf,rst,tex,txt,wpd,wps',
+    video: '3g2,3gp,aaf,asf,avchd,avi,drc,flv,m2v,m4p,m4v,mkv,mng,mov,mp2,mp4,mpe,mpeg,mpg,mpv,mxf,nsv,ogg,ogv,ogm,qt,rm,rmvb,roq,srt,svi,vob,webm,wmv,yuv',
+    web: 'html,htm,css,js,jsx,less,scss,wasm'
+};
+
     const LS_COLORS = {
   '*README': '#ffd700',
   '*README.rst': '#ffd700',
@@ -837,8 +857,6 @@ const extension_map_ansi_dark = {
   '.sqlite': { r: '38', g: '139', b: '210' }
 }
 
-
-
 function categorize() {
     var reverse = {};
 
@@ -857,7 +875,7 @@ function categorize() {
     console.log('ls colors', reverse);
 }
 
-function categorize2(map) {
+function categorize2(map, name) {
     var reverse = {};
 
     var ext_count = 0;
@@ -873,11 +891,13 @@ function categorize2(map) {
 
     console.log('ext_count', ext_count);
     console.log('category count', Object.keys(reverse).length);
-    console.log('map', reverse);
+    console.log('map', name, reverse);
+
+    window[name + '_cat'] = reverse;
 }
 
 function categorize3() {
-    var categories = new Map();
+    categories = new Map();
 
     var ext_count = 0;
     for (var cat in extension_categories) {
@@ -888,12 +908,48 @@ function categorize3() {
 
     console.log('count', ext_count);
     console.log('category count', categories.size);
+
+    console.log(categories)
 }
 
 categorize()
-categorize2(extension_map_256_dark)
-categorize2(extension_map_ansi_dark)
+categorize2(extension_map_256_dark, 'extension_map_256_dark')
+categorize2(extension_map_ansi_dark, 'extension_map_ansi_dark')
+
 categorize3();
+
+
+
+// extension_map_256_dark
+// 203_75_22 = audio and video / media
+// 181_137_0 = images
+// 88_110_117 = os files  / object
+// 108_113_196 = archive
+// 147_161_161 = code
+
+// extension_map_ansi_dark
+// 133_153_0 = code
+// 181_137_0 = media
+// 211_54_130 = archive
+// 220_50_47 = docs
+
+var cat6 = {};
+
+// ['media', 'photo', 'code', 'archive', 'doc', 'obj'].forEach(cat => {
+//     cat6[cat] = new Set();
+// })
+
+remove_dot = (str) => str.startsWith('.') ? str.substring(1) : str;
+
+cat6['media'] = [...extension_map_256_dark_cat['203_75_22']].map(remove_dot).join(',')
+cat6['photo'] = [...extension_map_256_dark_cat['181_137_0']].map(remove_dot).join(',')
+cat6['code'] = [...extension_map_256_dark_cat['147_161_161']].map(remove_dot).join(',')
+cat6['archive'] = [...extension_map_256_dark_cat['108_113_196']].map(remove_dot).join(',')
+cat6['obj'] = [...extension_map_256_dark_cat['88_110_117']].map(remove_dot).join(',')
+cat6['doc'] = [...extension_map_ansi_dark_cat['220_50_47']].map(remove_dot).join(',')
+
+console.log(JSON.stringify(cat6, null, '\t'));
+
 
 </script>
 

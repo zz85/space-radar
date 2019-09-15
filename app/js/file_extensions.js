@@ -6,8 +6,8 @@ extension_categories = {}
 dirs.forEach(cat => { d = fs.readFileSync(cat, 'utf-8'); extension_categories[cat] = d.split('\n').join(',') })
 */
 
-var extension_categories = {
-    archiv: '7z,a,apk,ar,bz2,cab,cpio,deb,dmg,egg,gz,iso,jar,lha,mar,pea,rar,rpm,s7z,shar,tar,tbz2,tgz,tlz,war,whl,xpi,zip,zipx,deb,rpm,xz,pak,crx,exe,msi,bin',
+var extension_categories_11 = {
+    archive: '7z,a,apk,ar,bz2,cab,cpio,deb,dmg,egg,gz,iso,jar,lha,mar,pea,rar,rpm,s7z,shar,tar,tbz2,tgz,tlz,war,whl,xpi,zip,zipx,deb,rpm,xz,pak,crx,exe,msi,bin',
     audio: 'aac,aiff,ape,au,flac,gsm,it,m3u,m4a,mid,mod,mp3,mpa,pls,ra,s3m,sid,wav,wma,xm',
     code: 'c,cc,class,clj,cpp,cs,cxx,el,go,h,java,lua,m,m4,php,pl,po,py,rb,rs,sh,swift,vb,vcxproj,xcodeproj,xml,diff,patch',
     font: 'eot,otf,ttf,woff,woff2',
@@ -19,3 +19,12 @@ var extension_categories = {
     web: 'html,htm,css,js,jsx,less,scss,wasm'
 };
 
+/* 6 categories */
+var extension_categories_6 = {
+	"media": "aac,au,flac,mid,midi,mka,mp3,mpc,ogg,opus,ra,wav,m4a,axa,oga,spx,xspf,mov,MOV,mpg,mpeg,m2v,mkv,ogm,mp4,m4v,mp4v,vob,qt,nuv,wmv,asf,rm,rmvb,flc,avi,fli,flv,gl,m2ts,divx,webm,axv,anx,ogv,ogx",
+	"image": "jpg,JPG,jpeg,gif,bmp,pbm,pgm,ppm,tga,xbm,xpm,tif,tiff,png,PNG,svg,svgz,mng,pcx,dl,xcf,xwd,yuv,cgm,emf,eps,CR2,ico",
+	"code": "tex,rdf,owl,n3,ttl,nt,torrent,xml,*Makefile,*Rakefile,*Dockerfile,*build.xml,*rc,*1,nfo,*README,*README.txt,*readme.txt,md,*README.markdown,ini,yml,cfg,conf,h,hpp,c,cpp,cxx,cc,objc,sqlite,go,sql,csv",
+	"archive": "tar,tgz,arj,taz,lzh,lzma,tlz,txz,zip,z,Z,dz,gz,lz,xz,bz2,bz,tbz,tbz2,tz,deb,rpm,jar,rar,ace,zoo,cpio,7z,rz,apk,gem",
+	"obj": "log,bak,aux,lof,lol,lot,out,toc,bbl,blg,*,part,incomplete,swp,tmp,temp,o,pyc,class,cache",
+	"doc": "doc,docx,rtf,odt,dot,dotx,ott,xls,xlsx,ods,ots,ppt,pptx,odp,otp,fla,psd"
+}
