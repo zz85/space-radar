@@ -1,6 +1,7 @@
 {
   "name": "space-radar",
-  "version": "5.0.0",
+  "productName": "SpaceRadar",
+  "version": "5.1.1",
   "description": "Disk Usage Electron App",
   "main": "main.js",
   "scripts": {

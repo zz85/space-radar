@@ -4,8 +4,23 @@
 
 let partition
 
+// Moving this here for some v8 specific optimizations
+
 function one() {
   return 1
+}
+
+function sizeValue(d) {
+  return d.size
+}
+
+function countIsValue(d) {
+  return (d.count = d.value)
+}
+
+function sumAndHideChildren(d) {
+  d._children = d.children // save before mutating
+  d.sum = d.value
 }
 
 function computeNodeCount(data) {
@@ -13,25 +28,19 @@ function computeNodeCount(data) {
   partition
     .value(one)
     .nodes(data)
-    .forEach(d => {
-      d.count = d.value
-    })
+    .forEach(countIsValue)
 
   console.timeEnd('computeNodeCount')
 }
-
 function computeNodeSize(data) {
   console.time('computeNodeSize')
   partition
-    .value(d => d.size)
+    .value(sizeValue)
     .nodes(data)
     // .filter(function(d) {
     //   return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
     // })
-    .forEach(function(d) {
-      d._children = d.children // save before mutating
-      d.sum = d.value
-    })
+    .forEach(sumAndHideChildren)
 
   console.timeEnd('computeNodeSize')
 }
@@ -40,7 +49,7 @@ function setNodeFilter(data) {
   const LEVELS = 11,
     HIDE_THRESHOLD = 0.1
 
-  return partition.children(function(d, depth) {
+  return partition.children(function hideChildren(d, depth) {
     if (depth >= LEVELS) {
       return null
     }

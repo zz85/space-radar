@@ -12,7 +12,6 @@ var current_size = 0,
   start_time
 
 var legend = d3.select('#legend')
-var hue = d3.scale.category10() // colour hash
 
 function startScan(path) {
   cleanup()
@@ -253,7 +252,7 @@ promptbox.ondrop = function(e) {
 /*** Selection Handling ****/
 
 function openDirectory() {
-  let loc = Navigator.currentPath()
+  let loc = Navigation.currentPath()
   if (loc) shell.showItemInFolder(loc.join(PATH_DELIMITER))
 }
 

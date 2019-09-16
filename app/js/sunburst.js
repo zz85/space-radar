@@ -1,4 +1,8 @@
 'use strict'
+var rootNode,
+  currentNode,
+  max_level,
+  current_level = 0
 
 function SunBurst() {
   function onResize() {
@@ -124,11 +128,6 @@ function SunBurst() {
       return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1
     })
 
-  var rootNode,
-    currentNode,
-    max_level,
-    current_level = 0
-
   var circular_meter = svg.append('g')
   // TODO make a tiny border around the rim of center to show the percentage of current space
 
@@ -201,7 +200,7 @@ function SunBurst() {
   }
 
   function _mouseout(d) {
-    if (path) path.style('opacity', 0.8)
+    if (path) svg.selectAll('path').style('opacity', 0.8)
 
     if (currentNode) updateCore(currentNode)
   }
@@ -231,6 +230,7 @@ function SunBurst() {
 
     max_level = 0
     current_level = 0
+    setNodeFilter(node)
 
     var tmp = node.parent
     while (tmp) {
@@ -345,6 +345,10 @@ function SunBurst() {
 
     computeNodeCount(root)
     computeNodeSize(root)
+
+    console.time('color')
+    colorByTypes(root)
+    console.timeEnd('color')
 
     console.log('Root count', root.count, 'ROOT size', format(root.value))
 

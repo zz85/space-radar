@@ -58,6 +58,12 @@ global.State = {
   },
   highlightPath: path => {
     PluginManager.highlightPath(path)
+  },
+
+  showWorking: func => {
+    // blocking dialog
+    lightbox(true)
+    setTimeout(func, 100, () => lightbox(false))
   }
 }
 
