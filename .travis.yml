@@ -23,7 +23,7 @@ before_deploy:
 - sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
 - sudo apt-key update
 - sudo apt-get -qq update
-- sudo apt install -y wine-stable winehq-stable
+- sudo apt install -y wine-stable winehq-stable --allow-unauthenticated
 - npm install
 - npm run everything
 
