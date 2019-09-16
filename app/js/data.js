@@ -15,14 +15,13 @@ function sizeValue(d) {
 }
 
 function countIsValue(d) {
-  return d.count = d.value
+  return (d.count = d.value)
 }
 
 function sumAndHideChildren(d) {
   d._children = d.children // save before mutating
   d.sum = d.value
 }
-
 
 function computeNodeCount(data) {
   console.time('computeNodeCount')
@@ -50,17 +49,16 @@ function setNodeFilter(data) {
   const LEVELS = 11,
     HIDE_THRESHOLD = 0.1
 
-
   return partition.children(function hideChildren(d, depth) {
-  if (depth >= LEVELS) {
-    return null
-  }
-  if (!d._children) return null
+    if (depth >= LEVELS) {
+      return null
+    }
+    if (!d._children) return null
 
-  const children = d._children.filter(c => c.sum / data.sum * 100 > HIDE_THRESHOLD)
-  return children
-  // return depth < LEVELS ? d._children : null;
-})
+    const children = d._children.filter(c => c.sum / data.sum * 100 > HIDE_THRESHOLD)
+    return children
+    // return depth < LEVELS ? d._children : null;
+  })
 }
 
 function namesort(a, b) {

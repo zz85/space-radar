@@ -1,16 +1,20 @@
+// More color references
+// https://github.com/d3/d3-scale-chromatic
+// http://bl.ocks.org/emmasaunders/52fa83767df27f1fc8b3ee2c6d372c74
+
+const size_scales = [0, 1e3, 1e5, 1e6, 1e8, 1e9, 1e12, 1e14, 1e15]
 // 1K 1e3
 // 1MB 1e6
 // 1GB 1e9
 // 1TB 1e12
 // 1PB 1e15
 
-const size_scales = [0, 1e3, 1e5, 1e6, 1e8, 1e9, 1e12, 1e14, 1e15]
+var accent = d3.scaleOrdinal(d3.schemeAccent)
+// try multi-hue
 const color_range = d3.scale
   .linear()
-  .range(['blue', 'red'])
+  .range(['#000004', '#fcffa4'])
   .interpolate(d3.interpolateLab)
-
-
 
 // TODO fix lab deopt.
 // https://github.com/colorjs/color-space
@@ -25,13 +29,7 @@ const size_scale_colors = d3.scale
   .linear()
   .domain(size_scales)
   .clamp(true)
-  .range(size_color_range)
-
-const size_luminance = d3.scale
-  .linear()
-  .domain([0, 1e9])
-  .clamp(true)
-  .range([90, 50])
+  .range(['#000004', '#fcffa4'])
 
 const depth_luminance = d3.scale
   .linear() // .sqrt()
@@ -41,12 +39,11 @@ const depth_luminance = d3.scale
 
 const greyScale = d3.scale
   .linear()
-  // .range(['white', 'black'])
   .range(['black', 'white'])
   .domain([0, 12])
   .clamp(true)
 
-let colorScheme = global[localStorage.color_extension_scheme] || schemeLsColor
+let colorScheme = global[localStorage.color_extension_scheme] || schemeCat6
 let fill = global[localStorage.color_mode] || colorByProp
 // colorByProp // filetypes
 // colorBySize // size
@@ -162,56 +159,46 @@ let fill = global[localStorage.color_mode] || colorByProp
     submenu: [
       // { type: 'radio', label: 'Color by Extension', click: () => { switchColorMode('colorByProp') } },
       {
-        label: 'Color by Extension',
-        submenu: [
-          {
-            type: 'radio',
-            label: 'LS Colors',
-            click: () => switchColorScheme('schemeLsColor')
-          },
-          {
-            type: 'radio',
-            label: 'Solarized Colors Ansi',
-            click: () => switchColorScheme('schemeAnsi')
-          },
-          {
-            type: 'radio',
-            label: 'Solarized Colors 256',
-            click: () => switchColorScheme('scheme256')
-          },
-          {
-            type: 'radio',
-            label: 'Hashed',
-            click: () => switchColorScheme('schemeHue')
-          }
-        ]
+        type: 'radio',
+        label: 'File extensions - 6 Categories',
+        click: () => switchColorScheme('schemeCat6')
       },
       {
         type: 'radio',
-        label: 'Colorful Parents',
+        label: 'File extensions - 11 Categories',
+        click: () => switchColorScheme('schemeCat11')
+      },
+      {
+        type: 'radio',
+        label: 'File extensions - Hashed',
+        click: () => switchColorScheme('schemeHue')
+      },
+      {
+        type: 'radio',
+        label: 'Root Colors (Original Scheme)',
+        click: () => {
+          switchColorMode('colorByParent')
+        }
+      }, //
+      {
+        type: 'radio',
+        label: 'Root Colors (Numbers)',
         click: () => {
           switchColorMode('colorByParentName')
         }
       }, //
       {
         type: 'radio',
-        label: 'Color By Size (Blue - Red)',
-        click: () => {
-          switchColorMode('colorBySize')
-        }
-      }, //
-      {
-        type: 'radio',
-        label: 'Color By Size (Black - White)',
+        label: 'Color By Size (Greyscale)',
         click: () => {
           switchColorMode('colorBySizeBw')
         }
       }, //
       {
         type: 'radio',
-        label: 'Shades of Parents',
+        label: 'Color By Size',
         click: () => {
-          switchColorMode('colorByParent')
+          switchColorMode('colorBySize')
         }
       }, //
       { type: 'separator' }
@@ -251,23 +238,15 @@ function schemeHue(ext) {
   return d3.lab(randExt[ext])
 }
 
-function schemeAnsi(ext) {
-  if (ext in extension_map_ansi_dark) {
-    const { r, g, b } = extension_map_ansi_dark[ext]
-    return d3.lab(d3.rgb(r, g, b))
+function schemeCat6(ext) {
+  if (ext in extension_categories_6) {
+    return d3.lab(hue(extension_categories_6[ext]))
   }
 }
 
-function schemeLsColor(ext) {
-  if (ext in LS_COLORS) {
-    return d3.lab(LS_COLORS[ext])
-  }
-}
-
-function scheme256(ext) {
-  if (ext in extension_map_256_dark) {
-    const { r, g, b } = extension_map_256_dark[ext]
-    return d3.lab(d3.rgb(r, g, b))
+function schemeCat11(ext) {
+  if (ext in extension_categories_11) {
+    return d3.lab(hue(extension_categories_11[ext]))
   }
 }
 
@@ -281,15 +260,27 @@ function byExtension(d, def) {
   return def ? null : d3.rgb(0, 0, 0)
 }
 
-function colorBySize(d) {
-  const c = d3.lab(size_scale_colors(d.value))
-  c.l = size_luminance(d.value)
-  return c
-}
+const size_luminance = d3.scale
+  .linear()
+  .domain([0, 1e9])
+  .clamp(true)
+  .range([90, 50])
 
 function colorBySizeBw(d) {
   const c = d3.lab()
   c.l = size_luminance(d.value)
+  return c
+}
+
+const size_luminance2 = d3.scale
+  .linear()
+  .domain([0, 1e9])
+  .clamp(true)
+  .range([50, 90])
+
+function colorBySize(d) {
+  const c = d3.lab(size_scale_colors(d.value))
+  c.l = size_luminance2(d.value)
   return c
 }
 
@@ -298,9 +289,8 @@ function colorBySizeBw(d) {
 function colorByParent(d) {
   const p = getParent(d)
   // const c = d3.lab(hue(p.sum)); // size
-  // const c = d3.lab(hue(p.count)); // number
-  // // var c = d3.lab(hue(p.name)) // parent name
-  const c = d3.lab(hue(p.children ? p.children.length : 0))
+  const c = d3.lab(hue(p.count)) // number
+  // const c = d3.lab(hue(p.children ? p.children.length : 0))
   // c.l = luminance(d.value)
   c.l = depth_luminance(d.depth)
   return c
@@ -368,7 +358,8 @@ function colorWalkNode(node) {
   }
 
   // darker - saturated cores, lighter - whiter cores
-  l = l * 1.03 // adjusts as it diffuses the directory
+  l = l * 1.05 // adjusts brighter as it diffuses the directory
+  // l = l * 0.96
   l = Math.max(Math.min(98, l), 2)
 
   node.color = d3.lab(l, a, b)
@@ -388,14 +379,3 @@ function childrenFirst(data, func) {
 
   func(data)
 }
-
-/*
-archive = violet, compressed archive = violet + bold
-audio = orange, video = orange + bold
-*/
-
-
-
-// More color references
-// https://github.com/d3/d3-scale-chromatic
-// http://bl.ocks.org/emmasaunders/52fa83767df27f1fc8b3ee2c6d372c74

@@ -252,7 +252,7 @@ promptbox.ondrop = function(e) {
 /*** Selection Handling ****/
 
 function openDirectory() {
-  let loc = Navigator.currentPath()
+  let loc = Navigation.currentPath()
   if (loc) shell.showItemInFolder(loc.join(PATH_DELIMITER))
 }
 
