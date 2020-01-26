@@ -51,7 +51,7 @@ Futher Explorations
 History
 ==
 
-This project started as quick prototype for me to test drive [atom electron](http://electron.atom.io) (& some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+This project started as quick prototype for me to test drive [electron](https://www.electronjs.org/) (& some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
 
 
 Whats New
