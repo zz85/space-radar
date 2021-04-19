@@ -135,7 +135,7 @@
         return close()
       }
 
-      let size = 0 | (result[1] * 1024)
+      let size = parseInt(result[1]) * 1024
       let path = result[2].split('/')
 
       // Depending on how find is used the first element may be empty
