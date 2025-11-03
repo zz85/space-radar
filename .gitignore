@@ -1,3 +1,18 @@
-lastload.json
-node_modules
-js/fs-ipc.json
+# Node modules
+node_modules/
+app/node_modules/
+
+# OS junk
+.DS_Store
+
+# Runtime artifacts
+app/lastload.json
+app/js/fs-ipc.json
+logs/
+*.log
+*.lock
+
+# Build outputs
+builds/
+SpaceRadar-*/
+*.zip

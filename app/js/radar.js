@@ -6,7 +6,17 @@ const path = require('path')
 const LASTLOAD_FILE = path.join(__dirname, 'lastload.json')
 
 // IPC handling
-// const { sendIpcMsg } = require(path.join(__dirname, 'js/ipc'))
+function sendIpcMsg(cmd, msg) {
+  try {
+    const { ipcRenderer } = require('electron')
+    if (cmd === 'go') {
+      console.log('[renderer] sending scan-go', msg)
+      ipcRenderer.send('scan-go', msg)
+    }
+  } catch (err) {
+    console.error('[renderer] sendIpcMsg error', err)
+  }
+}
 
 var current_size = 0,
   start_time
@@ -119,14 +129,17 @@ function complete(json) {
 }
 
 function handleIPC(cmd, args) {
+  try { console.log('[renderer] handleIPC', cmd) } catch (e) {}
   switch (cmd) {
     case 'progress':
       return progress.apply(null, args)
     case 'refresh':
       return refresh.apply(null, args)
     case 'complete':
+      try { console.log('[renderer] complete received') } catch (e) {}
       return complete(args[0])
     case 'fs-ipc':
+      try { console.log('[renderer] fs-ipc received', args && args[0]) } catch (e) {}
       return fsipc(args[0])
     case 'du_pipe_start':
       return start_read()
@@ -148,6 +161,7 @@ function fsipc(filename) {
       args = zlib.inflateSync(args)
       args = JSON.parse(args)
       var cmd = args.shift()
+      try { console.log('[renderer] fsipc dispatch', cmd) } catch (e) {}
       handleIPC(cmd, args)
     } catch (e) {
       console.error(e.stack)
@@ -159,7 +173,25 @@ function fsipc(filename) {
 function ready() {
   // start here
   showPrompt()
+  try {
+    console.log('[renderer] auto-opening folder picker on startup')
+    scanFolder()
+  } catch (e) {
+    console.error('[renderer] auto-open picker failed', e)
+  }
   // fsipc('fs-ipc.json')
+}
+
+// Ensure ready() runs when DOM is loaded regardless of IPC bootstrap
+try {
+  if (document && document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready)
+  } else {
+    // Document already ready
+    ready()
+  }
+} catch (e) {
+  console.error('[renderer] failed to register DOMContentLoaded', e)
 }
 
 function rerunPage() {
@@ -190,15 +222,22 @@ function newWindow() {
 }
 
 function scanFolder() {
-  var dialog = remote.dialog
-  var selection = dialog.showOpenDialog({ properties: ['openDirectory'] })
-
-  if (selection && selection[0]) {
-    selectPath(selection[0])
+  try {
+    console.log('[renderer] scanFolder invoked')
+    const { ipcRenderer } = require('electron')
+    Promise.resolve(ipcRenderer.invoke('select-folder')).then((selectedPath) => {
+      console.log('[renderer] select-folder result', selectedPath)
+      if (selectedPath) {
+        selectPath(selectedPath)
+      } else {
+        console.log('[renderer] Folder selection canceled or failed')
+      }
+    }).catch((err) => {
+      console.error('[renderer] select-folder IPC error', err)
+    })
+  } catch (err) {
+    console.error('[renderer] scanFolder error', err)
   }
-
-  console.log(selection)
-  // 'openFile', 'multiSelections'
 }
 
 function readFile() {

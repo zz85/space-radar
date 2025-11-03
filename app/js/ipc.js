@@ -1,6 +1,7 @@
 /* globals: handleIPC */
 const DEBUG = process.env.DEBUG //
-const { remote } = require('electron')
+const electron = require('electron')
+const remote = electron && electron.remote
 
 const ipc_name = 'viz'
 const fs = require('fs')
@@ -11,7 +12,11 @@ let win
 setupLocalStorageIPC()
 // setupWebViewIPC()
 // setupChildIPC()
-setupRemoteIPC()
+if (remote) {
+  setupRemoteIPC()
+} else {
+  try { console.warn('[renderer] electron.remote not available; skipping remote IPC setup') } catch (e) {}
+}
 // setupIPC()
 // ready() // run this
 
@@ -28,19 +33,28 @@ function setupLocalStorageIPC() {
 function sendIpcMsg(cmd, msg) {
   // webview.send('scan', msg)
   // child.send({cmd: cmd, msg: msg})
-  win.webContents.send('scan', msg)
+  try {
+    if (win && win.webContents) {
+      win.webContents.send('scan', msg)
+    } else if (electron && electron.ipcRenderer) {
+      electron.ipcRenderer.send('scan-go', msg)
+    }
+  } catch (e) {
+    try { console.error('[renderer] sendIpcMsg fallback error', e) } catch (_) {}
+  }
 }
 
 // ----------------------- //
 // Remote IPC //
 // -------------------------//
 
-var main_ipc = remote.ipcMain
-
-main_ipc.on('call', function(event, cmd) {
-  var args = Array.prototype.slice.call(arguments, 2)
-  handleIPC(cmd, args)
-})
+if (remote) {
+  var main_ipc = remote.ipcMain
+  main_ipc.on('call', function(event, cmd) {
+    var args = Array.prototype.slice.call(arguments, 2)
+    handleIPC(cmd, args)
+  })
+}
 
 function setupRemoteIPC() {
   win = new remote.BrowserWindow(DEBUG ? { width: 800, height: 600 } : { show: false })
@@ -49,7 +63,7 @@ function setupRemoteIPC() {
 
   win.webContents.on('did-finish-load', function() {
     // win.webContents.send('ready')
-    ready()
+    try { ready() } catch (e) { console.error(e) }
   })
 }
 

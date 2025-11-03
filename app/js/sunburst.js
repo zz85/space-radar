@@ -300,6 +300,9 @@ function SunBurst() {
       .append('path')
       .attr('class', 'area')
       .style('fill', fill)
+      .style('stroke', '#c8c8c8')
+      .style('stroke-opacity', 0.6)
+      .style('stroke-width', function(d) { return Math.max(0.25, 1.0 - d.depth * 0.08) })
       .style('fill-opacity', d => {
         // return 1
         return d.depth === 2 - (node === prevNode) ? 1 : 0
@@ -313,6 +316,9 @@ function SunBurst() {
       // update
       .merge(path)
       .attr('d', arc)
+      .style('stroke', '#c8c8c8')
+      .style('stroke-opacity', 0.6)
+      .style('stroke-width', function(d) { return Math.max(0.25, 1.0 - d.depth * 0.08) })
       .transition()
       .duration(transition_time)
       .style('fill-opacity', 1)
