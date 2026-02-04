@@ -210,6 +210,12 @@ app.on("ready", function() {
     }
   });
 
+  // Handle new window request from renderer
+  ipcMain.on("new-window", () => {
+    const newWin = require("./js/start")();
+    // Note: new windows are independent, closing them won't quit the app
+  });
+
   // Forward scan commands from renderer to scanner window
   ipcMain.on("scan-go", (event, targetPath) => {
     try {
