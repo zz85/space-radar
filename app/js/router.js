@@ -1,71 +1,71 @@
-const { EventEmitter } = require('events')
+const { EventEmitter } = require("events");
 
 class NavigationController extends EventEmitter {
   constructor() {
-    super()
-    this.clear()
+    super();
+    this.clear();
   }
 
   clear() {
-    this.backStack = []
-    this.fwdStack = []
+    this.backStack = [];
+    this.fwdStack = [];
   }
 
   currentPath() {
-    const { backStack } = this
-    return backStack.length ? backStack[backStack.length - 1].concat() : []
+    const { backStack } = this;
+    return backStack.length ? backStack[backStack.length - 1].concat() : [];
   }
 
   updatePath(path) {
-    if (!path.length) return
-    if (this.currentPath().join('/') === path.join('/')) return
-    let n = this.currentPath()
+    if (!path.length) return;
+    if (this.currentPath().join("/") === path.join("/")) return;
+    let n = this.currentPath();
     if (!n || n !== path) {
-      this.backStack.push(path)
-      if (this.fwdStack.length) this.fwdStack = []
+      this.backStack.push(path);
+      if (this.fwdStack.length) this.fwdStack = [];
     }
 
-    this.notify()
+    this.notify();
   }
 
   notify() {
-    this.emit('navigationchanged', this.currentPath())
+    this.emit("navigationchanged", this.currentPath());
   }
 
   back() {
-    if (this.backStack.length < 2) return
-    let n = this.backStack.pop()
-    log('navigateBack', n)
-    this.fwdStack.push(n)
-    this.notify()
+    if (this.backStack.length < 2) return;
+    let n = this.backStack.pop();
+    log("navigateBack", n);
+    this.fwdStack.push(n);
+    this.notify();
   }
 
   forward() {
-    if (!this.fwdStack.length) return
-    let n = this.fwdStack.pop()
-    this.backStack.push(n)
-    this.notify()
+    if (!this.fwdStack.length) return;
+    let n = this.fwdStack.pop();
+    this.backStack.push(n);
+    this.notify();
   }
 }
 
-global.Navigation = new NavigationController()
+global.Navigation = new NavigationController();
 
 global.State = {
   navigateTo: path => Navigation.updatePath(path),
   clearNavigation: () => {
-    Navigation.clear()
-    PluginManager.clear()
+    Navigation.clear();
+    PluginManager.clear();
   },
   highlightPath: path => {
-    PluginManager.highlightPath(path)
+    PluginManager.highlightPath(path);
   },
 
   showWorking: func => {
     // blocking dialog
-    lightbox(true)
-    setTimeout(func, 100, () => lightbox(false))
+    lightbox(true);
+    setTimeout(func, 100, () => lightbox(false));
   }
-}
+};
 
 /*****************
  * Graph Plugins
@@ -77,18 +77,18 @@ global.State = {
  * .showLess()
  */
 
-Navigation.on('navigationchanged', path => {
-  PluginManager.navigateTo(path)
-})
+Navigation.on("navigationchanged", path => {
+  PluginManager.navigateTo(path);
+});
 
-let width, height
+let width, height;
 
 function calculateDimensions() {
-  width = innerWidth
+  width = innerWidth;
   height =
     innerHeight -
-    document.querySelector('header').getBoundingClientRect().height -
-    document.querySelector('footer').getBoundingClientRect().height
+    document.querySelector("header").getBoundingClientRect().height -
+    document.querySelector("footer").getBoundingClientRect().height;
 }
 
 /**
@@ -98,110 +98,119 @@ function calculateDimensions() {
  */
 class SpacePluginManager {
   constructor() {
-    const activatedGraphs = new Set()
-    this.activatedGraphs = activatedGraphs
+    const activatedGraphs = new Set();
+    this.activatedGraphs = activatedGraphs;
   }
 
   resize() {
-    calculateDimensions()
-    this.activatedGraphs.forEach(activatedGraph => activatedGraph.resize())
+    calculateDimensions();
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.resize());
   }
 
   clear() {
-    this.data = null
+    this.data = null;
     // TODO run clear on graphs?
   }
 
   generate(json) {
-    console.trace('generate', json)
+    console.trace("generate", json);
 
-    const loaded = this.data
-    this.data = json
+    const loaded = this.data;
+    this.data = json;
 
-    this.activatedGraphs.forEach(activatedGraph => activatedGraph.generate(json))
-    this.resize()
+    this.activatedGraphs.forEach(activatedGraph =>
+      activatedGraph.generate(json)
+    );
+    this.resize();
     if (!loaded) {
-      State.navigateTo([json.name])
+      State.navigateTo([json.name]);
     } else {
-      this.navigateTo(Navigation.currentPath())
+      this.navigateTo(Navigation.currentPath());
     }
   }
 
   navigateTo(path) {
-    console.log('navigateTo', path)
+    console.log("navigateTo", path);
 
-    if (!this.data) return
+    if (!this.data) return;
     //
-    const current = getNodeFromPath(path, this.data)
+    const current = getNodeFromPath(path, this.data);
 
-    this.activatedGraphs.forEach(activatedGraph => activatedGraph.navigateTo(path, current, this.data))
+    this.activatedGraphs.forEach(activatedGraph =>
+      activatedGraph.navigateTo(path, current, this.data)
+    );
   }
 
   highlightPath(path) {
-    const current = path && path.length ? getNodeFromPath(path, this.data) : null
+    const current =
+      path && path.length ? getNodeFromPath(path, this.data) : null;
     this.activatedGraphs.forEach(activatedGraph => {
-      if (activatedGraph.highlightPath) activatedGraph.highlightPath(path, current, this.data)
-    })
+      if (activatedGraph.highlightPath)
+        activatedGraph.highlightPath(path, current, this.data);
+    });
   }
 
   navigateUp() {
-    var current = Navigation.currentPath()
+    var current = Navigation.currentPath();
     if (current.length > 1) {
-      current.pop()
-      State.navigateTo(current)
+      current.pop();
+      State.navigateTo(current);
     }
   }
 
   showLess() {
-    this.activatedGraphs.forEach(activatedGraph => activatedGraph.showLess())
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.showLess());
   }
 
   showMore() {
-    this.activatedGraphs.forEach(activatedGraph => activatedGraph.showMore())
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.showMore());
   }
 
   cleanup() {
-    this.activatedGraphs.forEach(activatedGraph => activatedGraph.cleanup())
+    this.activatedGraphs.forEach(activatedGraph => activatedGraph.cleanup());
   }
 
   activate(graph) {
-    this.activatedGraphs.add(graph)
+    this.activatedGraphs.add(graph);
 
     if (this.data) {
       // make data immutable for now
-      this.data = _loadLast()
-      this.generate(this.data)
+      this.data = _loadLast();
+      this.generate(this.data);
     }
   }
 
   loadLast() {
-    this.generate(_loadLast())
+    this.generate(_loadLast());
   }
 
   deactivate(graph) {
-    graph.cleanup()
-    this.activatedGraphs.delete(graph)
+    graph.cleanup();
+    this.activatedGraphs.delete(graph);
   }
 
   deactivateAll() {
-    this.activatedGraphs.forEach(graph => this.deactivate(graph))
+    this.activatedGraphs.forEach(graph => this.deactivate(graph));
   }
 }
 
-global.PluginManager = new SpacePluginManager()
+global.PluginManager = new SpacePluginManager();
 
 // chart plugins
-const treemapGraph = TreeMap()
-const sunburstGraph = SunBurst()
-const flamegraphGraph = new FlameGraph()
+const treemapGraph = TreeMap();
+const sunburstGraph = SunBurst();
+const flamegraphGraph = new FlameGraph();
 
 // common
-const listview = new ListView()
-const breadcrumbs = new Breadcumbs()
+const listview = new ListView();
+const breadcrumbs = new Breadcumbs();
 
-PluginManager.activate(listview)
-PluginManager.activate(breadcrumbs)
+// Initialize dimensions at startup
+calculateDimensions();
 
-showSunburst()
+PluginManager.activate(listview);
+PluginManager.activate(breadcrumbs);
+
+showSunburst();
 // showFlamegraph()
 // showTreemap()

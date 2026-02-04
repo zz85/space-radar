@@ -2,71 +2,75 @@
  * Process data
  */
 
-let partition
+// partition is initialized by sunburst.js before these functions are called
+// Declare it here so it's accessible in this file's scope
+var partition;
 
 // Moving this here for some v8 specific optimizations
 
 function one() {
-  return 1
+  return 1;
 }
 
 function sizeValue(d) {
-  return d.size
+  return d.size;
 }
 
 function countIsValue(d) {
-  return (d.count = d.value)
+  return (d.count = d.value);
 }
 
 function sumAndHideChildren(d) {
-  d._children = d.children // save before mutating
-  d.sum = d.value
+  d._children = d.children; // save before mutating
+  d.sum = d.value;
 }
 
 function computeNodeCount(data) {
-  console.time('computeNodeCount')
+  console.time("computeNodeCount");
   partition
     .value(one)
     .nodes(data)
-    .forEach(countIsValue)
+    .forEach(countIsValue);
 
-  console.timeEnd('computeNodeCount')
+  console.timeEnd("computeNodeCount");
 }
 function computeNodeSize(data) {
-  console.time('computeNodeSize')
+  console.time("computeNodeSize");
   partition
     .value(sizeValue)
     .nodes(data)
     // .filter(function(d) {
     //   return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
     // })
-    .forEach(sumAndHideChildren)
+    .forEach(sumAndHideChildren);
 
-  console.timeEnd('computeNodeSize')
+  console.timeEnd("computeNodeSize");
 }
 
 function setNodeFilter(data) {
   const LEVELS = 11,
-    HIDE_THRESHOLD = 0.1
+    HIDE_THRESHOLD = 0.1;
 
   return partition.children(function hideChildren(d, depth) {
     if (depth >= LEVELS) {
-      return null
+      return null;
     }
-    if (!d._children) return null
+    if (!d._children) return null;
 
-    const children = d._children.filter(c => (c.sum / data.sum) * 100 > HIDE_THRESHOLD)
-    return children
+    const children = d._children.filter(
+      c => (c.sum / data.sum) * 100 > HIDE_THRESHOLD
+    );
+    return children;
     // return depth < LEVELS ? d._children : null;
-  })
+  });
 }
 
 function namesort(a, b) {
-  return d3.ascending(a.name, b.name)
+  return d3.ascending(a.name, b.name);
 }
 function sizesort(a, b) {
-  return d3.ascending(a.sum, b.sum)
+  return d3.ascending(a.sum, b.sum);
 }
 function countsort(a, b) {
-  return d3.ascending(a.count, b.count)
+  return d3.ascending(a.count, b.count);
 }

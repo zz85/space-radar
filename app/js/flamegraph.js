@@ -58,12 +58,15 @@ class FlameGraph extends Chart {
   }
 
   resize() {
-    const newHeight = (height * 2) / 3;
-    console.log("FlameGraph resize", width, height);
-    this.graph.width(width).height(newHeight);
+    // Ensure we have valid dimensions
+    const w = width || window.innerWidth;
+    const h = height || window.innerHeight - 200;
+    const newHeight = (h * 2) / 3;
+    console.log("FlameGraph resize", w, h);
+    this.graph.width(w).height(newHeight);
     const svg = document.querySelector(".d3-flame-graph");
     if (svg) {
-      svg.setAttribute("width", width);
+      svg.setAttribute("width", w);
       svg.setAttribute("height", newHeight);
     }
     this.draw();
@@ -79,25 +82,51 @@ class FlameGraph extends Chart {
   navigateTo(path, node, root) {
     if (path.join("/") === this.currentPath) return console.log("abort draw");
     console.log("FlameGraph navigateTo");
-    this.data = root;
-    this.draw();
-    // Note: zoomTo in v4 takes a hierarchy node directly
-    // The node passed here should already be a hierarchy node from the data
+    // Don't redraw on navigation - flamegraph handles its own zoom
+    // this.data = root;
+    // this.draw();
   }
 
   generate(data) {
     console.log("FlameGraph generate");
 
-    // TODO. This may cause hangups!!!
-    // partition = d3.layout.partition()
-    //   partition
-    //     .value(d => d.size)
-    //     .sort(namesort) // namesort countsort sizesort
+    // Preprocess data to ensure 'value' is set for d3-flame-graph
+    // d3-flame-graph expects each node to have a 'value' property
+    function computeValue(node) {
+      if (node.children && node.children.length > 0) {
+        let sum = 0;
+        for (const child of node.children) {
+          sum += computeValue(child);
+        }
+        node.value = sum;
+        return sum;
+      } else {
+        // Leaf node - use size or default to 0
+        node.value = node.size || 0;
+        return node.value;
+      }
+    }
 
-    // computeNodeSize(data)
-    // setNodeFilter(data)
+    // Clone data to avoid mutating the original
+    const clonedData = JSON.parse(JSON.stringify(data));
+    computeValue(clonedData);
 
-    this.data = data;
+    // Filter out very small nodes to prevent memory issues with large trees
+    const THRESHOLD = 0.001; // 0.1% of total
+    const totalValue = clonedData.value || 1;
+
+    function filterSmallNodes(node) {
+      if (node.children) {
+        node.children = node.children
+          .filter(child => child.value / totalValue >= THRESHOLD)
+          .map(filterSmallNodes);
+      }
+      return node;
+    }
+
+    filterSmallNodes(clonedData);
+
+    this.data = clonedData;
     this.draw();
   }
 
