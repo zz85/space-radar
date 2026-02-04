@@ -23,9 +23,7 @@ crashReporter.start({
 */
 
 app.on("window-all-closed", function() {
-  if (process.platform != "darwin") {
-    app.quit();
-  }
+  app.quit();
 });
 
 let scannerWin;
@@ -172,6 +170,11 @@ function sendColorChange(type, value) {
 
 app.on("ready", function() {
   mainWindow = require("./js/start")();
+
+  // Quit app when main window is closed
+  mainWindow.on("closed", function() {
+    app.quit();
+  });
 
   // Build the application menu
   buildAppMenu();
