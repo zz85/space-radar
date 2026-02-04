@@ -10,6 +10,7 @@
     "app": "electron app",
     "debug": "DEBUG=1 npm run app",
     "clean": "rm -rf SpaceRadar-darwin-x64 SpaceRadar-darwin-arm64 SpaceRadar-darwin-universal SpaceRadar-linux-x64 SpaceRadar-win32-x64 builds",
+    "deep_clean": "rm -rf node_modules package-lock.json app/node_modules app/package-lock.json",
     "build": "npm run build:mac && npm run build:linux && npm run build:win",
     "build:mac": "electron-packager app SpaceRadar --platform=darwin --arch=x64 --icon=app/Icon.icns --app-version=$npm_package_version",
     "build:mac-arm64": "electron-packager app SpaceRadar --platform=darwin --arch=arm64 --icon=app/Icon.icns --app-version=$npm_package_version",
