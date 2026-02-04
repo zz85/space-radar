@@ -120,12 +120,12 @@ function SunBurst() {
       return d.x + d.dx - 0.01 / (d.depth + 0.5) + ADJUSTMENT
     })
     .innerRadius(function(d) {
-      return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth - 1)
+      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth - 1)
       // return Math.sqrt(d.y); // ROOT
     })
     .outerRadius(function(d) {
       // return Math.sqrt(d.y + d.dy); // ROOT
-      return CORE_RADIUS + OUTER_RADIUS / FLEXI_LEVEL * (d.depth + 0) - 1
+      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth + 0) - 1
     })
 
   var circular_meter = svg.append('g')
@@ -141,7 +141,7 @@ function SunBurst() {
 
   function updateCore(d) {
     // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
-    var percent = (d.sum / (currentNode || root).sum * 100).toFixed(2) + '%'
+    var percent = ((d.sum / (currentNode || root).sum) * 100).toFixed(2) + '%'
 
     // 1. lengend
     // legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
@@ -251,7 +251,9 @@ function SunBurst() {
         dkey = key(d)
       return pkey > dkey
         ? { depth: d.depth - 1, x: 0, dx: 0 }
-        : pkey < dkey ? { depth: d.depth - 1, x: 2 * Math.PI, dx: 0 } : { depth: 0, x: 0, dx: 2 * Math.PI }
+        : pkey < dkey
+        ? { depth: d.depth - 1, x: 2 * Math.PI, dx: 0 }
+        : { depth: 0, x: 0, dx: 2 * Math.PI }
     }
 
     function outsideArc(d) {
