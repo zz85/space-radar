@@ -270,11 +270,11 @@ function TreeMap() {
       var p = chain.pop()
       h = gh(p)
       var parentHeight = p.parent ? gh(p.parent) : height
-      var ny = gy(p) / parentHeight * (parentHeight - labelAdjustment)
+      var ny = (gy(p) / parentHeight) * (parentHeight - labelAdjustment)
       for (i = chain.length; i--; ) {
         var n = chain[i]
-        ny += ry[i] / gh(p) * (h - labelAdjustment)
-        h = gh(n) / gh(p) * (h - labelAdjustment)
+        ny += (ry[i] / gh(p)) * (h - labelAdjustment)
+        h = (gh(n) / gh(p)) * (h - labelAdjustment)
         p = n
       }
 
@@ -372,8 +372,7 @@ function TreeMap() {
     zoom(currentNode)
   }
 
-  d3
-    .select(canvas)
+  d3.select(canvas)
     .on('mousemove', function(...a) {
       ;[mousex, mousey] = d3.mouse(canvas)
       drawThenCancel()

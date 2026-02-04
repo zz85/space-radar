@@ -25,7 +25,7 @@ function opener() {
   var minw = 794,
     minh = 480,
     height = Math.max(size.height * 0.8, 600) | 0, // 1300, 600
-    width = Math.max(height * 6 / 8, 880) | 0 //1600,880
+    width = Math.max((height * 6) / 8, 880) | 0 //1600,880
 
   var mainWindow = new BrowserWindow({
     width: width,

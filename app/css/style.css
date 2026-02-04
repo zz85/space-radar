@@ -8,6 +8,20 @@ body {
     'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
+/* Make toolbar draggable on macOS with hidden title bar */
+.toolbar-header {
+  -webkit-app-region: drag;
+}
+
+/* Keep interactive elements clickable */
+.toolbar-header button,
+.toolbar-header input,
+.toolbar-header select,
+.toolbar-header .btn-group,
+.toolbar-footer {
+  -webkit-app-region: no-drag;
+}
+
 #photon-window {
   z-index: 400;
 }

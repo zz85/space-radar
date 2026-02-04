@@ -55,7 +55,7 @@ function setNodeFilter(data) {
     }
     if (!d._children) return null
 
-    const children = d._children.filter(c => c.sum / data.sum * 100 > HIDE_THRESHOLD)
+    const children = d._children.filter(c => (c.sum / data.sum) * 100 > HIDE_THRESHOLD)
     return children
     // return depth < LEVELS ? d._children : null;
   })

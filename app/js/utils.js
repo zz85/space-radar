@@ -58,7 +58,7 @@ function fmt_time(ms) {
     return s.toFixed(2) + 's'
   }
 
-  s = (s % 60) | 0
+  s = s % 60 | 0
   s = s == 0 ? '00' : s > 10 ? s : '0' + s
   return (m | 0) + ':' + s + 'm'
 }

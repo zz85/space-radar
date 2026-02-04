@@ -214,7 +214,7 @@ function scanner() {
     const p = path.join(__dirname, 'fs-ipc.json')
     const before_size = json_str.length
     const zlib_json_str = zlib.deflateSync(json_str)
-    log('compression', (zlib_json_str.length / before_size * 100).toFixed(2), '% original size')
+    log('compression', ((zlib_json_str.length / before_size) * 100).toFixed(2), '% original size')
     fs.writeFileSync(p, zlib_json_str)
     // Notify renderer via localStorage about the fs payload instead of recursion
     try {

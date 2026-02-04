@@ -37,7 +37,9 @@ class FlameGraph extends Chart {
       .html(d => {
         const fullpath = getNodePath(d.data).join('/')
         // short name = d.data.name
-        return fullpath + ' - ' + format(d.data.value) + ' ' + `(${(d.data.value / this.data.value * 100).toFixed(2)}%)`
+        return (
+          fullpath + ' - ' + format(d.data.value) + ' ' + `(${((d.data.value / this.data.value) * 100).toFixed(2)}%)`
+        )
       })
 
     this.graph.tooltip(tip).onClick(e => {
@@ -55,7 +57,7 @@ class FlameGraph extends Chart {
   }
 
   resize() {
-    const newHeight = height * 2 / 3
+    const newHeight = (height * 2) / 3
     console.log('FlameGraph resize', width, height)
     this.graph.width(width).height(newHeight)
     const svg = document.querySelector('.d3-flame-graph')
