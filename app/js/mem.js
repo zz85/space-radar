@@ -64,8 +64,8 @@ function stat_windows(out) {
     var parts = line.split(',')
     if (parts.length >= 3) {
       // FreePhysicalMemory and TotalVisibleMemorySize are in KB
-      var freeMemory = parseInt(parts[1]) * 1024 // Convert to bytes
-      var totalMemory = parseInt(parts[2]) * 1024 // Convert to bytes
+      var freeMemory = parseInt(parts[1], 10) * 1024 // Convert to bytes
+      var totalMemory = parseInt(parts[2], 10) * 1024 // Convert to bytes
       
       // Map to macOS-style names for compatibility
       vm_stat['free'] = freeMemory
@@ -145,7 +145,7 @@ function process_out_unix(stdout) {
         parent.children = []
         parent.children.push({
           name: parent.name,
-          size: parent.size,
+          size: parent.rss,
           parent: 1
         })
         delete parent.size
@@ -187,9 +187,9 @@ function process_out_windows(stdout) {
     if (parts.length >= 5) {
       // CSV format: Node,Name,ParentProcessId,ProcessId,WorkingSetSize
       var name = parts[1] ? parts[1].trim() : 'Unknown'
-      var ppid = parseInt(parts[2]) || 0
-      var pid = parseInt(parts[3]) || 0
-      var rss = parseInt(parts[4]) || 0 // WorkingSetSize is already in bytes
+      var ppid = parseInt(parts[2], 10) || 0
+      var pid = parseInt(parts[3], 10) || 0
+      var rss = parseInt(parts[4], 10) || 0 // WorkingSetSize is already in bytes
       
       if (pid === 0) continue // Skip invalid entries
       
@@ -225,7 +225,7 @@ function process_out_windows(stdout) {
         parent.children = []
         parent.children.push({
           name: parent.name,
-          size: parent.size,
+          size: parent.rss,
           parent: 1
         })
         delete parent.size
