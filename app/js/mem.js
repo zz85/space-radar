@@ -5,17 +5,17 @@ const si = require('systeminformation')
 
 // Build process tree from flat list of processes
 function buildProcessTree(processList) {
-  var all = {}
-  var c = 0
-  var rss_sum = 0
+  const all = {}
+  let c = 0
+  let rss_sum = 0
 
   // Build lookup table
   processList.forEach(proc => {
-    var pid = proc.pid
-    var ppid = proc.parentPid
+    const pid = proc.pid
+    const ppid = proc.parentPid
     // memRss is in KB, convert to bytes
-    var rss = (proc.memRss || 0) * 1024
-    var comm = proc.name || 'Unknown'
+    const rss = (proc.memRss || 0) * 1024
+    const comm = proc.name || 'Unknown'
 
     if (pid === 0) return // Skip invalid entries
 
@@ -30,7 +30,7 @@ function buildProcessTree(processList) {
     }
   })
 
-  var app = {
+  const app = {
     name: 'App Memory',
     children: []
   }
@@ -40,7 +40,7 @@ function buildProcessTree(processList) {
     .map(k => all[k])
     .sort((a, b) => a.pid - b.pid)
     .forEach(a => {
-      var parent
+      let parent
       if (a.ppid in all) {
         parent = all[a.ppid]
       } else {
@@ -78,30 +78,23 @@ function mem(callback) {
   // Use systeminformation library for cross-platform memory and process info
   // Works on Windows (including Windows 11), macOS, and Linux
   
-  let memInfo
-  let processInfo
-
-  // Get memory information
-  si.mem()
-    .then(data => {
+  // Get memory and process information in parallel
+  Promise.all([si.mem(), si.processes()])
+    .then(([memData, processData]) => {
       // Convert systeminformation format to our expected format
       // systeminformation returns: total, free, used, active, available, etc.
-      memInfo = {
-        free: data.free || 0,
-        active: data.active || data.used || 0,
-        inactive: data.inactive || 0,
-        speculative: data.speculative || 0,
-        'wired down': data.wired || 0,
-        'occupied by compressor': data.compressed || 0
+      const memInfo = {
+        free: memData.free || 0,
+        active: memData.active || memData.used || 0,
+        inactive: memData.inactive || 0,
+        speculative: memData.speculative || 0,
+        'wired down': memData.wired || 0,
+        'occupied by compressor': memData.compressed || 0
       }
 
-      // Get process list with memory info
-      return si.processes()
-    })
-    .then(data => {
       // systeminformation returns: all, running, blocked, sleeping, unknown, list
-      // list contains array of processes with: pid, parentPid, name, pcpu, pmem, mem, etc.
-      processInfo = buildProcessTree(data.list || [])
+      // list contains array of processes with: pid, parentPid, name, pcpu, pmem, memRss, etc.
+      const processInfo = buildProcessTree(processData.list || [])
 
       // Combine memory and process info
       const top = combine(processInfo, memInfo)
@@ -129,13 +122,13 @@ occupied by compressor 499.375
 */
 
 function combine(app, vm_stat) {
-  var top = {
+  const top = {
     name: 'Memory',
     children: []
   }
 
-  var diff = vm_stat.active - app.sum
-  var active = {
+  const diff = vm_stat.active - app.sum
+  const active = {
     name: 'Active Memory',
     children: [app.app]
   }
