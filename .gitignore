@@ -1,3 +1,5 @@
 lastload.json
 node_modules
 js/fs-ipc.json
+package-lock.json
+app/package-lock.json
