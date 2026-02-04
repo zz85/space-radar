@@ -1,83 +1,93 @@
-'use strict'
+"use strict";
 // memory usage
 
-const si = require('systeminformation')
+let si;
+try {
+  si = require("systeminformation");
+} catch (e) {
+  console.error("Failed to load systeminformation:", e);
+  si = null;
+}
 
 // Build process tree from flat list of processes
 function buildProcessTree(processList) {
-  const all = {}
-  let c = 0
-  let rss_sum = 0
+  const all = {};
+  let c = 0;
+  let rss_sum = 0;
 
   // Build lookup table
   processList.forEach(proc => {
-    const pid = proc.pid
-    const ppid = proc.parentPid
+    const pid = proc.pid;
+    const ppid = proc.parentPid;
     // memRss is in KB, convert to bytes
-    const rss = (proc.memRss || 0) * 1024
-    const comm = proc.name || 'Unknown'
+    const rss = (proc.memRss || 0) * 1024;
+    const comm = proc.name || "Unknown";
 
-    if (pid === 0) return // Skip invalid entries
+    if (pid === 0) return; // Skip invalid entries
 
-    c++
-    rss_sum += rss
+    c++;
+    rss_sum += rss;
 
     all[pid] = {
       pid: pid,
       ppid: ppid,
       rss: rss,
       comm: comm
-    }
-  })
+    };
+  });
 
   const app = {
-    name: 'App Memory',
+    name: "App Memory",
     children: []
-  }
+  };
 
   // Build tree structure
   Object.keys(all)
     .map(k => all[k])
     .sort((a, b) => a.pid - b.pid)
     .forEach(a => {
-      let parent
+      let parent;
       if (a.ppid in all) {
-        parent = all[a.ppid]
+        parent = all[a.ppid];
       } else {
-        parent = app
+        parent = app;
       }
 
       if (!parent.children) {
-        parent.children = []
+        parent.children = [];
         parent.children.push({
           name: parent.name,
           size: parent.rss,
           parent: 1
-        })
-        delete parent.size
+        });
+        delete parent.size;
       }
-      parent.children.push(a)
+      parent.children.push(a);
 
       // cleanup
-      a.name = a.comm + ' (' + a.pid + ')'
-      a.size = a.rss
-      delete a.comm
-      delete a.pid
-      delete a.rss
-      delete a.ppid
-    })
+      a.name = a.comm + " (" + a.pid + ")";
+      a.size = a.rss;
+      delete a.comm;
+      delete a.pid;
+      delete a.rss;
+      delete a.ppid;
+    });
 
   return {
     app: app,
     sum: rss_sum,
     count: c
-  }
+  };
 }
 
 function mem(callback) {
   // Use systeminformation library for cross-platform memory and process info
   // Works on Windows (including Windows 11), macOS, and Linux
-  
+
+  if (!si) {
+    return callback(new Error("systeminformation module not available"));
+  }
+
   // Get memory and process information in parallel
   Promise.all([si.mem(), si.processes()])
     .then(([memData, processData]) => {
@@ -88,22 +98,22 @@ function mem(callback) {
         active: memData.active || memData.used || 0,
         inactive: memData.inactive || 0,
         speculative: memData.speculative || 0,
-        'wired down': memData.wired || 0,
-        'occupied by compressor': memData.compressed || 0
-      }
+        "wired down": memData.wired || 0,
+        "occupied by compressor": memData.compressed || 0
+      };
 
       // systeminformation returns: all, running, blocked, sleeping, unknown, list
       // list contains array of processes with: pid, parentPid, name, pcpu, pmem, memRss, etc.
-      const processInfo = buildProcessTree(processData.list || [])
+      const processInfo = buildProcessTree(processData.list || []);
 
       // Combine memory and process info
-      const top = combine(processInfo, memInfo)
-      callback(null, top)
+      const top = combine(processInfo, memInfo);
+      callback(null, top);
     })
     .catch(error => {
-      console.error('Memory scan error:', error)
-      callback(error)
-    })
+      console.error("Memory scan error:", error);
+      callback(error);
+    });
 }
 /*
 free 1782.23046875
@@ -123,31 +133,31 @@ occupied by compressor 499.375
 
 function combine(app, vm_stat) {
   const top = {
-    name: 'Memory',
+    name: "Memory",
     children: []
-  }
+  };
 
-  const diff = vm_stat.active - app.sum
+  const diff = vm_stat.active - app.sum;
   const active = {
-    name: 'Active Memory',
+    name: "Active Memory",
     children: [app.app]
-  }
+  };
 
-  top.children.push(active)
+  top.children.push(active);
 
   // app.app
   active.children.push({
-    name: 'Kernel / others?',
+    name: "Kernel / others?",
     size: diff
-  })
-  ;['free', 'inactive', 'speculative', 'wired down', 'occupied by compressor']
+  });
+  ["free", "inactive", "speculative", "wired down", "occupied by compressor"]
     //, 'purgeable', 'stored in compressor', 'active',
     .forEach(function(n) {
       top.children.push({
         name: n,
         size: vm_stat[n]
-      })
-    })
+      });
+    });
 
-  return top
+  return top;
 }
