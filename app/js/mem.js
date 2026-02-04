@@ -1,80 +1,49 @@
 'use strict'
 // memory usage
 
-let CMD = 'ps -cx -opid,ppid,rss,comm'
-// -m sort by memory
-// -c use short process name
-// -x extended (other users)
-let child_process = require('child_process')
-let VM_STAT = 'vm_stat'
+const si = require('systeminformation')
 
-function stat(out) {
-  var r = /page size of (\d+)/.exec(out)
-  var page_size = +r[1]
+// Build process tree from flat list of processes
+function buildProcessTree(processList) {
+  const all = {}
+  let c = 0
+  let rss_sum = 0
 
-  var m
+  // Build lookup table
+  processList.forEach(proc => {
+    const pid = proc.pid
+    const ppid = proc.parentPid
+    // memRss is in KB, convert to bytes
+    const rss = (proc.memRss || 0) * 1024
+    const comm = proc.name || 'Unknown'
 
-  var page_reg = /Pages\s+([^:]+)[^\d]+(\d+)/g
-
-  var vm_stat = {}
-
-  while ((m = page_reg.exec(out))) {
-    // console.log(m[1], m[2] * page_size / 1024 / 1024)
-    vm_stat[m[1]] = m[2] * page_size
-  }
-
-  return vm_stat
-}
-
-function process_out(stdout) {
-  // log(stdout)
-  // var lines = stdout.split("\n");
-  var regex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/gm
-  var m
-
-  var c = 0,
-    rss_sum = 0
-  var pid, ppid, rss, comm, process
-  var all = {}
-  while ((m = regex.exec(stdout))) {
-    pid = +m[1]
-    ppid = +m[2]
-    rss = +m[3] * 1024
-    comm = m[4]
+    if (pid === 0) return // Skip invalid entries
 
     c++
     rss_sum += rss
 
-    process = {
+    all[pid] = {
       pid: pid,
       ppid: ppid,
       rss: rss,
       comm: comm
     }
+  })
 
-    all[pid] = process
-
-    // log(c, pid, ppid, rss, comm)
-  }
-
-  var app = {
+  const app = {
     name: 'App Memory',
     children: []
   }
 
-  let sorted = Object.keys(all)
-    .map(k => {
-      return all[k]
-    })
-    .sort((a, b) => {
-      return a.pid - b.pid
-    })
+  // Build tree structure
+  Object.keys(all)
+    .map(k => all[k])
+    .sort((a, b) => a.pid - b.pid)
     .forEach(a => {
       let parent
       if (a.ppid in all) {
         parent = all[a.ppid]
       } else {
-        // console.log('top level', a)
         parent = app
       }
 
@@ -82,7 +51,7 @@ function process_out(stdout) {
         parent.children = []
         parent.children.push({
           name: parent.name,
-          size: parent.size,
+          size: parent.rss,
           parent: 1
         })
         delete parent.size
@@ -98,8 +67,6 @@ function process_out(stdout) {
       delete a.ppid
     })
 
-  // console.log(app)
-  // console.log('rss_sum', rss_sum)
   return {
     app: app,
     sum: rss_sum,
@@ -108,30 +75,35 @@ function process_out(stdout) {
 }
 
 function mem(callback) {
-  let vm_stat
+  // Use systeminformation library for cross-platform memory and process info
+  // Works on Windows (including Windows 11), macOS, and Linux
+  
+  // Get memory and process information in parallel
+  Promise.all([si.mem(), si.processes()])
+    .then(([memData, processData]) => {
+      // Convert systeminformation format to our expected format
+      // systeminformation returns: total, free, used, active, available, etc.
+      const memInfo = {
+        free: memData.free || 0,
+        active: memData.active || memData.used || 0,
+        inactive: memData.inactive || 0,
+        speculative: memData.speculative || 0,
+        'wired down': memData.wired || 0,
+        'occupied by compressor': memData.compressed || 0
+      }
 
-  child_process.exec(VM_STAT, (error, stdout, stderr) => {
-    if (error) {
+      // systeminformation returns: all, running, blocked, sleeping, unknown, list
+      // list contains array of processes with: pid, parentPid, name, pcpu, pmem, memRss, etc.
+      const processInfo = buildProcessTree(processData.list || [])
+
+      // Combine memory and process info
+      const top = combine(processInfo, memInfo)
+      callback(null, top)
+    })
+    .catch(error => {
+      console.error('Memory scan error:', error)
       callback(error)
-      return console.error(error)
-    }
-
-    vm_stat = stat(stdout)
-
-    child_process.exec(CMD, ps)
-  })
-
-  let ps = (error, stdout, stderr) => {
-    if (error) {
-      callback(error)
-      return console.error(error)
-    }
-    let app = process_out(stdout)
-
-    let top = combine(app, vm_stat)
-
-    callback(null, top)
-  }
+    })
 }
 /*
 free 1782.23046875
@@ -150,13 +122,13 @@ occupied by compressor 499.375
 */
 
 function combine(app, vm_stat) {
-  var top = {
+  const top = {
     name: 'Memory',
     children: []
   }
 
-  var diff = vm_stat.active - app.sum
-  var active = {
+  const diff = vm_stat.active - app.sum
+  const active = {
     name: 'Active Memory',
     children: [app.app]
   }
