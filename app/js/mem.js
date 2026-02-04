@@ -1,14 +1,36 @@
 'use strict'
 // memory usage
 
-let CMD = 'ps -cx -opid,ppid,rss,comm'
-// -m sort by memory
-// -c use short process name
-// -x extended (other users)
-let child_process = require('child_process')
-let VM_STAT = 'vm_stat'
+const child_process = require('child_process')
+const isWindows = process.platform === 'win32'
+
+// Platform-specific commands
+let CMD, VM_STAT
+
+if (isWindows) {
+  // Windows: Use WMIC to get process information
+  CMD = 'wmic process get ProcessId,ParentProcessId,WorkingSetSize,Name /format:csv'
+  // Windows: Use WMIC to get memory information
+  VM_STAT = 'wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /format:csv'
+} else {
+  // macOS/Linux: Use ps command
+  CMD = 'ps -cx -opid,ppid,rss,comm'
+  // -m sort by memory
+  // -c use short process name
+  // -x extended (other users)
+  // macOS: Use vm_stat
+  VM_STAT = 'vm_stat'
+}
 
 function stat(out) {
+  if (isWindows) {
+    return stat_windows(out)
+  } else {
+    return stat_macos(out)
+  }
+}
+
+function stat_macos(out) {
   var r = /page size of (\d+)/.exec(out)
   var page_size = +r[1]
 
@@ -26,7 +48,48 @@ function stat(out) {
   return vm_stat
 }
 
+function stat_windows(out) {
+  // Parse Windows WMIC CSV output
+  // Expected format: Node,FreePhysicalMemory,TotalVisibleMemorySize
+  var lines = out.trim().split('\n')
+  var vm_stat = {}
+  
+  if (lines.length < 2) return vm_stat
+  
+  // Find the data line (skip header and empty lines)
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim()
+    if (!line) continue
+    
+    var parts = line.split(',')
+    if (parts.length >= 3) {
+      // FreePhysicalMemory and TotalVisibleMemorySize are in KB
+      var freeMemory = parseInt(parts[1]) * 1024 // Convert to bytes
+      var totalMemory = parseInt(parts[2]) * 1024 // Convert to bytes
+      
+      // Map to macOS-style names for compatibility
+      vm_stat['free'] = freeMemory
+      vm_stat['active'] = totalMemory - freeMemory
+      vm_stat['inactive'] = 0
+      vm_stat['speculative'] = 0
+      vm_stat['wired down'] = 0
+      vm_stat['occupied by compressor'] = 0
+      break
+    }
+  }
+  
+  return vm_stat
+}
+
 function process_out(stdout) {
+  if (isWindows) {
+    return process_out_windows(stdout)
+  } else {
+    return process_out_unix(stdout)
+  }
+}
+
+function process_out_unix(stdout) {
   // log(stdout)
   // var lines = stdout.split("\n");
   var regex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/gm
@@ -100,6 +163,84 @@ function process_out(stdout) {
 
   // console.log(app)
   // console.log('rss_sum', rss_sum)
+  return {
+    app: app,
+    sum: rss_sum,
+    count: c
+  }
+}
+
+function process_out_windows(stdout) {
+  // Parse Windows WMIC CSV output
+  // Expected format: Node,Name,ParentProcessId,ProcessId,WorkingSetSize
+  var lines = stdout.trim().split('\n')
+  var all = {}
+  var c = 0
+  var rss_sum = 0
+  
+  // Skip first line (header)
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim()
+    if (!line) continue
+    
+    var parts = line.split(',')
+    if (parts.length >= 5) {
+      // CSV format: Node,Name,ParentProcessId,ProcessId,WorkingSetSize
+      var name = parts[1] ? parts[1].trim() : 'Unknown'
+      var ppid = parseInt(parts[2]) || 0
+      var pid = parseInt(parts[3]) || 0
+      var rss = parseInt(parts[4]) || 0 // WorkingSetSize is already in bytes
+      
+      if (pid === 0) continue // Skip invalid entries
+      
+      c++
+      rss_sum += rss
+      
+      all[pid] = {
+        pid: pid,
+        ppid: ppid,
+        rss: rss,
+        comm: name
+      }
+    }
+  }
+  
+  var app = {
+    name: 'App Memory',
+    children: []
+  }
+  
+  Object.keys(all)
+    .map(k => all[k])
+    .sort((a, b) => a.pid - b.pid)
+    .forEach(a => {
+      var parent
+      if (a.ppid in all) {
+        parent = all[a.ppid]
+      } else {
+        parent = app
+      }
+      
+      if (!parent.children) {
+        parent.children = []
+        parent.children.push({
+          name: parent.name,
+          size: parent.size,
+          parent: 1
+        })
+        delete parent.size
+      }
+      parent.children.push(a)
+      
+      // cleanup
+      a.name = a.comm + ' (' + a.pid + ')'
+      a.size = a.rss
+      delete a.comm
+      delete a.pid
+      delete a.rss
+      delete a.ppid
+    })
+  
   return {
     app: app,
     sum: rss_sum,
