@@ -74,12 +74,21 @@ function scanner() {
       //   }
       // }, complete)
 
+      const homeDir = process.env.HOME || process.env.USERPROFILE || ''
+      const pjoin = path.join
       du(
         {
           parent: target,
           node: json,
-          onprogress: progress
+          onprogress: progress,
           // onrefresh: refresh
+          excludePaths: [
+            pjoin(homeDir, 'Library/CloudStorage'),
+            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDrive'),
+            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDrive-mac'),
+            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDriveStandaloneUpdater'),
+            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDrive-mac.FinderSync')
+          ]
         },
         complete
       )
@@ -207,7 +216,13 @@ function scanner() {
     const zlib_json_str = zlib.deflateSync(json_str)
     log('compression', ((zlib_json_str.length / before_size) * 100).toFixed(2), '% original size')
     fs.writeFileSync(p, zlib_json_str)
-    ipc_transfer('fs-ipc', p)
+    // Notify renderer via localStorage about the fs payload instead of recursion
+    try {
+      const notice = JSON.stringify(['fs-ipc', p])
+      localStorage.lsipc = localStorage.lsipc === notice ? notice + ' ' : notice
+    } catch (e) {
+      console.error('fs-ipc notify failed', e)
+    }
     return
   }
 }

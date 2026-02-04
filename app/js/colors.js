@@ -20,7 +20,7 @@ const color_range = d3.scale
 // https://github.com/colorjs/color-space
 // chroma
 
-const hue = d3.scale.category10() // colour hash
+const hue = d3.scale.category10() // legacy palette (used for some schemes)
 
 const size_color_range = color_range.ticks(size_scales.length - 1).map(v => color_range(v))
 const linear = d3.scale.linear()
@@ -43,16 +43,31 @@ const greyScale = d3.scale
   .domain([0, 12])
   .clamp(true)
 
-let colorScheme = global[localStorage.color_extension_scheme] || schemeCat6
-let fill = global[localStorage.color_mode] || colorByProp
+const COLOR_SCHEMES = { schemeCat6: schemeCat6, schemeCat11: schemeCat11, schemeHue: schemeHue }
+const COLOR_MODES = {
+  colorByProp: colorByProp,
+  colorBySizeBw: colorBySizeBw,
+  colorBySize: colorBySize,
+  colorByParentName: colorByParentName,
+  colorByParent: colorByParent
+}
+
+let colorScheme = COLOR_SCHEMES[localStorage.color_extension_scheme] || schemeHue
+let fill = COLOR_MODES[localStorage.color_mode] || colorByProp
 // colorByProp // filetypes
 // colorBySize // size
 // colorByParentName colorful
 // colorByParent // children
 // byExtension
 ;(() => {
-  const remote = require('electron').remote
-  const { app, Menu, MenuItem } = remote
+  // Avoid deprecated remote; build menu only when available
+  let Menu, MenuItem, app
+  try {
+    const electron = require('electron')
+    Menu = electron.Menu
+    MenuItem = electron.MenuItem
+    app = electron.app
+  } catch (e) {}
 
   const template = [
     {
@@ -100,7 +115,7 @@ let fill = global[localStorage.color_mode] || colorByProp
     }
   ]
 
-  if (process.platform === 'darwin') {
+  if (process.platform === 'darwin' && app && typeof app.getName === 'function') {
     template.unshift({
       label: app.getName(),
       submenu: [
@@ -136,7 +151,7 @@ let fill = global[localStorage.color_mode] || colorByProp
   }
 
   function switchColorMode(type) {
-    fill = global[type]
+    fill = COLOR_MODES[type] || colorByProp
     localStorage.color_mode = type
     PluginManager.navigateTo(Navigation.currentPath())
 
@@ -150,7 +165,7 @@ let fill = global[localStorage.color_mode] || colorByProp
 
   function switchColorScheme(scheme) {
     localStorage.color_extension_scheme = scheme
-    colorScheme = global[scheme]
+    colorScheme = COLOR_SCHEMES[scheme] || schemeCat6
     switchColorMode('colorByProp')
   }
 
@@ -206,13 +221,10 @@ let fill = global[localStorage.color_mode] || colorByProp
     ]
   })
 
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
-
-  // var contextMenu = new Menu()
-  // var openMenu = new MenuItem({ label: 'Color by Filetypes', click: () => {} })
-  // contextMenu.append(openMenu)
-  // Menu.setApplicationMenu(contextMenu)
+  if (Menu && Menu.buildFromTemplate) {
+    const menu = Menu.buildFromTemplate(template)
+    try { Menu.setApplicationMenu(menu) } catch (e) {}
+  }
 })()
 
 function colorByProp(d) {
@@ -220,20 +232,26 @@ function colorByProp(d) {
   return d.color
 }
 
-const ext_reg = /\.\w+$/
+var ext_reg = /\.\w+$/
 
 const tmpExtensions = new Set()
 const randExt = {}
 
 function schemeHue(ext) {
+  // Stable rainbow mapping: hash extension -> hue angle
+  function hashString(s) {
+    let h = 2166136261 >>> 0
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i)
+      h = Math.imul(h, 16777619)
+    }
+    return h >>> 0
+  }
+
   if (!randExt[ext]) {
-    // use hashes for exploration!
-    randExt[ext] = hue(ext)
-    // d3.rgb({
-    //   r: Math.random() * 256 | 0,
-    //   g: Math.random() * 256 | 0,
-    //   b: Math.random() * 256 | 0
-    // })
+    const h = hashString(ext) % 360
+    const color = d3.hsl(h, 0.65, 0.55) // vivid but readable
+    randExt[ext] = color.toString()
   }
   return d3.lab(randExt[ext])
 }
