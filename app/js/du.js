@@ -33,6 +33,21 @@
       if (counter % 100000 === 0) if (options.onrefresh) options.onrefresh(dir, name)
     }
 
+    // Respect exclusion paths (absolute)
+    try {
+      const excludePaths = options.excludePaths || []
+      for (let i = 0; i < excludePaths.length; i++) {
+        const ex = excludePaths[i]
+        if (dir === ex || (dir.length > ex.length && dir.indexOf(ex + path.sep) === 0)) {
+          return done(dir)
+        }
+      }
+      // Special-case: Exclude OneDrive data inside Group Containers
+      if (dir.indexOf(path.sep + 'Library' + path.sep + 'Group Containers' + path.sep) !== -1 && dir.indexOf('OneDrive') !== -1) {
+        return done(dir)
+      }
+    } catch (e) {}
+
     fs.lstat(dir, (err, stat) => {
       if (err) {
         console.log(err.stack)
@@ -46,13 +61,31 @@
 
       if (stat.isSymbolicLink()) return done(dir)
 
+      // Prepare inode dedupe set
+      if (!options.seenInodes) options.seenInodes = new Set()
+      const inodeKey = (stat.ino != null && stat.dev != null) ? (stat.dev + ':' + stat.ino) : null
+
       if (stat.isFile()) {
+        if (inodeKey) {
+          if (options.seenInodes.has(inodeKey)) {
+            size = 0
+          } else {
+            options.seenInodes.add(inodeKey)
+          }
+        }
         node.name = name
         node.size = size
         return done(dir)
       }
 
       if (stat.isDirectory()) {
+        if (inodeKey) {
+          if (options.seenInodes.has(inodeKey)) {
+            return done(dir)
+          } else {
+            options.seenInodes.add(inodeKey)
+          }
+        }
         node.name = name
         // node.size = size;
         node.children = []
@@ -79,7 +112,9 @@
                 name: file,
                 node: childNode,
                 onprogress: options.onprogress,
-                onrefresh: options.onrefresh
+                onrefresh: options.onrefresh,
+                excludePaths: options.excludePaths,
+                seenInodes: options.seenInodes
               },
               ok
             )

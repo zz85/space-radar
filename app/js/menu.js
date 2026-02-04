@@ -132,7 +132,7 @@ var template = [
 ]
 
 if (process.platform == 'darwin') {
-  var name = remote.app.getName()
+  var name = (function(){ try { return require('electron').app && require('electron').app.getName() } catch(e){ return 'SpaceRadar' } })()
   template.unshift({
     label: name,
     submenu: [
@@ -164,7 +164,7 @@ if (process.platform == 'darwin') {
         label: 'Quit',
         accelerator: 'Command+Q',
         click: function() {
-          app.quit()
+          try { require('electron').app && require('electron').app.quit() } catch(e) {}
         }
       }
     ]

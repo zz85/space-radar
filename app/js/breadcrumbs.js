@@ -35,8 +35,8 @@ class Breadcumbs extends Chart {
   }
 }
 
-var Menu = remote.Menu
-var MenuItem = remote.MenuItem
+var Menu = (function(){ try { return require('electron').Menu } catch(e){ return null } })()
+var MenuItem = (function(){ try { return require('electron').MenuItem } catch(e){ return null } })()
 
 var contextMenu = new Menu()
 var openMenu = new MenuItem({ label: 'Open File', click: openSelection })
@@ -47,7 +47,7 @@ contextMenu.append(openMenu)
 
 // contextMenu.append(new MenuItem({ label: 'External', click: externalSelection }))
 contextMenu.append(sep)
-contextMenu.append(new MenuItem({ label: 'Delete', click: trashSelection }))
+if (MenuItem) contextMenu.append(new MenuItem({ label: 'Delete', click: trashSelection }))
 
 var optionsMenu = new Menu()
 optionsMenu.append(new MenuItem({ label: 'Sort by Size', type: 'checkbox', checked: true }))
@@ -61,7 +61,7 @@ window.addEventListener(
 
     openMenu.enabled = !selection.children
 
-    contextMenu.popup(remote.getCurrentWindow())
+    try { contextMenu.popup() } catch (e) {}
   },
   false
 )

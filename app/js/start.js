@@ -5,7 +5,7 @@ module.exports = opener
 function opener() {
   var remote
 
-  let DEBUG = 0
+  let DEBUG = process.env.DEBUG
 
   let electron = require('electron')
 
@@ -36,7 +36,11 @@ function opener() {
     // frame: false, // new api to hide
     // transparent: true,
     titleBarStyle: 'hidden', // hidden hiddenInset customButtonsOnHover
-    icon: require('path').join(__dirname, 'Icon.png')
+    icon: require('path').join(__dirname, 'Icon.png'),
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
   })
 
   mainWindow.loadURL('file://' + __dirname + '/../index.html')
