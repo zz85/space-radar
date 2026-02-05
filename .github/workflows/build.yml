@@ -5,8 +5,10 @@ on: push
 jobs:
   release:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
 
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
 
@@ -34,5 +36,5 @@ jobs:
           # release the app after building
           release: ${{ startsWith(github.ref, 'refs/tags/v') }}
 
-          # Build only for current platform
-          args: ${{ matrix.os == 'macos-latest' && '--mac' || matrix.os == 'ubuntu-latest' && '--linux' || '--win' }}
+          # Build only for current platform, explicitly publish
+          args: ${{ matrix.os == 'macos-latest' && '--mac --publish always' || matrix.os == 'ubuntu-latest' && '--linux --publish always' || '--win --publish always' }}
