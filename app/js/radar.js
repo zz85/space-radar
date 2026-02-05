@@ -39,9 +39,9 @@ function updateStatsDisplay(fileCount, dirCount, size, errorCount) {
   const bytesPerSec = elapsed > 0 ? size / elapsed : 0;
 
   let statusText = `Scanning: ${formatNumber(fileCount)} files | ${formatNumber(
-    dirCount
+    dirCount,
   )} dirs | ${format(size)} | ${formatNumber(itemsPerSec)} items/sec | ${format(
-    bytesPerSec
+    bytesPerSec,
   )}/sec`;
 
   // Show error count if there are any errors
@@ -60,7 +60,7 @@ function getDiskSpaceInfo(scanPath, callback) {
   }
 
   si.fsSize()
-    .then(drives => {
+    .then((drives) => {
       // Normalize paths for cross-platform comparison
       const normalizedScanPath = scanPath.replace(/\\/g, "/");
 
@@ -69,7 +69,7 @@ function getDiskSpaceInfo(scanPath, callback) {
       let bestMatch = null;
       let longestMatchLength = 0;
 
-      drives.forEach(d => {
+      drives.forEach((d) => {
         const normalizedMount = d.mount.replace(/\\/g, "/");
         if (normalizedScanPath.startsWith(normalizedMount)) {
           if (normalizedMount.length > longestMatchLength) {
@@ -87,13 +87,13 @@ function getDiskSpaceInfo(scanPath, callback) {
           total: drive.size,
           used: drive.used,
           available: drive.available,
-          usePercent: drive.use
+          usePercent: drive.use,
         });
       } else {
         callback(new Error("No drive found"));
       }
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error getting disk space info:", err);
       callback(err);
     });
@@ -125,7 +125,7 @@ function startScan(path) {
     const usePercent =
       diskInfo.usePercent != null ? diskInfo.usePercent.toFixed(2) : "0.00";
     const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(
-      diskInfo.available
+      diskInfo.available,
     )} | Used: ${format(diskInfo.used)} (${usePercent}%)`;
     diskSpaceElement.textContent = diskInfoText;
   });
@@ -137,12 +137,12 @@ function startScan(path) {
       {
         parent: path,
         node: json,
-        onprogress: progress
+        onprogress: progress,
         // onrefresh: refresh
       },
       () => {
         complete(json);
-      }
+      },
     );
   } else {
     sendIpcMsg("go", path);
@@ -157,12 +157,12 @@ function start_read() {
     {
       parent: "./output.txt",
       node: json,
-      onprogress: progress
+      onprogress: progress,
       // onrefresh: refresh
     },
     () => {
       return complete(json);
-    }
+    },
   );
 }
 
@@ -178,7 +178,7 @@ function progress(dir, name, size, fileCount, dirCount, errorCount) {
       format(size) +
       (errorCount > 0
         ? " <span style='color: #c44;'>(" + errorCount + " errors)</span>"
-        : "")
+        : ""),
   );
   current_size = size;
 
@@ -225,7 +225,7 @@ function complete(json, finalStats) {
   onJson(null, json);
   legend.style("display", "none");
   lightbox(false);
-  requestAnimationFrame(function() {
+  requestAnimationFrame(function () {
     console.timeEnd("a");
   });
 
@@ -242,17 +242,17 @@ function complete(json, finalStats) {
       elapsed < 60 ? elapsed.toFixed(1) + "s" : (elapsed / 60).toFixed(1) + "m";
 
     let statusText = `Scanned: ${formatNumber(
-      finalStats.fileCount
+      finalStats.fileCount,
     )} files | ${formatNumber(finalStats.dirCount)} dirs | ${format(
-      finalStats.current_size
+      finalStats.current_size,
     )} in ${timeStr} (${formatNumber(itemsPerSec)} items/sec, ${format(
-      bytesPerSec
+      bytesPerSec,
     )}/sec)`;
 
     // Show error count if there were any errors
     if (finalStats.errorCount && finalStats.errorCount > 0) {
       statusText += ` | ${formatNumber(
-        finalStats.errorCount
+        finalStats.errorCount,
       )} errors (permission denied, etc.)`;
     }
 
@@ -370,7 +370,7 @@ function scanFolder() {
     console.log("[renderer] scanFolder invoked");
     const { ipcRenderer } = require("electron");
     Promise.resolve(ipcRenderer.invoke("select-folder"))
-      .then(selectedPath => {
+      .then((selectedPath) => {
         console.log("[renderer] select-folder result", selectedPath);
         if (selectedPath) {
           selectPath(selectedPath);
@@ -378,7 +378,7 @@ function scanFolder() {
           console.log("[renderer] Folder selection canceled or failed");
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("[renderer] select-folder IPC error", err);
       });
   } catch (err) {
@@ -400,7 +400,7 @@ function scanMemory() {
   mempoller.run();
 }
 
-document.ondragover = document.ondrop = function(e) {
+document.ondragover = document.ondrop = function (e) {
   e.preventDefault();
   // prevent anyhow drag
   return false;
@@ -416,15 +416,15 @@ function selectPath(path) {
 }
 
 var promptbox = document.getElementById("promptbox");
-promptbox.ondragover = function() {
+promptbox.ondragover = function () {
   this.className = "hover";
   return false;
 };
-promptbox.ondragleave = promptbox.ondragend = function() {
+promptbox.ondragleave = promptbox.ondragend = function () {
   this.className = "";
   return false;
 };
-promptbox.ondrop = function(e) {
+promptbox.ondrop = function (e) {
   this.className = "";
   e.preventDefault();
   var file = e.dataTransfer.files[0];
@@ -469,13 +469,13 @@ function trashSelection() {
   if (selection) {
     let file = key(selection);
     var ok = confirm(
-      "Are you sure you wish to send " + file + " to the trash?"
+      "Are you sure you wish to send " + file + " to the trash?",
     );
     if (ok) {
       log("trash selection", file);
       if (shell.moveItemToTrash(file)) {
         alert(
-          file + " moved to trash!\n(currently needs rescan to update graphs)"
+          file + " moved to trash!\n(currently needs rescan to update graphs)",
         );
         shell.beep();
       }
@@ -505,11 +505,11 @@ function _loadLast() {
 
 function hideAll() {
   // toggle button states
-  [...document.querySelectorAll(".mode_buttons")].forEach(button =>
-    button.classList.remove("active")
+  [...document.querySelectorAll(".mode_buttons")].forEach((button) =>
+    button.classList.remove("active"),
   );
   [...document.querySelectorAll(".graph-container")].forEach(
-    el => (el.style.display = "none")
+    (el) => (el.style.display = "none"),
   );
 
   // // hide sunburst
@@ -523,14 +523,15 @@ function hideAll() {
 }
 
 function deactivateCharts() {
-  [sunburstGraph, treemapGraph, flamegraphGraph].forEach(chart =>
-    PluginManager.deactivate(chart)
+  [sunburstGraph, treemapGraph, flamegraphGraph].forEach((chart) =>
+    PluginManager.deactivate(chart),
   );
 }
 
 function showSunburst() {
   hideAll();
   sunburst_button.classList.add("active");
+  d3.select("#sunburst-canvas").style("display", "inline-block");
   d3.select("#sunburst-chart").style("display", "inline-block");
 
   deactivateCharts();
@@ -555,6 +556,6 @@ function showFlamegraph() {
   PluginManager.activate(flamegraphGraph);
 }
 
-d3.select(window).on("resize", function() {
+d3.select(window).on("resize", function () {
   PluginManager.resize();
 });

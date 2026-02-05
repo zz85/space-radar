@@ -4,9 +4,9 @@ body {
   overflow: none;
 
   /* Use System Fonts */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
 }
 
 /* Make toolbar draggable on macOS with hidden title bar */
@@ -197,6 +197,29 @@ line {
   /*padding-bottom: 100%;*/ /* aspect ratio */
   vertical-align: top;
   overflow: hidden;
+}
+
+/* Sunburst canvas styles */
+#sunburst-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#sunburst-chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#sunburst-chart #explanation {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .svg-content-responsive {
