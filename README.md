@@ -1,4 +1,4 @@
-Space Radar Electron
+Space Radar
 ====
 SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts.
 
@@ -16,6 +16,7 @@ Features
 - breadcrumbs and navigation
 - opens files and directories
 - analyze disk contents from a remote server (see section [Reading from a file](#reading-file))
+- memory usage breakdown
 
 Screenshots
 ==
