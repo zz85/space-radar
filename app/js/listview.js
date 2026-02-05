@@ -54,9 +54,9 @@ class ListView extends Chart {
         { class: "nav-group-title" },
         `${path.join("/")} ${format(currentSize)}`,
         {
-          onclick: () => State.navigateTo(path.slice(0, -1))
-        }
-      )
+          onclick: () => State.navigateTo(path.slice(0, -1)),
+        },
+      ),
     ];
 
     const highlighted = this.highlightedPath;
@@ -70,7 +70,7 @@ class ListView extends Chart {
 
     // let str = '----------\n'
     const nodes = this.nodes;
-    nodes.slice(0, INITIAL_LOAD).forEach(child => {
+    nodes.slice(0, INITIAL_LOAD).forEach((child) => {
       // str += child.name + '\t' + format(child.value) + '\n'
       const childSize = child.sum ?? child.value ?? child.size ?? 0;
 
@@ -79,15 +79,19 @@ class ListView extends Chart {
           "span",
           {
             class: `nav-group-item${check_path == child.name ? " active" : ""}`,
-            href: "#"
+            href: "#",
           },
           [
             elm("span", {
               class: "icon icon-record",
-              style: `color: ${fill(child)};`
+              style: `color: ${fill(child)};`,
             }),
             child.name || "",
-            elm("span", { class: "", style: "float:right;" }, format(childSize))
+            elm(
+              "span",
+              { class: "", style: "float:right;" },
+              format(childSize),
+            ),
           ],
           {
             onmousedown: () => {
@@ -95,9 +99,9 @@ class ListView extends Chart {
               child.children && State.navigateTo([...path, child.name]);
             },
             onmouseenter: () => State.highlightPath([...path, child.name]),
-            onmouseleave: () => State.highlightPath()
-          }
-        )
+            onmouseleave: () => State.highlightPath(),
+          },
+        ),
       );
     });
 
@@ -106,22 +110,51 @@ class ListView extends Chart {
       navs.push(
         elm("span", { class: "nav-group-item", href: "#" }, [
           elm("span", { class: "icon icon-record" }),
-          `and ${remaining} other items....`
-        ])
+          `and ${remaining} other items....`,
+        ]),
       );
     }
 
     // log(str)
-    [...sidebar.childNodes].forEach(v => v.remove());
+    [...sidebar.childNodes].forEach((v) => v.remove());
     const nav = elm("nav", { class: "nav-group" }, navs);
     sidebar.appendChild(nav);
   }
 
   highlightPath(path) {
+    const oldHighlight = this.highlightedPath;
     this.highlightedPath = path;
-    // Only redraw if we have valid path and current node
-    if (this.path && this.current) {
-      this.draw(this.path, this.current);
+
+    // Skip if path and current aren't set
+    if (!this.path || !this.current) return;
+
+    // Optimization: just update active class instead of full redraw
+    const highlighted = path;
+    const check_path =
+      highlighted &&
+      highlighted.length > this.path.length &&
+      !this.path.some((p, i) => p !== highlighted[i])
+        ? highlighted[this.path.length]
+        : null;
+
+    const oldCheck =
+      oldHighlight &&
+      oldHighlight.length > this.path.length &&
+      !this.path.some((p, i) => p !== oldHighlight[i])
+        ? oldHighlight[this.path.length]
+        : null;
+
+    // Only do DOM updates if the highlighted item changed
+    if (check_path !== oldCheck) {
+      const items = sidebar.querySelectorAll(".nav-group-item");
+      items.forEach((item) => {
+        const itemName = item.childNodes[1];
+        if (itemName && itemName.textContent === check_path) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
     }
   }
 

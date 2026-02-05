@@ -25,7 +25,7 @@ const hue = d3.scale.category10(); // legacy palette (used for some schemes)
 
 const size_color_range = color_range
   .ticks(size_scales.length - 1)
-  .map(v => color_range(v));
+  .map((v) => color_range(v));
 const linear = d3.scale.linear();
 
 const size_scale_colors = d3.scale
@@ -62,7 +62,7 @@ const SEABORN_DEEP = [
   "#DA8BC3", // pink
   "#8C8C8C", // gray
   "#CCB974", // olive/yellow
-  "#64B5CD" // cyan
+  "#64B5CD", // cyan
 ];
 
 // Seaborn "muted" palette - softer, easier on the eyes
@@ -76,7 +76,7 @@ const SEABORN_MUTED = [
   "#DC7EC0", // pink
   "#797979", // gray
   "#D5BB67", // olive/yellow
-  "#82C6E2" // cyan
+  "#82C6E2", // cyan
 ];
 
 // Seaborn "pastel" palette - light and soft
@@ -90,7 +90,7 @@ const SEABORN_PASTEL = [
   "#FAB0E4", // pink
   "#CFCFCF", // gray
   "#FFFEA3", // yellow
-  "#B9F2F0" // cyan
+  "#B9F2F0", // cyan
 ];
 
 // Seaborn "bright" palette - high saturation, vivid
@@ -104,7 +104,7 @@ const SEABORN_BRIGHT = [
   "#F14CC1", // pink
   "#A3A3A3", // gray
   "#FFC400", // yellow
-  "#00D7FF" // cyan
+  "#00D7FF", // cyan
 ];
 
 // Seaborn "dark" palette - rich, darker tones
@@ -118,7 +118,7 @@ const SEABORN_DARK = [
   "#A23582", // pink
   "#3C3C3C", // gray
   "#B8850A", // olive/yellow
-  "#006374" // cyan
+  "#006374", // cyan
 ];
 
 // Seaborn "colorblind" palette - optimized for color vision deficiency
@@ -132,7 +132,7 @@ const SEABORN_COLORBLIND = [
   "#FBAFE4", // light pink
   "#949494", // gray
   "#ECE133", // yellow
-  "#56B4E9" // sky blue
+  "#56B4E9", // sky blue
 ];
 
 // Map file categories to seaborn palette indices
@@ -146,7 +146,7 @@ const CATEGORY_TO_INDEX_11 = {
   slide: 6, // pink
   sheet: 7, // gray
   text: 8, // yellow/olive
-  web: 9 // cyan
+  web: 9, // cyan
 };
 
 const CATEGORY_TO_INDEX_6 = {
@@ -155,7 +155,7 @@ const CATEGORY_TO_INDEX_6 = {
   image: 4, // purple
   archive: 3, // red
   doc: 2, // green
-  obj: 7 // gray
+  obj: 7, // gray
 };
 
 // Cache for seaborn color lookups
@@ -172,14 +172,14 @@ function setSeabornPalette(name) {
     pastel: SEABORN_PASTEL,
     bright: SEABORN_BRIGHT,
     dark: SEABORN_DARK,
-    colorblind: SEABORN_COLORBLIND
+    colorblind: SEABORN_COLORBLIND,
   };
 
   if (palettes[name]) {
     currentSeabornPalette = palettes[name];
     currentPaletteName = name;
     // Clear cache when palette changes
-    Object.keys(seabornCache).forEach(key => delete seabornCache[key]);
+    Object.keys(seabornCache).forEach((key) => delete seabornCache[key]);
   }
 }
 
@@ -268,7 +268,7 @@ function toggleDarkMode(enabled) {
 
   // Refresh visualization if data is loaded
   if (PluginManager.data) {
-    State.showWorking(done => {
+    State.showWorking((done) => {
       PluginManager.cleanup();
       PluginManager.loadLast();
       done();
@@ -287,34 +287,34 @@ if (isDarkMode) {
 
 const COLOR_SCHEMES = {
   // Seaborn palettes (new defaults)
-  seabornDeep: ext => {
+  seabornDeep: (ext) => {
     setSeabornPalette("deep");
     return schemeSeaborn11(ext);
   },
-  seabornMuted: ext => {
+  seabornMuted: (ext) => {
     setSeabornPalette("muted");
     return schemeSeaborn11(ext);
   },
-  seabornPastel: ext => {
+  seabornPastel: (ext) => {
     setSeabornPalette("pastel");
     return schemeSeaborn11(ext);
   },
-  seabornBright: ext => {
+  seabornBright: (ext) => {
     setSeabornPalette("bright");
     return schemeSeaborn11(ext);
   },
-  seabornDark: ext => {
+  seabornDark: (ext) => {
     setSeabornPalette("dark");
     return schemeSeaborn11(ext);
   },
-  seabornColorblind: ext => {
+  seabornColorblind: (ext) => {
     setSeabornPalette("colorblind");
     return schemeSeaborn11(ext);
   },
   // Legacy schemes
   schemeCat6: schemeCat6,
   schemeCat11: schemeCat11,
-  schemeHue: schemeHue
+  schemeHue: schemeHue,
 };
 
 const COLOR_MODES = {
@@ -323,7 +323,7 @@ const COLOR_MODES = {
   colorBySize: colorBySize,
   colorByParentName: colorByParentName,
   colorByParent: colorByParent,
-  colorByRandom: colorByRandom
+  colorByRandom: colorByRandom,
 };
 
 // Default to seaborn pastel scheme with colorByParent mode
@@ -344,7 +344,7 @@ function switchColorMode(type) {
   PluginManager.navigateTo(Navigation.currentPath());
 
   if (PluginManager.data)
-    State.showWorking(done => {
+    State.showWorking((done) => {
       PluginManager.cleanup();
       PluginManager.loadLast();
       done();
@@ -454,13 +454,23 @@ function colorBySize(d) {
 
 // TODO file size using domain on screen
 
+// Cache for colorByParent to avoid repeated LAB conversions
+const colorByParentCache = new WeakMap();
+
 function colorByParent(d) {
+  // Check cache first
+  if (colorByParentCache.has(d)) {
+    return colorByParentCache.get(d);
+  }
+
   const p = getParent(d);
   // const c = d3.lab(hue(p.sum)); // size
   const c = d3.lab(hue(p.count)); // number
   // const c = d3.lab(hue(p.children ? p.children.length : 0))
   // c.l = luminance(d.value)
   c.l = depth_luminance(d.depth);
+
+  colorByParentCache.set(d, c);
   return c;
 }
 
@@ -569,7 +579,7 @@ function colorByTypes(data) {
 function childrenFirst(data, func) {
   const { children } = data;
   if (children) {
-    children.forEach(v => {
+    children.forEach((v) => {
       childrenFirst(v, func);
     });
   }

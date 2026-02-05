@@ -1,21 +1,24 @@
-'use strict'
+"use strict";
 var rootNode,
   currentNode,
   max_level,
-  current_level = 0
+  current_level = 0;
 
 function SunBurst() {
   function onResize() {
-    log('resize')
-    calcDimensions()
+    log("resize");
+    calcDimensions();
     svg_container
-      .select('svg')
+      .select("svg")
       // .attr("viewBox", "0 0 " + width + " " + height)
-      .attr('width', width)
-      .attr('height', height)
-      .select('g')
-      .attr('transform', 'translate(' + width / 2 + ',' + (height / 2 + 10) + ')')
-    redraw()
+      .attr("width", width)
+      .attr("height", height)
+      .select("g")
+      .attr(
+        "transform",
+        "translate(" + width / 2 + "," + (height / 2 + 10) + ")",
+      );
+    redraw();
   }
 
   /*
@@ -74,74 +77,74 @@ function SunBurst() {
    - Fastest IPC (headless node / electron)
   */
 
-  var len = Math.min(window.innerWidth, window.innerHeight)
+  var len = Math.min(window.innerWidth, window.innerHeight);
 
-  var radius = len * 0.45
+  var radius = len * 0.45;
 
   function calcDimensions() {
-    radius = len * 0.45
-    log(innerHeight, height)
+    radius = len * 0.45;
+    log(innerHeight, height);
   }
 
   // calcDimensions()
 
   var LEVELS = 11,
     INNER_LEVEL = 7,
-    PATH_DELIMITER = '/',
+    PATH_DELIMITER = "/",
     USE_COUNT = 0,
     HIDE_THRESHOLD = 0.1, // percentage (use 0.01, 1)
     CORE_RADIUS = radius * 0.4, // radius / LEVELS
     OUTER_RADIUS = radius - CORE_RADIUS,
-    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL)
+    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL);
 
-  let svg_container, svg
-  let explanation, core_top, core_center, core_tag
+  let svg_container, svg;
+  let explanation, core_top, core_center, core_tag;
 
   function initDom() {
-    svg_container = d3.select('body').select('#sunburst-chart')
-    svg = svg_container.append('svg').append('g')
+    svg_container = d3.select("body").select("#sunburst-chart");
+    svg = svg_container.append("svg").append("g");
 
-    explanation = d3.select('#explanation')
-    core_top = d3.select('#core_top')
-    core_center = d3.select('#core_center')
-    core_tag = d3.select('#core_tag')
+    explanation = d3.select("#explanation");
+    core_top = d3.select("#core_top");
+    core_center = d3.select("#core_center");
+    core_tag = d3.select("#core_tag");
   }
 
-  initDom()
+  initDom();
 
-  const ADJUSTMENT = -Math.PI / 2
+  const ADJUSTMENT = -Math.PI / 2;
 
   var arc = d3.svg
     .arc()
-    .startAngle(function(d) {
-      return d.x + ADJUSTMENT
+    .startAngle(function (d) {
+      return d.x + ADJUSTMENT;
     })
-    .endAngle(function(d) {
-      return d.x + d.dx - 0.01 / (d.depth + 0.5) + ADJUSTMENT
+    .endAngle(function (d) {
+      return d.x + d.dx - 0.01 / (d.depth + 0.5) + ADJUSTMENT;
     })
-    .innerRadius(function(d) {
-      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth - 1)
+    .innerRadius(function (d) {
+      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth - 1);
       // return Math.sqrt(d.y); // ROOT
     })
-    .outerRadius(function(d) {
+    .outerRadius(function (d) {
       // return Math.sqrt(d.y + d.dy); // ROOT
-      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth + 0) - 1
-    })
+      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth + 0) - 1;
+    });
 
-  var circular_meter = svg.append('g')
+  var circular_meter = svg.append("g");
   // TODO make a tiny border around the rim of center to show the percentage of current space
 
-  document.addEventListener('ready', function() {
-    explanation.on('click', zoomOut)
-  })
+  document.addEventListener("ready", function () {
+    explanation.on("click", zoomOut);
+  });
 
   // Data Bind Elements
-  var path
-  var center
+  var path;
+  var center;
 
   function updateCore(d) {
     // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
-    var percent = ((d.sum / (currentNode || root).sum) * 100).toFixed(2) + '%'
+    var percent = ((d.sum / (currentNode || root).sum) * 100).toFixed(2) + "%";
 
     // 1. lengend
     // legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
@@ -149,232 +152,258 @@ function SunBurst() {
     // 2. core
     // core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
 
-    core_top.html(d.name)
-    core_center.html(
-      format(d.sum)
-        .split(' ')
-        .join('<br/>')
-    )
-    core_tag.html(percent + '<br/>')
+    core_top.html(d.name);
+    core_center.html(format(d.sum).split(" ").join("<br/>"));
+    core_tag.html(percent + "<br/>");
     // + '<br/>' + format(currentNode.value)
     // + ' (' + percent + ')<br/>'
   }
 
+  // Debounce mouseover to reduce DOM thrashing
+  var hoverTimeout = null;
   function mouseover(d) {
-    State.highlightPath(keys(d))
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    hoverTimeout = setTimeout(function () {
+      State.highlightPath(keys(d));
+    }, 16); // ~1 frame at 60fps
   }
 
   function mouseout() {
-    State.highlightPath()
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    hoverTimeout = setTimeout(function () {
+      State.highlightPath();
+    }, 16);
   }
 
   function highlightPath(_path, d) {
     if (d) {
-      _mouseover(d)
+      _mouseover(d);
     } else {
-      _mouseout(d)
+      _mouseout(d);
     }
   }
 
-  function _mouseover(d) {
-    updateCore(d)
+  // Cache for ancestor lookup to avoid repeated traversals
+  var ancestorCache = new WeakMap();
 
-    svg
-      .selectAll('path')
-      .style('opacity', 1 / (1 + d.depth))
-      .filter(node => {
-        if (node.depth < d.depth) {
-          // node is parent of d
-          return false
-        } else {
-          // d is parent of node
-          var e = node
-          while (e) {
-            if (e == d) return true
-            e = e.parent
-          }
-          return false
+  function getAncestors(node) {
+    if (ancestorCache.has(node)) return ancestorCache.get(node);
+    var ancestors = new Set();
+    var e = node;
+    while (e) {
+      ancestors.add(e);
+      e = e.parent;
+    }
+    ancestorCache.set(node, ancestors);
+    return ancestors;
+  }
+
+  function _mouseover(d) {
+    updateCore(d);
+
+    // Use cached ancestors for O(1) lookup instead of O(depth) traversal
+    var dAncestors = getAncestors(d);
+
+    // Use requestAnimationFrame to batch DOM updates
+    requestAnimationFrame(function () {
+      svg.selectAll("path").style("opacity", function (node) {
+        // Check if d is ancestor of node (node is descendant of d)
+        // or if node is ancestor of d
+        if (dAncestors.has(node) || getAncestors(node).has(d)) {
+          return 1;
         }
-      })
-      .style('opacity', 1)
+        return 0.3;
+      });
+    });
   }
 
   function _mouseout(d) {
-    if (path) svg.selectAll('path').style('opacity', 0.8)
+    requestAnimationFrame(function () {
+      if (path) svg.selectAll("path").style("opacity", 0.8);
+    });
 
-    if (currentNode) updateCore(currentNode)
+    if (currentNode) updateCore(currentNode);
   }
 
   function zoomIn(p) {
     // Prevent zooming into "Other files" synthetic nodes
-    if (p._isOtherFiles) return
+    if (p._isOtherFiles) return;
 
     if (p.depth > 1) {
-      p = p.parent
+      p = p.parent;
     }
-    if (!p.children) return
+    if (!p.children) return;
 
     // zoom(p, p)
-    State.navigateTo(keys(p))
+    State.navigateTo(keys(p));
   }
 
   function zoomOut(p) {
-    if (!p || !p.parent) return
+    if (!p || !p.parent) return;
     // zoom(p.parent, p)
-    State.navigateTo(keys(p.parent))
+    State.navigateTo(keys(p.parent));
   }
 
   // Zoom to the specified node
   // updating the reference new root
   // uses a previous node for animation
   function zoom(node, prevNode) {
-    core_center.html(format(node.sum))
-    core_top.html(node.name)
+    core_center.html(format(node.sum));
+    core_top.html(node.name);
 
-    max_level = 0
-    current_level = 0
-    setNodeFilter(node)
+    max_level = 0;
+    current_level = 0;
+    setNodeFilter(node);
 
-    var tmp = node.parent
+    var tmp = node.parent;
     while (tmp) {
-      current_level++
-      tmp = tmp.parent
+      current_level++;
+      tmp = tmp.parent;
     }
 
-    currentNode = node
+    currentNode = node;
     // console.log('current_level', current_level)
 
     // Rescale outside angles to match the new layout.
     var enterArc,
       exitArc,
-      outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI])
+      outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI]);
 
     function insideArc(d) {
       var pkey = key(prevNode),
-        dkey = key(d)
+        dkey = key(d);
       return pkey > dkey
         ? { depth: d.depth - 1, x: 0, dx: 0 }
         : pkey < dkey
-        ? { depth: d.depth - 1, x: 2 * Math.PI, dx: 0 }
-        : { depth: 0, x: 0, dx: 2 * Math.PI }
+          ? { depth: d.depth - 1, x: 2 * Math.PI, dx: 0 }
+          : { depth: 0, x: 0, dx: 2 * Math.PI };
     }
 
     function outsideArc(d) {
-      return { depth: d.depth + 1, x: outsideAngle(d.x), dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x) }
+      return {
+        depth: d.depth + 1,
+        x: outsideAngle(d.x),
+        dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x),
+      };
     }
 
-    center
-      .datum(node)
-      .on('mouseover', mouseover)
-      .on('mouseout', mouseout)
+    center.datum(node).on("mouseover", mouseover).on("mouseout", mouseout);
 
     // When zooming in, arcs enter from the outside and exit to the inside.
     // Entering outside arcs start from the old layout.
     if (node === prevNode)
-      (enterArc = outsideArc), (exitArc = insideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
+      ((enterArc = outsideArc),
+        (exitArc = insideArc),
+        outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx]));
 
-    const flatten_nodes = partition.nodes(node).slice(1)
+    const flatten_nodes = partition.nodes(node).slice(1);
 
     // When zooming out, arcs enter from the inside and exit to the outside.
     // Exiting outside arcs transition to the new layout.
     if (node !== prevNode)
-      (enterArc = insideArc), (exitArc = outsideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
+      ((enterArc = insideArc),
+        (exitArc = outsideArc),
+        outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx]));
 
-    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level)
+    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level);
 
-    var transition_time = d3.event && d3.event.altKey ? 7500 : 750
+    var transition_time = d3.event && d3.event.altKey ? 7500 : 300;
 
-    path = svg.selectAll('path').data(flatten_nodes, key)
+    path = svg.selectAll("path").data(flatten_nodes, key);
 
     // exit
     path
       .exit()
       .transition()
       .duration(transition_time)
-      .style('fill-opacity', function(d) {
-        return d.depth === 1 + (node === prevNode) ? 1 : 0
+      .style("fill-opacity", function (d) {
+        return d.depth === 1 + (node === prevNode) ? 1 : 0;
       })
-      .attrTween('d', function(d) {
-        return arcTween.call(this, exitArc(d))
+      .attrTween("d", function (d) {
+        return arcTween.call(this, exitArc(d));
       })
-      .remove()
+      .remove();
 
     // enter
     path
       .enter()
-      .append('path')
-      .attr('class', 'area')
-      .style('fill', fill)
-      .style('stroke', '#c8c8c8')
-      .style('stroke-opacity', 0.6)
-      .style('stroke-width', function(d) { return Math.max(0.25, 1.0 - d.depth * 0.08) })
-      .style('fill-opacity', d => {
+      .append("path")
+      .attr("class", "area")
+      .style("fill", fill)
+      .style("stroke", "#c8c8c8")
+      .style("stroke-opacity", 0.6)
+      .style("stroke-width", function (d) {
+        return Math.max(0.25, 1.0 - d.depth * 0.08);
+      })
+      .style("fill-opacity", (d) => {
         // return 1
-        return d.depth === 2 - (node === prevNode) ? 1 : 0
+        return d.depth === 2 - (node === prevNode) ? 1 : 0;
       })
-      .on('click', zoomIn)
-      .each(function(d) {
-        this._current = enterArc(d)
+      .on("click", zoomIn)
+      .each(function (d) {
+        this._current = enterArc(d);
       })
-      .on('mouseover', mouseover)
-      .on('mouseout', mouseout)
+      .on("mouseover", mouseover)
+      .on("mouseout", mouseout)
       // update
       .merge(path)
-      .attr('d', arc)
-      .style('stroke', '#c8c8c8')
-      .style('stroke-opacity', 0.6)
-      .style('stroke-width', function(d) { return Math.max(0.25, 1.0 - d.depth * 0.08) })
+      .attr("d", arc)
+      .style("stroke", "#c8c8c8")
+      .style("stroke-opacity", 0.6)
+      .style("stroke-width", function (d) {
+        return Math.max(0.25, 1.0 - d.depth * 0.08);
+      })
       .transition()
       .duration(transition_time)
-      .style('fill-opacity', 1)
-      .attrTween('d', function(d) {
-        return arcTween.call(this, updateArc(d))
-      })
+      .style("fill-opacity", 1)
+      .attrTween("d", function (d) {
+        return arcTween.call(this, updateArc(d));
+      });
   }
 
   function redraw(node) {
-    if (!rootNode) return
-    node = node || currentNode
-    zoom(node, node)
+    if (!rootNode) return;
+    node = node || currentNode;
+    zoom(node, node);
   }
 
-  var jsoned = false
+  var jsoned = false;
 
   function generateSunburst(root) {
-    var oldLineage
+    var oldLineage;
     // if (currentNode) oldLineage = keys(currentNode)
 
-    currentNode = root
-    rootNode = root
+    currentNode = root;
+    rootNode = root;
 
-    partition = d3.layout.partition()
+    partition = d3.layout.partition();
 
     partition
-      .value(d => d.size)
+      .value((d) => d.size)
       .sort(namesort) // namesort countsort sizesort
-      .size([2 * Math.PI, radius]) // use r*r for equal area
+      .size([2 * Math.PI, radius]); // use r*r for equal area
 
-    computeNodeCount(root)
-    computeNodeSize(root)
+    computeNodeCount(root);
+    computeNodeSize(root);
 
-    console.time('color')
-    colorByTypes(root)
-    console.timeEnd('color')
+    console.time("color");
+    colorByTypes(root);
+    console.timeEnd("color");
 
-    console.log('Root count', root.count, 'ROOT size', format(root.value))
+    console.log("Root count", root.count, "ROOT size", format(root.value));
 
-    console.time('compute3')
+    console.time("compute3");
     // Now redefine the value function to use the previously-computed sum.
 
-    max_level = 0
+    max_level = 0;
 
-    setNodeFilter(root).value(function(d) {
+    setNodeFilter(root).value(function (d) {
       // decide count or sum
-      max_level = Math.max(d.depth, max_level)
-      return USE_COUNT ? d.count : d.sum
-    })
+      max_level = Math.max(d.depth, max_level);
+      return USE_COUNT ? d.count : d.sum;
+    });
 
-    console.timeEnd('compute3')
+    console.timeEnd("compute3");
 
     // if (jsoned) {
     //   // this attempts to place you in the same view after you refresh the data
@@ -386,47 +415,44 @@ function SunBurst() {
     //   updateCore(root)
     //   return redraw()
     // }
-    jsoned = true
+    jsoned = true;
 
-    center = svg
-      .append('g')
-      .attr('id', 'core')
-      .on('click', zoomOut)
+    center = svg.append("g").attr("id", "core").on("click", zoomOut);
 
-    center.append('circle').attr('r', CORE_RADIUS)
+    center.append("circle").attr("r", CORE_RADIUS);
 
-    center.append('title').text('zoom out')
+    center.append("title").text("zoom out");
 
-    if (RENDER_3D) plot3d(partition.nodes(root))
-    redraw()
+    if (RENDER_3D) plot3d(partition.nodes(root));
+    redraw();
   }
 
   function arcTween(b) {
-    var i = d3.interpolate(this._current, b)
-    this._current = i(0)
-    return function(t) {
-      return arc(i(t))
-    }
+    var i = d3.interpolate(this._current, b);
+    this._current = i(0);
+    return function (t) {
+      return arc(i(t));
+    };
   }
 
   function updateArc(d) {
-    return { depth: d.depth, x: d.x, dx: d.dx }
+    return { depth: d.depth, x: d.x, dx: d.dx };
   }
 
   // Export plugin interface
   return {
     resize: onResize,
     generate: generateSunburst,
-    showMore: function() {
-      LEVELS++
-      redraw()
+    showMore: function () {
+      LEVELS++;
+      redraw();
     },
-    showLess: function() {
-      if (LEVELS <= 1) return
-      LEVELS--
-      redraw()
+    showLess: function () {
+      if (LEVELS <= 1) return;
+      LEVELS--;
+      redraw();
     },
-    cleanup: function() {
+    cleanup: function () {
       // if (rootNode) {
       //   partition
       //   .nodes(rootNode)
@@ -436,8 +462,8 @@ function SunBurst() {
 
       if (path) {
         // do some GC()!!!
-        path.remove()
-        center.remove()
+        path.remove();
+        center.remove();
 
         // d3
         //   .select('#sequence')
@@ -445,17 +471,17 @@ function SunBurst() {
         //   .selectAll('a')
         //   .remove()
 
-        rootNode = currentNode = null
-        path = center = null
+        rootNode = currentNode = null;
+        path = center = null;
 
-        jsoned = false
+        jsoned = false;
       }
     },
-    navigateTo: function(keys) {
-      if (!rootNode) return
-      var n = getNodeFromPath(keys, rootNode)
-      zoom(n, currentNode)
+    navigateTo: function (keys) {
+      if (!rootNode) return;
+      var n = getNodeFromPath(keys, rootNode);
+      zoom(n, currentNode);
     },
-    highlightPath: highlightPath
-  }
+    highlightPath: highlightPath,
+  };
 }
