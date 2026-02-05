@@ -43,7 +43,6 @@
     "electron-builder": "^26.0.0",
     "prettier": "^3.8.1"
   },
-  "dependencies": {},
   "build": {
     "appId": "com.zz85.spaceradar",
     "productName": "SpaceRadar",

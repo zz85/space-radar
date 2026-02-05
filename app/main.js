@@ -9,6 +9,8 @@ const {
   Menu,
   shell,
 } = require("electron");
+const { autoUpdater } = require("electron-updater");
+
 app.commandLine.appendSwitch("js-flags", "--expose_gc");
 
 /*
@@ -28,6 +30,34 @@ app.on("window-all-closed", function () {
 
 let scannerWin;
 let mainWindow;
+
+// Auto-updater event logging
+autoUpdater.on("checking-for-update", () => {
+  console.log("[updater] Checking for updates...");
+});
+
+autoUpdater.on("update-available", (info) => {
+  console.log("[updater] Update available:", info.version);
+});
+
+autoUpdater.on("update-not-available", () => {
+  console.log("[updater] App is up to date");
+});
+
+autoUpdater.on("error", (err) => {
+  console.error("[updater] Error:", err);
+});
+
+autoUpdater.on("download-progress", (progress) => {
+  console.log(
+    "[updater] Download progress:",
+    Math.round(progress.percent) + "%",
+  );
+});
+
+autoUpdater.on("update-downloaded", (info) => {
+  console.log("[updater] Update downloaded:", info.version);
+});
 
 // Build application menu with color options
 function buildAppMenu() {
@@ -239,6 +269,9 @@ function sendColorChange(type, value) {
 
 app.on("ready", function () {
   mainWindow = require("./js/start")();
+
+  // Check for updates and notify user
+  autoUpdater.checkForUpdatesAndNotify();
 
   // Quit app when main window is closed
   mainWindow.on("closed", function () {

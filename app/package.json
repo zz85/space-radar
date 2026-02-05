@@ -19,6 +19,7 @@
     "d3-selection": "^1.1.0",
     "d3-shape": "^0.5.1",
     "d3-tip": "^0.7.1",
+    "electron-updater": "^6.7.3",
     "photonkit": "^0.1.2",
     "systeminformation": "^5.30.7",
     "tail-stream": "^0.3.3"
