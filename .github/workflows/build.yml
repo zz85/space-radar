@@ -1,0 +1,134 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - v6
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install app dependencies
+        run: cd app && npm install
+
+      - name: Build for macOS (x64)
+        if: matrix.platform == 'mac'
+        run: npm run build:mac
+
+      - name: Build for macOS (arm64)
+        if: matrix.platform == 'mac'
+        run: npm run build:mac-arm64
+
+      - name: Build for Linux
+        if: matrix.platform == 'linux'
+        run: npm run build:linux
+
+      - name: Build for Windows
+        if: matrix.platform == 'win'
+        run: npm run build:win
+
+      - name: Create macOS x64 zip
+        if: matrix.platform == 'mac'
+        run: npm run zip:mac
+
+      - name: Create macOS arm64 zip
+        if: matrix.platform == 'mac'
+        run: npm run zip:mac-arm64
+
+      - name: Create Linux zip
+        if: matrix.platform == 'linux'
+        run: npm run zip:linux
+
+      - name: Create Windows zip
+        if: matrix.platform == 'win'
+        run: |
+          Compress-Archive -Path SpaceRadar-win32-x64 -DestinationPath builds/SpaceRadar-win32-x64.zip
+        shell: pwsh
+
+      - name: Upload macOS x64 artifact
+        if: matrix.platform == 'mac'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpaceRadar-darwin-x64
+          path: builds/SpaceRadar-darwin-x64.zip
+
+      - name: Upload macOS arm64 artifact
+        if: matrix.platform == 'mac'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpaceRadar-darwin-arm64
+          path: builds/SpaceRadar-darwin-arm64.zip
+
+      - name: Upload Linux artifact
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpaceRadar-linux-x64
+          path: builds/SpaceRadar-linux-x64.zip
+
+      - name: Upload Windows artifact
+        if: matrix.platform == 'win'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpaceRadar-win32-x64
+          path: builds/SpaceRadar-win32-x64.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/SpaceRadar-darwin-x64/SpaceRadar-darwin-x64.zip
+            artifacts/SpaceRadar-darwin-arm64/SpaceRadar-darwin-arm64.zip
+            artifacts/SpaceRadar-linux-x64/SpaceRadar-linux-x64.zip
+            artifacts/SpaceRadar-win32-x64/SpaceRadar-win32-x64.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
