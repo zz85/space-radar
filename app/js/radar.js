@@ -23,6 +23,9 @@ var current_size = 0,
   start_time,
   lastStatsUpdate = 0;
 
+// Store disk info for adding free space to visualization
+var currentDiskInfo = null;
+
 var legend = d3.select("#legend");
 var bottomStatus = document.getElementById("bottom_status");
 
@@ -64,6 +67,11 @@ function getDiskSpaceInfo(scanPath, callback) {
       // Normalize paths for cross-platform comparison
       const normalizedScanPath = scanPath.replace(/\\/g, "/");
 
+      // On macOS with APFS, /System/Volumes/Data is where user data actually lives
+      // but paths appear as /Users/... (symlinked). We need to check both.
+      const isMac = process.platform === "darwin";
+      const dataVolumePrefix = "/System/Volumes/Data";
+
       // Find the drive with the longest matching mount point
       // This handles nested mount points correctly (e.g., /home vs /)
       let bestMatch = null;
@@ -71,11 +79,34 @@ function getDiskSpaceInfo(scanPath, callback) {
 
       drives.forEach((d) => {
         const normalizedMount = d.mount.replace(/\\/g, "/");
-        if (normalizedScanPath.startsWith(normalizedMount)) {
-          if (normalizedMount.length > longestMatchLength) {
-            longestMatchLength = normalizedMount.length;
-            bestMatch = d;
+
+        // Check if scan path matches this mount
+        let matches = normalizedScanPath.startsWith(normalizedMount);
+
+        // On macOS, also check if this is the Data volume and scan path is a user path
+        // User paths like /Users/... are actually on /System/Volumes/Data
+        if (isMac && normalizedMount === dataVolumePrefix) {
+          // Data volume should match most user-accessible paths
+          if (
+            normalizedScanPath.startsWith("/Users") ||
+            normalizedScanPath.startsWith("/Applications") ||
+            normalizedScanPath.startsWith("/Library") ||
+            normalizedScanPath.startsWith("/opt") ||
+            normalizedScanPath.startsWith("/usr/local")
+          ) {
+            matches = true;
+            // Give Data volume higher priority than root for user paths
+            if (longestMatchLength <= 1) {
+              longestMatchLength = dataVolumePrefix.length;
+              bestMatch = d;
+              return;
+            }
           }
+        }
+
+        if (matches && normalizedMount.length > longestMatchLength) {
+          longestMatchLength = normalizedMount.length;
+          bestMatch = d;
         }
       });
 
@@ -112,22 +143,28 @@ function startScan(path) {
   log("file", stat.isFile(), "dir", stat.isDirectory());
 
   // Get and display disk space info
+  currentDiskInfo = null; // Reset
   getDiskSpaceInfo(path, (err, diskInfo) => {
     const diskSpaceElement = document.getElementById("disk_space_info");
-    if (!diskSpaceElement) return;
 
     if (err || !diskInfo) {
-      diskSpaceElement.textContent = "Disk info unavailable";
+      if (diskSpaceElement)
+        diskSpaceElement.textContent = "Disk info unavailable";
       return;
     }
 
-    // Handle potential null/undefined usePercent
-    const usePercent =
-      diskInfo.usePercent != null ? diskInfo.usePercent.toFixed(2) : "0.00";
-    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(
-      diskInfo.available,
-    )} | Used: ${format(diskInfo.used)} (${usePercent}%)`;
-    diskSpaceElement.textContent = diskInfoText;
+    // Store for later use in visualization
+    currentDiskInfo = diskInfo;
+
+    if (diskSpaceElement) {
+      // Handle potential null/undefined usePercent
+      const usePercent =
+        diskInfo.usePercent != null ? diskInfo.usePercent.toFixed(2) : "0.00";
+      const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(
+        diskInfo.available,
+      )} | Used: ${format(diskInfo.used)} (${usePercent}%)`;
+      diskSpaceElement.textContent = diskInfoText;
+    }
   });
 
   // return sendIpcMsg('go', path);
@@ -487,6 +524,29 @@ function trashSelection() {
 
 function onJson(error, data) {
   if (error) throw error;
+
+  // Add free space as a child of root if disk info is available
+  if (currentDiskInfo && currentDiskInfo.available > 0) {
+    // Ensure children array exists
+    if (!data.children) {
+      data.children = [];
+    }
+
+    // Remove any existing free space node (in case of refresh)
+    data.children = data.children.filter((c) => !c._isFreeSpace);
+
+    // Add free space node
+    data.children.push({
+      name: "Free Space",
+      size: currentDiskInfo.available,
+      _isFreeSpace: true, // Mark for special handling
+    });
+
+    console.log(
+      "Added free space to visualization:",
+      format(currentDiskInfo.available),
+    );
+  }
 
   const jsonStr = JSON.stringify(data);
   const before = Buffer.byteLength(jsonStr);

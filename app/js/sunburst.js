@@ -145,8 +145,15 @@ function SunBurst() {
     ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true);
     ctx.closePath();
 
-    // Get fill color
-    var color = fill(d);
+    // Get fill color - special handling for free space
+    var color;
+    if (d._isFreeSpace) {
+      // Light gray for free space to distinguish from used space
+      color = "#e8e8e8";
+    } else {
+      color = fill(d);
+    }
+
     if (color && typeof color.toString === "function") {
       ctx.fillStyle = color.toString();
     } else if (color) {
@@ -295,8 +302,8 @@ function SunBurst() {
       // Zoom in
       var node = hit.node;
 
-      // Prevent zooming into "Other files" synthetic nodes
-      if (node._isOtherFiles) return;
+      // Prevent zooming into "Other files" or "Free Space" synthetic nodes
+      if (node._isOtherFiles || node._isFreeSpace) return;
 
       // If clicking on depth > 1, zoom to parent instead
       if (node.depth - currentNode.depth > 1) {
