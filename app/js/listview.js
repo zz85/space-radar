@@ -40,6 +40,11 @@ class ListView extends Chart {
   }
 
   draw(path, current) {
+    // Guard against undefined current
+    if (!current) {
+      return;
+    }
+
     const INITIAL_LOAD = 10;
     const currentSize = current.sum ?? current.value ?? current.size ?? 0;
 
@@ -114,7 +119,10 @@ class ListView extends Chart {
 
   highlightPath(path) {
     this.highlightedPath = path;
-    this.draw(this.path, this.current);
+    // Only redraw if we have valid path and current node
+    if (this.path && this.current) {
+      this.draw(this.path, this.current);
+    }
   }
 
   cleanup() {
