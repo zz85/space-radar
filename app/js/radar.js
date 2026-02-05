@@ -2,7 +2,7 @@
 
 const { shell } = require("electron");
 const path = require("path");
-const si = require("systeminformation");
+// si (systeminformation) is already loaded by mem.js
 
 const LASTLOAD_FILE = path.join(__dirname, "lastload.json");
 
@@ -54,6 +54,11 @@ function updateStatsDisplay(fileCount, dirCount, size, errorCount) {
 
 // Function to get disk space info for a given path
 function getDiskSpaceInfo(scanPath, callback) {
+  if (!si) {
+    callback(new Error("systeminformation not available"));
+    return;
+  }
+
   si.fsSize()
     .then(drives => {
       // Normalize paths for cross-platform comparison
