@@ -62,10 +62,10 @@ function startScan(path) {
 
   // Get and display disk space info
   getDiskSpaceInfo(path, diskInfo => {
-    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${diskInfo.usePercent.toFixed(2)}%)`
-    const statusElement = document.getElementById('bottom_status')
-    if (statusElement) {
-      statusElement.innerHTML = diskInfoText
+    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${diskInfo.usePercent.toFixed(2)}%) | `
+    const diskSpaceElement = document.getElementById('disk_space_info')
+    if (diskSpaceElement) {
+      diskSpaceElement.textContent = diskInfoText
     }
   })
 
