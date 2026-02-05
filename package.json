@@ -1,7 +1,7 @@
 {
   "name": "space-radar",
   "productName": "SpaceRadar",
-  "version": "6.0.0-alpha.2",
+  "version": "6.0.0-alpha.3",
   "description": "Disk Usage Electron App",
   "main": "app/main.js",
   "scripts": {
@@ -50,6 +50,7 @@
   "build": {
     "appId": "com.zz85.spaceradar",
     "productName": "SpaceRadar",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "app": "app",
       "output": "dist",
