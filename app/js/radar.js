@@ -2,6 +2,7 @@
 
 const { shell } = require('electron')
 const path = require('path')
+const si = require('systeminformation')
 
 const LASTLOAD_FILE = path.join(__dirname, 'lastload.json')
 
@@ -23,6 +24,30 @@ var current_size = 0,
 
 var legend = d3.select('#legend')
 
+// Function to get disk space info for a given path
+function getDiskSpaceInfo(scanPath, callback) {
+  si.fsSize()
+    .then(drives => {
+      // Find the drive that contains the scan path
+      const drive = drives.find(d => {
+        // Check if the scan path starts with the mount point
+        return scanPath.startsWith(d.mount)
+      }) || drives[0] // fallback to first drive if no match
+      
+      if (drive) {
+        callback({
+          total: drive.size,
+          used: drive.used,
+          available: drive.available,
+          usePercent: drive.use
+        })
+      }
+    })
+    .catch(err => {
+      console.error('Error getting disk space info:', err)
+    })
+}
+
 function startScan(path) {
   cleanup()
   hidePrompt()
@@ -34,6 +59,15 @@ function startScan(path) {
 
   var stat = fs.lstatSync(path)
   log('file', stat.isFile(), 'dir', stat.isDirectory())
+
+  // Get and display disk space info
+  getDiskSpaceInfo(path, diskInfo => {
+    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${diskInfo.usePercent.toFixed(2)}%)`
+    const statusElement = document.getElementById('bottom_status')
+    if (statusElement) {
+      statusElement.innerHTML = diskInfoText
+    }
+  })
 
   // return sendIpcMsg('go', path);
   if (stat.isFile()) {
