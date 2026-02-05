@@ -26,6 +26,13 @@ jobs:
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
 
+          # macOS code signing certificate
+          mac_certs: ${{ secrets.MAC_CERTS }}
+          mac_certs_password: ${{ secrets.MAC_CERTS_PASSWORD }}
+
           # If the commit is tagged with a version (e.g. "v1.0.0"),
           # release the app after building
           release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+
+          # Build only for current platform
+          args: ${{ matrix.os == 'macos-latest' && '--mac' || matrix.os == 'ubuntu-latest' && '--linux' || '--win' }}
