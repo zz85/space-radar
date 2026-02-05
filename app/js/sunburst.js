@@ -206,6 +206,9 @@ function SunBurst() {
   }
 
   function zoomIn(p) {
+    // Prevent zooming into "Other files" synthetic nodes
+    if (p._isOtherFiles) return
+
     if (p.depth > 1) {
       p = p.parent
     }
