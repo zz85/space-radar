@@ -4,8 +4,9 @@ body {
   overflow: none;
 
   /* Use System Fonts */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-    'Droid Sans', 'Helvetica Neue', sans-serif !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif !important;
 }
 
 /* Make toolbar draggable on macOS with hidden title bar */
@@ -287,4 +288,117 @@ line {
   overflow: hidden;
   text-overflow: ellipsis;
   /* todo some kind of flex width */
+}
+
+/* =============================================================================
+   DARK MODE STYLES
+   ============================================================================= */
+
+body.dark-mode {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+body.dark-mode .window {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode .toolbar-header,
+body.dark-mode .toolbar-footer {
+  background: linear-gradient(to bottom, #2d2d2d, #252525);
+  border-color: #3a3a3a;
+}
+
+body.dark-mode .toolbar-header .title {
+  color: #e0e0e0;
+}
+
+body.dark-mode .btn {
+  background: linear-gradient(to bottom, #404040, #353535);
+  border-color: #505050;
+  color: #e0e0e0;
+}
+
+body.dark-mode .btn:hover {
+  background: linear-gradient(to bottom, #4a4a4a, #404040);
+}
+
+body.dark-mode .btn:active,
+body.dark-mode .btn.active {
+  background: linear-gradient(to bottom, #353535, #404040);
+  border-color: #606060;
+}
+
+body.dark-mode .window-content {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode #sidebar {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .nav-group-item {
+  color: #ccc;
+}
+
+body.dark-mode .nav-group-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode #legend {
+  background: #2d2d2d;
+  color: #e0e0e0;
+}
+
+body.dark-mode #shades {
+  background: #1a1a1a;
+}
+
+body.dark-mode .Aligner-item {
+  background: #2d2d2d;
+}
+
+body.dark-mode #promptbox {
+  color: #e0e0e0;
+}
+
+body.dark-mode #explanation {
+  color: #ccc;
+}
+
+/* Sunburst strokes for dark mode - use darker strokes for contrast */
+body.dark-mode path {
+  stroke: rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode #chart path {
+  stroke: rgba(0, 0, 0, 0.4);
+}
+
+/* Breadcrumb dark mode */
+body.dark-mode .breadcrumb {
+  background: #2d2d2d;
+}
+
+body.dark-mode .breadcrumb a {
+  background: #404040;
+  color: #e0e0e0;
+}
+
+body.dark-mode .breadcrumb a:hover {
+  background: #505050;
+}
+
+/* Loading overlay dark mode */
+body.dark-mode #loading {
+  color: #e0e0e0;
+}
+
+/* Better contrast for scan stats in footer */
+#bottom_status {
+  font-weight: 500;
+}
+
+body.dark-mode #bottom_status {
+  color: #b0b0b0;
 }

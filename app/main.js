@@ -118,42 +118,106 @@ function buildAppMenu() {
     label: "Color Options",
     submenu: [
       {
-        type: "radio",
-        label: "File extensions - 6 Categories",
-        click: () => sendColorChange("scheme", "schemeCat6")
+        label: "Seaborn Palettes",
+        submenu: [
+          {
+            type: "radio",
+            label: "Deep",
+            click: () => sendColorChange("scheme", "seabornDeep")
+          },
+          {
+            type: "radio",
+            label: "Muted",
+            click: () => sendColorChange("scheme", "seabornMuted")
+          },
+          {
+            type: "radio",
+            label: "Pastel (Default)",
+            checked: true,
+            click: () => sendColorChange("scheme", "seabornPastel")
+          },
+          {
+            type: "radio",
+            label: "Bright",
+            click: () => sendColorChange("scheme", "seabornBright")
+          },
+          {
+            type: "radio",
+            label: "Dark",
+            click: () => sendColorChange("scheme", "seabornDark")
+          },
+          {
+            type: "radio",
+            label: "Colorblind-friendly",
+            click: () => sendColorChange("scheme", "seabornColorblind")
+          }
+        ]
       },
+      { type: "separator" },
       {
-        type: "radio",
-        label: "File extensions - 11 Categories",
-        click: () => sendColorChange("scheme", "schemeCat11")
+        label: "Legacy Schemes",
+        submenu: [
+          {
+            type: "radio",
+            label: "Classic - 11 Categories",
+            click: () => sendColorChange("scheme", "schemeCat11")
+          },
+          {
+            type: "radio",
+            label: "Classic - 6 Categories",
+            click: () => sendColorChange("scheme", "schemeCat6")
+          },
+          {
+            type: "radio",
+            label: "Rainbow (Hash-based)",
+            click: () => sendColorChange("scheme", "schemeHue")
+          }
+        ]
       },
+      { type: "separator" },
       {
-        type: "radio",
-        label: "File extensions - Hashed",
-        checked: true,
-        click: () => sendColorChange("scheme", "schemeHue")
+        label: "Color Modes",
+        submenu: [
+          {
+            type: "radio",
+            label: "By File Type",
+            click: () => sendColorChange("mode", "colorByProp")
+          },
+          {
+            type: "radio",
+            label: "By Size (Color Gradient)",
+            click: () => sendColorChange("mode", "colorBySize")
+          },
+          {
+            type: "radio",
+            label: "By Size (Greyscale)",
+            click: () => sendColorChange("mode", "colorBySizeBw")
+          },
+          {
+            type: "radio",
+            label: "By Root Directory (Default)",
+            checked: true,
+            click: () => sendColorChange("mode", "colorByParent")
+          },
+          {
+            type: "radio",
+            label: "By Parent Name",
+            click: () => sendColorChange("mode", "colorByParentName")
+          },
+          { type: "separator" },
+          {
+            type: "radio",
+            label: "Random / Confetti",
+            click: () => sendColorChange("mode", "colorByRandom")
+          }
+        ]
       },
+      { type: "separator" },
       {
-        type: "radio",
-        label: "Root Colors (Original Scheme)",
-        click: () => sendColorChange("mode", "colorByParent")
-      },
-      {
-        type: "radio",
-        label: "Root Colors (Numbers)",
-        click: () => sendColorChange("mode", "colorByParentName")
-      },
-      {
-        type: "radio",
-        label: "Color By Size (Greyscale)",
-        click: () => sendColorChange("mode", "colorBySizeBw")
-      },
-      {
-        type: "radio",
-        label: "Color By Size",
-        click: () => sendColorChange("mode", "colorBySize")
-      },
-      { type: "separator" }
+        type: "checkbox",
+        label: "Dark Mode",
+        click: menuItem => sendColorChange("darkMode", menuItem.checked)
+      }
     ]
   });
 

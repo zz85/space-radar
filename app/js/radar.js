@@ -19,9 +19,30 @@ function sendIpcMsg(cmd, msg) {
 }
 
 var current_size = 0,
-  start_time;
+  start_time,
+  lastStatsUpdate = 0;
 
 var legend = d3.select("#legend");
+var bottomStatus = document.getElementById("bottom_status");
+
+// Format number with commas
+function formatNumber(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// Update stats display in footer
+function updateStatsDisplay(fileCount, dirCount, size) {
+  const elapsed = (performance.now() - start_time) / 1000; // seconds
+  const totalItems = fileCount + dirCount;
+  const itemsPerSec = elapsed > 0 ? Math.round(totalItems / elapsed) : 0;
+  const bytesPerSec = elapsed > 0 ? size / elapsed : 0;
+
+  bottomStatus.textContent = `Scanning: ${formatNumber(
+    fileCount
+  )} files | ${formatNumber(dirCount)} dirs | ${format(size)} | ${formatNumber(
+    itemsPerSec
+  )} items/sec | ${format(bytesPerSec)}/sec`;
+}
 
 function startScan(path) {
   cleanup();
@@ -71,7 +92,7 @@ function start_read() {
   );
 }
 
-function progress(dir, name, size) {
+function progress(dir, name, size, fileCount, dirCount) {
   // log('[' + ipc_name + '] progress', name)
   // may take a little while
   legend.html(
@@ -81,7 +102,11 @@ function progress(dir, name, size) {
       format(size)
   );
   current_size = size;
-  // TODO collect number of files too
+
+  // Update footer stats display
+  if (fileCount !== undefined && dirCount !== undefined) {
+    updateStatsDisplay(fileCount, dirCount, size);
+  }
 }
 
 function lightbox(show) {
@@ -113,7 +138,7 @@ function cleanup() {
   // memory()
 }
 
-function complete(json) {
+function complete(json, finalStats) {
   log("[" + ipc_name + "] complete..", json);
   console.timeEnd("scan_job_time");
 
@@ -127,6 +152,24 @@ function complete(json) {
 
   var time_took = performance.now() - start_time;
   log("Time took", (time_took / 60 / 1000).toFixed(2), "mins");
+
+  // Show final stats in footer
+  if (finalStats) {
+    const elapsed = time_took / 1000;
+    const totalItems = finalStats.fileCount + finalStats.dirCount;
+    const itemsPerSec = elapsed > 0 ? Math.round(totalItems / elapsed) : 0;
+    const bytesPerSec = elapsed > 0 ? finalStats.current_size / elapsed : 0;
+    const timeStr =
+      elapsed < 60 ? elapsed.toFixed(1) + "s" : (elapsed / 60).toFixed(1) + "m";
+
+    bottomStatus.textContent = `Scanned: ${formatNumber(
+      finalStats.fileCount
+    )} files | ${formatNumber(finalStats.dirCount)} dirs | ${format(
+      finalStats.current_size
+    )} in ${timeStr} (${formatNumber(itemsPerSec)} items/sec, ${format(
+      bytesPerSec
+    )}/sec)`;
+  }
 
   // webview.remove()
   // TODO add growl notification here
@@ -146,7 +189,7 @@ function handleIPC(cmd, args) {
       try {
         console.log("[renderer] complete received");
       } catch (e) {}
-      return complete(args[0]);
+      return complete(args[0], args[1]);
     case "fs-ipc":
       try {
         console.log("[renderer] fs-ipc received", args && args[0]);
@@ -307,7 +350,7 @@ promptbox.ondrop = function(e) {
 
 function openDirectory() {
   let loc = Navigation.currentPath();
-  if (loc) shell.showItemInFolder(loc.join(PATH_DELIMITER));
+  if (loc) shell.showItemInFolder(loc.join(path.sep));
 }
 
 function openSelection() {
