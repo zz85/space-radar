@@ -5,18 +5,16 @@ const child_process = require("child_process");
 const isMac = process.platform === "darwin";
 const isWindows = process.platform === "win32";
 
-// Load systeminformation for Windows/Linux
+// Load systeminformation globally (used by radar.js for disk space info)
 let si;
-if (!isMac) {
-  try {
-    si = require("systeminformation");
-  } catch (e) {
-    console.error("Failed to load systeminformation:", e);
-    si = null;
-  }
+try {
+  si = require("systeminformation");
+} catch (e) {
+  console.error("Failed to load systeminformation:", e);
+  si = null;
 }
 
-// macOS native commands
+// macOS native commands (more accurate than systeminformation for memory)
 const MAC_PS_CMD = "ps -cx -opid,ppid,rss,comm";
 const MAC_VM_STAT = "vm_stat";
 
