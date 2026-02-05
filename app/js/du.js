@@ -8,6 +8,9 @@
   let currentPath = ""; // Track current path being scanned
   let lastProgressTime = Date.now();
   let stuckThreshold = 30000; // 30 seconds without progress = potentially stuck
+  let cancelled = false; // Flag to cancel scanning
+  let paused = false; // Flag to pause scanning
+  let pauseResolvers = []; // Callbacks waiting for resume
 
   function resetCounters() {
     counter = 0;
@@ -17,6 +20,54 @@
     errorCount = 0;
     currentPath = "";
     lastProgressTime = Date.now();
+    cancelled = false;
+    paused = false;
+    pauseResolvers = [];
+  }
+
+  function cancel() {
+    cancelled = true;
+    // Also resume if paused so pending operations can complete
+    if (paused) {
+      resume();
+    }
+    console.log("[du] Scan cancelled by user");
+  }
+
+  function isCancelled() {
+    return cancelled;
+  }
+
+  function pause() {
+    if (!paused) {
+      paused = true;
+      console.log("[du] Scan paused by user");
+    }
+  }
+
+  function resume() {
+    if (paused) {
+      paused = false;
+      console.log("[du] Scan resumed by user");
+      // Resolve all waiting operations
+      const resolvers = pauseResolvers;
+      pauseResolvers = [];
+      resolvers.forEach((resolve) => resolve());
+    }
+  }
+
+  function isPaused() {
+    return paused;
+  }
+
+  // Returns a promise that resolves when not paused
+  function waitIfPaused() {
+    if (!paused) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      pauseResolvers.push(resolve);
+    });
   }
 
   function getStats() {
@@ -28,7 +79,9 @@
       errorCount,
       currentPath,
       lastProgressTime,
-      possiblyStuck: Date.now() - lastProgressTime > stuckThreshold
+      possiblyStuck: Date.now() - lastProgressTime > stuckThreshold,
+      cancelled,
+      paused,
     };
   }
 
@@ -61,7 +114,7 @@
           current_size,
           fileCount,
           dirCount,
-          errorCount
+          errorCount,
         );
       if (counter % 100000 === 0)
         if (options.onrefresh) options.onrefresh(dir, name);
@@ -82,7 +135,7 @@
       // Special-case: Exclude OneDrive data inside Group Containers
       if (
         dir.indexOf(
-          path.sep + "Library" + path.sep + "Group Containers" + path.sep
+          path.sep + "Library" + path.sep + "Group Containers" + path.sep,
         ) !== -1 &&
         dir.indexOf("OneDrive") !== -1
       ) {
@@ -90,11 +143,21 @@
       }
     } catch (e) {}
 
+    // Check if scan was cancelled before lstat
+    if (cancelled) {
+      return done(dir);
+    }
+
     fs.lstat(dir, (err, stat) => {
       if (err) {
         // Log error but continue scanning
         console.warn("[du] lstat error:", dir, err.code || err.message);
         errorCount++;
+        return done(dir);
+      }
+
+      // Check if scan was cancelled after lstat
+      if (cancelled) {
         return done(dir);
       }
 
@@ -169,7 +232,27 @@
             if (left === 0) done(name);
           }
 
-          list.forEach(file => {
+          // Process files with pause support
+          function processFile(index) {
+            if (index >= list.length) {
+              if (!left) done(name);
+              return;
+            }
+
+            // Check for cancellation
+            if (cancelled) {
+              ok(dir);
+              processFile(index + 1);
+              return;
+            }
+
+            // Check for pause - wait if paused
+            if (paused) {
+              waitIfPaused().then(() => processFile(index));
+              return;
+            }
+
+            const file = list[index];
             let childNode = {};
             node.children.push(childNode);
             descendFS(
@@ -180,13 +263,21 @@
                 onprogress: options.onprogress,
                 onrefresh: options.onrefresh,
                 excludePaths: options.excludePaths,
-                seenInodes: options.seenInodes
+                seenInodes: options.seenInodes,
               },
-              ok
+              ok,
             );
-          });
 
-          if (!left) done(name);
+            // Process next file (non-blocking to allow pause checks)
+            setImmediate(() => processFile(index + 1));
+          }
+
+          // Start processing files
+          if (list.length > 0) {
+            processFile(0);
+          } else {
+            done(name);
+          }
         });
 
         return;
@@ -200,5 +291,10 @@
 
   descendFS.resetCounters = resetCounters;
   descendFS.getStats = getStats;
+  descendFS.cancel = cancel;
+  descendFS.isCancelled = isCancelled;
+  descendFS.pause = pause;
+  descendFS.resume = resume;
+  descendFS.isPaused = isPaused;
   module.exports = descendFS;
 })();

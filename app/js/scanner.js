@@ -28,18 +28,39 @@ function scanner() {
     ipc = require("electron").ipcRenderer;
     const ipc_name = "du";
 
-    ipc.on("scan", function(_, target) {
+    ipc.on("scan", function (_, target) {
       log("got scan");
       go(target);
     });
+
+    ipc.on("cancel-scan", function () {
+      log("got cancel-scan");
+      if (du && du.cancel) {
+        du.cancel();
+      }
+    });
+
+    ipc.on("pause-scan", function () {
+      log("got pause-scan");
+      if (du && du.pause) {
+        du.pause();
+      }
+    });
+
+    ipc.on("resume-scan", function () {
+      log("got resume-scan");
+      if (du && du.resume) {
+        du.resume();
+      }
+    });
   } else {
-    process.on("disconnect", function() {
+    process.on("disconnect", function () {
       // exit when parent disconnects (killed / exit)
       console.log("parent exited");
       process.exit();
     });
 
-    process.on("message", function(m) {
+    process.on("message", function (m) {
       console.log("got", m);
       if (m.cmd == "go") {
         log("scan");
@@ -89,11 +110,11 @@ function scanner() {
             pjoin(homeDir, "Library/Containers/com.microsoft.OneDrive-mac"),
             pjoin(
               homeDir,
-              "Library/Containers/com.microsoft.OneDriveStandaloneUpdater"
+              "Library/Containers/com.microsoft.OneDriveStandaloneUpdater",
             ),
             pjoin(
               homeDir,
-              "Library/Containers/com.microsoft.OneDrive-mac.FinderSync"
+              "Library/Containers/com.microsoft.OneDrive-mac.FinderSync",
             ),
             // macOS system paths that often cause permission issues or hangs
             "/System/Volumes/Data/.Spotlight-V100",
@@ -110,10 +131,10 @@ function scanner() {
             // Time Machine
             "/Volumes/.timemachine",
             "/.MobileBackups",
-            "/.MobileBackups.trash"
-          ]
+            "/.MobileBackups.trash",
+          ],
         },
-        complete
+        complete,
       );
     } else if (stat.isFile()) {
       log("Reading file", target);
@@ -123,14 +144,14 @@ function scanner() {
         {
           parent: target,
           node: json,
-          onprogress: progress
+          onprogress: progress,
           // onrefresh: refresh
         },
-        complete
+        complete,
       );
     }
 
-    const refreshTask = new TaskChecker(function(next) {
+    const refreshTask = new TaskChecker(function (next) {
       log("refresh...");
       ipc_transfer("refresh", json);
       REFRESH_INTERVAL *= 3;
@@ -150,6 +171,13 @@ function scanner() {
         ? du.getStats()
         : { fileCount: 0, dirCount: 0, current_size: 0 };
 
+      // Check if scan was cancelled
+      const wasCancelled = du.isCancelled ? du.isCancelled() : false;
+      if (wasCancelled) {
+        log("Scan was cancelled, sending partial results");
+        finalStats.cancelled = true;
+      }
+
       log("complete task, ipc_transferring json", json);
       ipc_transfer("complete", json, finalStats);
       log("ipc_transfer done");
@@ -168,7 +196,7 @@ function scanner() {
         size,
         fileCount,
         dirCount,
-        errorCount
+        errorCount,
       );
     }
   }
@@ -254,7 +282,7 @@ function scanner() {
     log(
       "compression",
       ((zlib_json_str.length / before_size) * 100).toFixed(2),
-      "% original size"
+      "% original size",
     );
     fs.writeFileSync(p, zlib_json_str);
     // Notify renderer via localStorage about the fs payload instead of recursion

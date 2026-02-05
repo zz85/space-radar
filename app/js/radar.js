@@ -6,6 +6,10 @@ const path = require("path");
 
 const LASTLOAD_FILE = path.join(__dirname, "lastload.json");
 
+// Track scanning state
+var isScanning = false;
+var isPaused = false;
+
 // IPC handling
 function sendIpcMsg(cmd, msg) {
   try {
@@ -13,6 +17,15 @@ function sendIpcMsg(cmd, msg) {
     if (cmd === "go") {
       console.log("[renderer] sending scan-go", msg);
       ipcRenderer.send("scan-go", msg);
+    } else if (cmd === "cancel") {
+      console.log("[renderer] sending cancel-scan");
+      ipcRenderer.send("cancel-scan");
+    } else if (cmd === "pause") {
+      console.log("[renderer] sending pause-scan");
+      ipcRenderer.send("pause-scan");
+    } else if (cmd === "resume") {
+      console.log("[renderer] sending resume-scan");
+      ipcRenderer.send("resume-scan");
     }
   } catch (err) {
     console.error("[renderer] sendIpcMsg error", err);
@@ -138,6 +151,9 @@ function startScan(path) {
   log("start", path);
   start_time = performance.now();
   console.time("scan_job_time");
+  isScanning = true;
+  isPaused = false;
+  updateScanButtons();
 
   var stat = fs.lstatSync(path);
   log("file", stat.isFile(), "dir", stat.isDirectory());
@@ -205,9 +221,16 @@ function start_read() {
 
 function progress(dir, name, size, fileCount, dirCount, errorCount) {
   // log('[' + ipc_name + '] progress', name)
-  // Show current scanning path in legend for visibility
+  // Show current scanning path in legend for visibility with pause/cancel buttons
+  const pauseBtn = isPaused
+    ? "<button class='btn btn-positive' onclick='resumeScan()' style='margin-top: 10px; margin-right: 5px;'>Resume Scan</button>"
+    : "<button class='btn btn-default' onclick='pauseScan()' style='margin-top: 10px; margin-right: 5px;'>Pause Scan</button>";
+  const statusText = isPaused ? "PAUSED" : "Scanning...";
+
   legend.html(
-    "<h2>Scanning... <i>(try grabbing a drink..)</i></h2>" +
+    "<h2>" +
+      statusText +
+      " <i>(try grabbing a drink..)</i></h2>" +
       "<p style='font-size: 0.8em; word-break: break-all; max-height: 60px; overflow: hidden;'>" +
       dir +
       "</p>" +
@@ -215,7 +238,10 @@ function progress(dir, name, size, fileCount, dirCount, errorCount) {
       format(size) +
       (errorCount > 0
         ? " <span style='color: #c44;'>(" + errorCount + " errors)</span>"
-        : ""),
+        : "") +
+      "<br/><br/>" +
+      pauseBtn +
+      "<button class='btn btn-negative' onclick='cancelScan()' style='margin-top: 10px;'>Cancel Scan</button>",
   );
   current_size = size;
 
@@ -257,6 +283,9 @@ function cleanup() {
 function complete(json, finalStats) {
   log("[" + ipc_name + "] complete..", json);
   console.timeEnd("scan_job_time");
+  isScanning = false;
+  isPaused = false;
+  updateScanButtons();
 
   console.time("a");
   onJson(null, json);
@@ -269,6 +298,9 @@ function complete(json, finalStats) {
   var time_took = performance.now() - start_time;
   log("Time took", (time_took / 60 / 1000).toFixed(2), "mins");
 
+  // Check if scan was cancelled
+  const wasCancelled = finalStats && finalStats.cancelled;
+
   // Show final stats in footer
   if (finalStats) {
     const elapsed = time_took / 1000;
@@ -278,7 +310,8 @@ function complete(json, finalStats) {
     const timeStr =
       elapsed < 60 ? elapsed.toFixed(1) + "s" : (elapsed / 60).toFixed(1) + "m";
 
-    let statusText = `Scanned: ${formatNumber(
+    let statusText = wasCancelled ? "CANCELLED: " : "Scanned: ";
+    statusText += `${formatNumber(
       finalStats.fileCount,
     )} files | ${formatNumber(finalStats.dirCount)} dirs | ${format(
       finalStats.current_size,
@@ -299,6 +332,65 @@ function complete(json, finalStats) {
   // webview.remove()
   // TODO add growl notification here
   // shell.beep() // disabling as this can be anonying for memory monitor
+}
+
+// Cancel the current scan
+function cancelScan() {
+  if (!isScanning) {
+    console.log("[renderer] No scan in progress to cancel");
+    return;
+  }
+  console.log("[renderer] Cancelling scan...");
+  isPaused = false;
+  legend.html(
+    "<h2>Cancelling scan...</h2>" +
+      "<p>Please wait while the scan stops...</p>",
+  );
+  sendIpcMsg("cancel");
+}
+
+// Pause the current scan
+function pauseScan() {
+  if (!isScanning || isPaused) {
+    console.log("[renderer] Cannot pause - not scanning or already paused");
+    return;
+  }
+  console.log("[renderer] Pausing scan...");
+  isPaused = true;
+  updateScanButtons();
+  sendIpcMsg("pause");
+}
+
+// Resume the current scan
+function resumeScan() {
+  if (!isScanning || !isPaused) {
+    console.log("[renderer] Cannot resume - not scanning or not paused");
+    return;
+  }
+  console.log("[renderer] Resuming scan...");
+  isPaused = false;
+  updateScanButtons();
+  sendIpcMsg("resume");
+}
+
+// Update scan button visibility in footer
+function updateScanButtons() {
+  const cancelBtn = document.getElementById("cancel_scan_btn");
+  const pauseBtn = document.getElementById("pause_scan_btn");
+
+  if (cancelBtn) {
+    cancelBtn.style.display = isScanning ? "inline-block" : "none";
+  }
+  if (pauseBtn) {
+    pauseBtn.style.display = isScanning ? "inline-block" : "none";
+    if (isScanning) {
+      pauseBtn.textContent = isPaused ? "Resume Scan" : "Pause Scan";
+      pauseBtn.className = isPaused
+        ? "btn btn-positive pull-right"
+        : "btn btn-default pull-right";
+      pauseBtn.onclick = isPaused ? resumeScan : pauseScan;
+    }
+  }
 }
 
 function handleIPC(cmd, args) {

@@ -331,4 +331,46 @@ app.on("ready", function () {
       console.error("[main] scan-go error", err);
     }
   });
+
+  // Handle cancel scan request from renderer
+  ipcMain.on("cancel-scan", (event) => {
+    try {
+      console.log("[main] cancel-scan requested");
+      if (scannerWin && !scannerWin.isDestroyed()) {
+        scannerWin.webContents.send("cancel-scan");
+      } else {
+        console.error("[main] scanner window unavailable for cancel");
+      }
+    } catch (err) {
+      console.error("[main] cancel-scan error", err);
+    }
+  });
+
+  // Handle pause scan request from renderer
+  ipcMain.on("pause-scan", (event) => {
+    try {
+      console.log("[main] pause-scan requested");
+      if (scannerWin && !scannerWin.isDestroyed()) {
+        scannerWin.webContents.send("pause-scan");
+      } else {
+        console.error("[main] scanner window unavailable for pause");
+      }
+    } catch (err) {
+      console.error("[main] pause-scan error", err);
+    }
+  });
+
+  // Handle resume scan request from renderer
+  ipcMain.on("resume-scan", (event) => {
+    try {
+      console.log("[main] resume-scan requested");
+      if (scannerWin && !scannerWin.isDestroyed()) {
+        scannerWin.webContents.send("resume-scan");
+      } else {
+        console.error("[main] scanner window unavailable for resume");
+      }
+    } catch (err) {
+      console.error("[main] resume-scan error", err);
+    }
+  });
 });
