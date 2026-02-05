@@ -28,23 +28,30 @@ var legend = d3.select('#legend')
 function getDiskSpaceInfo(scanPath, callback) {
   si.fsSize()
     .then(drives => {
+      // Normalize paths for cross-platform comparison
+      const normalizedScanPath = scanPath.replace(/\\/g, '/')
+      
       // Find the drive that contains the scan path
       const drive = drives.find(d => {
+        const normalizedMount = d.mount.replace(/\\/g, '/')
         // Check if the scan path starts with the mount point
-        return scanPath.startsWith(d.mount)
+        return normalizedScanPath.startsWith(normalizedMount)
       }) || drives[0] // fallback to first drive if no match
       
       if (drive) {
-        callback({
+        callback(null, {
           total: drive.size,
           used: drive.used,
           available: drive.available,
           usePercent: drive.use
         })
+      } else {
+        callback(new Error('No drive found'))
       }
     })
     .catch(err => {
       console.error('Error getting disk space info:', err)
+      callback(err)
     })
 }
 
@@ -61,12 +68,17 @@ function startScan(path) {
   log('file', stat.isFile(), 'dir', stat.isDirectory())
 
   // Get and display disk space info
-  getDiskSpaceInfo(path, diskInfo => {
-    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${diskInfo.usePercent.toFixed(2)}%) | `
+  getDiskSpaceInfo(path, (err, diskInfo) => {
     const diskSpaceElement = document.getElementById('disk_space_info')
-    if (diskSpaceElement) {
-      diskSpaceElement.textContent = diskInfoText
+    if (!diskSpaceElement) return
+    
+    if (err || !diskInfo) {
+      diskSpaceElement.textContent = 'Disk info unavailable'
+      return
     }
+    
+    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${diskInfo.usePercent.toFixed(2)}%)`
+    diskSpaceElement.textContent = diskInfoText
   })
 
   // return sendIpcMsg('go', path);
