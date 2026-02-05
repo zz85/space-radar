@@ -39,7 +39,7 @@
     "url": "https://github.com/zz85/space-radar.git"
   },
   "devDependencies": {
-    "electron": "^35.7.5",
+    "electron": "^40.1.0",
     "electron-builder": "^26.0.0",
     "prettier": "^3.8.1"
   },
