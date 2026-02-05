@@ -1,68 +1,93 @@
-'use strict'
+"use strict";
 
-let browser = typeof window !== 'undefined'
+let browser = typeof window !== "undefined";
 
 if (browser) {
   // it's electron, so typeof(module) !== 'undefined' is true :)
-  module.exports = scanner
+  module.exports = scanner;
 } else {
   // pure node (when forked inside electron)
-  scanner()
+  scanner();
 }
 
 function scanner() {
-  const path = require('path')
-  const du = require('./du')
-  const duPipe = require('./duPipe')
-  const duFromFile = require('./duFromFile')
-  const fs = require('fs')
-  const utils = require('./utils')
-  const log = utils.log
-  const TimeoutTask = utils.TimeoutTask
-  const TaskChecker = utils.TaskChecker
-  const zlib = require('zlib')
+  const path = require("path");
+  const os = require("os");
+  const du = require("./du");
+  const duPipe = require("./duPipe");
+  const duFromFile = require("./duFromFile");
+  const fs = require("fs");
+  const utils = require("./utils");
+  const log = utils.log;
+  const TimeoutTask = utils.TimeoutTask;
+  const TaskChecker = utils.TaskChecker;
+  const zlib = require("zlib");
 
-  let ipc
+  // Use temp directory for IPC file (writable, not in asar)
+  const IPC_FILE = path.join(os.tmpdir(), "space-radar-fs-ipc.json");
+
+  let ipc;
 
   if (browser) {
-    ipc = require('electron').ipcRenderer
-    const ipc_name = 'du'
+    ipc = require("electron").ipcRenderer;
+    const ipc_name = "du";
 
-    ipc.on('scan', function(_, target) {
-      log('got scan')
-      go(target)
-    })
-  } else {
-    process.on('disconnect', function() {
-      // exit when parent disconnects (killed / exit)
-      console.log('parent exited')
-      process.exit()
-    })
+    ipc.on("scan", function (_, target) {
+      log("got scan");
+      go(target);
+    });
 
-    process.on('message', function(m) {
-      console.log('got', m)
-      if (m.cmd == 'go') {
-        log('scan')
-        go(m.msg)
+    ipc.on("cancel-scan", function () {
+      log("got cancel-scan");
+      if (du && du.cancel) {
+        du.cancel();
       }
-    })
+    });
+
+    ipc.on("pause-scan", function () {
+      log("got pause-scan");
+      if (du && du.pause) {
+        du.pause();
+      }
+    });
+
+    ipc.on("resume-scan", function () {
+      log("got resume-scan");
+      if (du && du.resume) {
+        du.resume();
+      }
+    });
+  } else {
+    process.on("disconnect", function () {
+      // exit when parent disconnects (killed / exit)
+      console.log("parent exited");
+      process.exit();
+    });
+
+    process.on("message", function (m) {
+      console.log("got", m);
+      if (m.cmd == "go") {
+        log("scan");
+        go(m.msg);
+      }
+    });
   }
 
   function go(target) {
-    log('go', target)
+    log("go", target);
     const START_REFRESH_INTERVAL = 5000,
-      MAX_REFRESH_INTERVAL = 15 * 60 * 1000
+      MAX_REFRESH_INTERVAL = 15 * 60 * 1000;
 
-    let REFRESH_INTERVAL = START_REFRESH_INTERVAL
+    let REFRESH_INTERVAL = START_REFRESH_INTERVAL;
 
-    target = path.resolve(target)
-    var stat = fs.lstatSync(target)
+    target = path.resolve(target);
+    var stat = fs.lstatSync(target);
 
-    let json
+    let json;
 
     if (stat.isDirectory()) {
-      log('Scanning target', target)
-      json = {}
+      log("Scanning target", target);
+      json = {};
 
       // duPipe.pipe({
       //   parent: target,
@@ -74,8 +99,8 @@ function scanner() {
       //   }
       // }, complete)
 
-      const homeDir = process.env.HOME || process.env.USERPROFILE || ''
-      const pjoin = path.join
+      const homeDir = process.env.HOME || process.env.USERPROFILE || "";
+      const pjoin = path.join;
       du(
         {
           parent: target,
@@ -83,99 +108,143 @@ function scanner() {
           onprogress: progress,
           // onrefresh: refresh
           excludePaths: [
-            pjoin(homeDir, 'Library/CloudStorage'),
-            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDrive'),
-            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDrive-mac'),
-            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDriveStandaloneUpdater'),
-            pjoin(homeDir, 'Library/Containers/com.microsoft.OneDrive-mac.FinderSync')
-          ]
+            // Cloud storage paths that can cause hangs or incomplete data
+            pjoin(homeDir, "Library/CloudStorage"),
+            pjoin(homeDir, "Library/Containers/com.microsoft.OneDrive"),
+            pjoin(homeDir, "Library/Containers/com.microsoft.OneDrive-mac"),
+            pjoin(
+              homeDir,
+              "Library/Containers/com.microsoft.OneDriveStandaloneUpdater",
+            ),
+            pjoin(
+              homeDir,
+              "Library/Containers/com.microsoft.OneDrive-mac.FinderSync",
+            ),
+            // macOS system paths that often cause permission issues or hangs
+            "/System/Volumes/Data/.Spotlight-V100",
+            "/private/var/db",
+            "/private/var/folders",
+            "/.Spotlight-V100",
+            "/.fseventsd",
+            "/dev",
+            "/System/Volumes/VM",
+            "/System/Volumes/Preboot",
+            "/System/Volumes/Update",
+            pjoin(homeDir, "Library/Caches"),
+            pjoin(homeDir, "Library/Saved Application State"),
+            // Time Machine
+            "/Volumes/.timemachine",
+            "/.MobileBackups",
+            "/.MobileBackups.trash",
+          ],
         },
-        complete
-      )
+        complete,
+      );
     } else if (stat.isFile()) {
-      log('Reading file', target)
-      json = new duFromFile.iNode()
+      log("Reading file", target);
+      json = new duFromFile.iNode();
 
       duFromFile(
         {
           parent: target,
           node: json,
-          onprogress: progress
+          onprogress: progress,
           // onrefresh: refresh
         },
-        complete
-      )
+        complete,
+      );
     }
 
-    const refreshTask = new TaskChecker(function(next) {
-      log('refresh...')
-      ipc_transfer('refresh', json)
-      REFRESH_INTERVAL *= 3
-      next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL))
-    }, REFRESH_INTERVAL)
-    refreshTask.schedule()
+    const refreshTask = new TaskChecker(function (next) {
+      log("refresh...");
+      ipc_transfer("refresh", json);
+      REFRESH_INTERVAL *= 3;
+      next(Math.min(REFRESH_INTERVAL, MAX_REFRESH_INTERVAL));
+    }, REFRESH_INTERVAL);
+    refreshTask.schedule();
 
-    console.time('async2')
+    console.time("async2");
 
     function complete(counter) {
       // log("Scan completed", counter, "files");
-      console.timeEnd('async2')
-      refreshTask.cancel()
+      console.timeEnd("async2");
+      refreshTask.cancel();
 
-      log('complete task, ipc_transferring json', json)
-      ipc_transfer('complete', json)
-      log('ipc_transfer done')
+      // Get final stats before reset
+      const finalStats = du.getStats
+        ? du.getStats()
+        : { fileCount: 0, dirCount: 0, current_size: 0 };
+
+      // Check if scan was cancelled
+      const wasCancelled = du.isCancelled ? du.isCancelled() : false;
+      if (wasCancelled) {
+        log("Scan was cancelled, sending partial results");
+        finalStats.cancelled = true;
+      }
+
+      log("complete task, ipc_transferring json", json);
+      ipc_transfer("complete", json, finalStats);
+      log("ipc_transfer done");
 
       // cleanup
-      json = null
-      du.resetCounters()
+      json = null;
+      du.resetCounters();
     }
 
-    function progress(path, name, size) {
-      refreshTask.check()
-      ipc_transfer('progress', path, name, size)
+    function progress(path, name, size, fileCount, dirCount, errorCount) {
+      refreshTask.check();
+      ipc_transfer(
+        "progress",
+        path,
+        name,
+        size,
+        fileCount,
+        dirCount,
+        errorCount,
+      );
     }
   }
 
   function webviewipc_Transfer() {
     try {
       // webview IPC
-      args.unshift('call')
-      ipc.sendToHost.apply(ipc, args)
+      args.unshift("call");
+      ipc.sendToHost.apply(ipc, args);
     } catch (e) {
-      err = e
-      console.error(e)
+      err = e;
+      console.error(e);
     }
   }
 
   /* Local storage IPC */
   function lsipc(json_str) {
-    let err
+    let err;
     try {
       // localStorage IPC
-      localStorage.lsipc = localStorage.lsipc === json_str ? json_str + ' ' : json_str
+      localStorage.lsipc =
+        localStorage.lsipc === json_str ? json_str + " " : json_str;
     } catch (e) {
-      console.error('fail: ')
-      log('len', json_str.length)
-      err = e
+      console.error("fail: ");
+      log("len", json_str.length);
+      err = e;
     }
 
-    return err
+    return err;
   }
 
   function ipc_transfer(...args) {
-    const json_str = JSON.stringify(args)
-    var err
+    const json_str = JSON.stringify(args);
+    var err;
 
-    err = null
+    err = null;
 
     if (browser) {
       // log('browser ipc');
       // json_str.length > 8192 &&
       if (json_str.length < 10000000) {
         // roughly 10MB payload
-        err = lsipc(json_str)
-        if (!err) return
+        err = lsipc(json_str);
+        if (!err) return;
       }
 
       // try {
@@ -208,21 +277,26 @@ function scanner() {
     //   if (!err) return
     // }
 
-    log('process fs ipc')
-    err = null
-    // fs ipc
-    const p = path.join(__dirname, 'fs-ipc.json')
-    const before_size = json_str.length
-    const zlib_json_str = zlib.deflateSync(json_str)
-    log('compression', ((zlib_json_str.length / before_size) * 100).toFixed(2), '% original size')
-    fs.writeFileSync(p, zlib_json_str)
+    log("process fs ipc");
+    err = null;
+    // fs ipc - use temp directory (writable, not in asar)
+    const p = IPC_FILE;
+    const before_size = json_str.length;
+    const zlib_json_str = zlib.deflateSync(json_str);
+    log(
+      "compression",
+      ((zlib_json_str.length / before_size) * 100).toFixed(2),
+      "% original size",
+    );
+    fs.writeFileSync(p, zlib_json_str);
     // Notify renderer via localStorage about the fs payload instead of recursion
     try {
-      const notice = JSON.stringify(['fs-ipc', p])
-      localStorage.lsipc = localStorage.lsipc === notice ? notice + ' ' : notice
+      const notice = JSON.stringify(["fs-ipc", p]);
+      localStorage.lsipc =
+        localStorage.lsipc === notice ? notice + " " : notice;
     } catch (e) {
-      console.error('fs-ipc notify failed', e)
+      console.error("fs-ipc notify failed", e);
     }
-    return
+    return;
   }
 }

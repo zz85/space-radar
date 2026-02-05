@@ -1,461 +1,608 @@
-'use strict'
-var rootNode,
-  currentNode,
-  max_level,
-  current_level = 0
+"use strict";
 
+/**
+ * Canvas-based Sunburst visualization
+ * Replaces SVG implementation for better performance
+ */
 function SunBurst() {
-  function onResize() {
-    log('resize')
-    calcDimensions()
-    svg_container
-      .select('svg')
-      // .attr("viewBox", "0 0 " + width + " " + height)
-      .attr('width', width)
-      .attr('height', height)
-      .select('g')
-      .attr('transform', 'translate(' + width / 2 + ',' + (height / 2 + 10) + ')')
-    redraw()
+  // ============== Configuration ==============
+  var LEVELS = 11;
+  var INNER_LEVEL = 7;
+  var USE_COUNT = 0;
+  var ANIMATION_DURATION = 300;
+
+  // ============== State ==============
+  var rootNode = null;
+  var currentNode = null;
+  var hoveredNode = null;
+  var canvas, ctx;
+  var width, height, centerX, centerY;
+  var radius, CORE_RADIUS, OUTER_RADIUS, FLEXI_LEVEL;
+
+  // Flat array of visible nodes for rendering
+  var visibleNodes = [];
+
+  // Animation state
+  var animationStart = null;
+  var isAnimating = false;
+
+  // RAF task for rendering
+  var drawer = new TimeoutRAFTask(draw);
+
+  // DOM references for center display
+  var core_top, core_center, core_tag;
+
+  // ============== Initialization ==============
+  function init() {
+    canvas = document.getElementById("sunburst-canvas");
+    if (!canvas) {
+      console.error("[sunburst] Canvas element not found");
+      return;
+    }
+    ctx = canvas.getContext("2d");
+
+    core_top = document.getElementById("core_top");
+    core_center = document.getElementById("core_center");
+    core_tag = document.getElementById("core_tag");
+
+    // Event listeners on canvas
+    canvas.addEventListener("mousemove", onMouseMove);
+    canvas.addEventListener("mouseout", onMouseOut);
+    canvas.addEventListener("click", onClick);
+
+    // Click on explanation div also zooms out
+    var explanation = document.getElementById("explanation");
+    if (explanation) {
+      explanation.addEventListener("click", function () {
+        if (currentNode && currentNode.parent) {
+          State.navigateTo(keys(currentNode.parent));
+        }
+      });
+    }
+
+    calcDimensions();
   }
-
-  /*
-   TODOs
-
-  - HDD Scanning
-    - Monitoring - eg https://github.com/paulmillr/chokidar
-    - Directory caching
-    - Real Disk usage
-    - Grab free space!
-    - Grab drives
-
-  - Cross platform
-
-  - UI
-     - color by
-       - size
-       - filetype
-       - last modified
-       - number of files
-    - Explorer Tree View
-    - Responsive resizing (Zooming)
-    - Filter hidden directories / files
-    - combine hidden file sizes
-    - Labels
-    - Pie Magnifier
-    - Absolute or relative file size intensity
-
-  - Perf
-    - Streaming partition datastructures
-    - Named Pipes
-
-  - Others
-    - Git integration
-    - Spotlike style
-    - Mac Preview style (or integrate Preview)
-    - Auto update (or use Electron Builder)
-
-  DONE
-   - Back / Fwd paths
-   - Custom levels rendering
-   - percentage as root of inner core
-   - threshold - hide small files
-   - Async file checking
-   - hover over states
-   - Streaming/incremental updates (sort of by recreating partitions & jsons)
-   - Hover stats
-   - Faster scanning
-   - correct hover states for core
-   - computation done in separate process
-   - change numbers of center to selection
-   - shows children selection on hover
-   - Allow destination scanning (root / folder)
-   - tested on windows
-   - Canvas implementation: http://bl.ocks.org/mbostock/1276463
-   - Fastest IPC (headless node / electron)
-  */
-
-  var len = Math.min(window.innerWidth, window.innerHeight)
-
-  var radius = len * 0.45
 
   function calcDimensions() {
-    radius = len * 0.45
-    log(innerHeight, height)
+    var header = document.querySelector("header");
+    var footer = document.querySelector("footer");
+
+    width = window.innerWidth;
+    height =
+      window.innerHeight -
+      (header ? header.getBoundingClientRect().height : 0) -
+      (footer ? footer.getBoundingClientRect().height : 0);
+
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+
+    centerX = width / 2;
+    centerY = height / 2;
+
+    var len = Math.min(width, height);
+    radius = len * 0.45;
+    CORE_RADIUS = radius * 0.4;
+    OUTER_RADIUS = radius - CORE_RADIUS;
+    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL);
   }
 
-  // calcDimensions()
+  // ============== Drawing ==============
+  function draw(next) {
+    if (!canvas || !ctx) return;
 
-  var LEVELS = 11,
-    INNER_LEVEL = 7,
-    PATH_DELIMITER = '/',
-    USE_COUNT = 0,
-    HIDE_THRESHOLD = 0.1, // percentage (use 0.01, 1)
-    CORE_RADIUS = radius * 0.4, // radius / LEVELS
-    OUTER_RADIUS = radius - CORE_RADIUS,
-    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL)
+    var dpr = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
 
-  let svg_container, svg
-  let explanation, core_top, core_center, core_tag
+    // Update animation progress
+    var t = 1;
+    if (isAnimating && animationStart) {
+      var elapsed = Date.now() - animationStart;
+      t = Math.min(elapsed / ANIMATION_DURATION, 1);
+      t = easeOutCubic(t);
+      if (t >= 1) {
+        isAnimating = false;
+        animationStart = null;
+      }
+    }
 
-  function initDom() {
-    svg_container = d3.select('body').select('#sunburst-chart')
-    svg = svg_container.append('svg').append('g')
+    // Draw arcs (already sorted by depth, back to front)
+    for (var i = 0; i < visibleNodes.length; i++) {
+      var node = visibleNodes[i];
+      drawArc(node, t);
+    }
 
-    explanation = d3.select('#explanation')
-    core_top = d3.select('#core_top')
-    core_center = d3.select('#core_center')
-    core_tag = d3.select('#core_tag')
+    // Draw center circle
+    drawCenter();
+
+    ctx.restore();
+
+    // Continue animation if needed
+    if (isAnimating) {
+      next();
+    }
   }
 
-  initDom()
+  function drawArc(node, t) {
+    var d = node.data;
 
-  const ADJUSTMENT = -Math.PI / 2
+    // Interpolate if animating
+    var startAngle = lerp(node.fromStartAngle, node.startAngle, t);
+    var endAngle = lerp(node.fromEndAngle, node.endAngle, t);
+    var innerR = lerp(node.fromInnerR, node.innerR, t);
+    var outerR = lerp(node.fromOuterR, node.outerR, t);
 
-  var arc = d3.svg
-    .arc()
-    .startAngle(function(d) {
-      return d.x + ADJUSTMENT
-    })
-    .endAngle(function(d) {
-      return d.x + d.dx - 0.01 / (d.depth + 0.5) + ADJUSTMENT
-    })
-    .innerRadius(function(d) {
-      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth - 1)
-      // return Math.sqrt(d.y); // ROOT
-    })
-    .outerRadius(function(d) {
-      // return Math.sqrt(d.y + d.dy); // ROOT
-      return CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (d.depth + 0) - 1
-    })
+    // Skip if arc is too small
+    if (endAngle - startAngle < 0.002) return;
+    if (outerR - innerR < 1) return;
 
-  var circular_meter = svg.append('g')
-  // TODO make a tiny border around the rim of center to show the percentage of current space
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerR, startAngle, endAngle);
+    ctx.arc(centerX, centerY, innerR, endAngle, startAngle, true);
+    ctx.closePath();
 
-  document.addEventListener('ready', function() {
-    explanation.on('click', zoomOut)
-  })
-
-  // Data Bind Elements
-  var path
-  var center
-
-  function updateCore(d) {
-    // d3.select(this).style('stroke', 'red').style('stroke-width', 2)
-    var percent = ((d.sum / (currentNode || root).sum) * 100).toFixed(2) + '%'
-
-    // 1. lengend
-    // legend.html("<h2>"+d.key+"</h2><p>size: "+format(d.value)+" "+percent+"</p>")
-
-    // 2. core
-    // core_tag.html(d.name + '<br/>' + format(d.value) + ' (' + percent + ')')
-
-    core_top.html(d.name)
-    core_center.html(
-      format(d.sum)
-        .split(' ')
-        .join('<br/>')
-    )
-    core_tag.html(percent + '<br/>')
-    // + '<br/>' + format(currentNode.value)
-    // + ' (' + percent + ')<br/>'
-  }
-
-  function mouseover(d) {
-    State.highlightPath(keys(d))
-  }
-
-  function mouseout() {
-    State.highlightPath()
-  }
-
-  function highlightPath(_path, d) {
-    if (d) {
-      _mouseover(d)
+    // Get fill color - special handling for free space
+    var color;
+    if (d._isFreeSpace) {
+      // Light gray for free space to distinguish from used space
+      color = "#e8e8e8";
     } else {
-      _mouseout(d)
+      color = fill(d);
     }
+
+    if (color && typeof color.toString === "function") {
+      ctx.fillStyle = color.toString();
+    } else if (color) {
+      ctx.fillStyle = color;
+    } else {
+      ctx.fillStyle = "#888";
+    }
+
+    // Hover effect - dim non-related segments
+    if (hoveredNode) {
+      if (isAncestorOrDescendant(d, hoveredNode)) {
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.globalAlpha = 0.3;
+      }
+    } else {
+      ctx.globalAlpha = 0.85;
+    }
+
+    ctx.fill();
+
+    // Stroke
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = "#c8c8c8";
+    ctx.lineWidth = Math.max(0.25, 1.0 - (d.depth - currentNode.depth) * 0.08);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
   }
 
-  function _mouseover(d) {
-    updateCore(d)
+  function drawCenter() {
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, CORE_RADIUS, 0, Math.PI * 2);
 
-    svg
-      .selectAll('path')
-      .style('opacity', 1 / (1 + d.depth))
-      .filter(node => {
-        if (node.depth < d.depth) {
-          // node is parent of d
-          return false
+    if (hoveredNode) {
+      ctx.fillStyle = "rgba(238, 238, 238, 0.5)";
+    } else {
+      ctx.fillStyle = "rgba(238, 238, 238, 0.2)";
+    }
+    ctx.fill();
+
+    // Light border
+    ctx.strokeStyle = "#ddd";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // ============== Hit Testing ==============
+  function hitTest(mouseX, mouseY) {
+    var dx = mouseX - centerX;
+    var dy = mouseY - centerY;
+    var distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Angle from positive x-axis, but we need to adjust for our rotation
+    var angle = Math.atan2(dy, dx);
+
+    // Check center circle first
+    if (distance <= CORE_RADIUS) {
+      return { type: "center", node: currentNode };
+    }
+
+    // Check arcs from front to back (reverse order for proper hit detection)
+    for (var i = visibleNodes.length - 1; i >= 0; i--) {
+      var node = visibleNodes[i];
+
+      // Check if distance is within this ring
+      if (distance >= node.innerR && distance <= node.outerR) {
+        // Normalize angles to compare
+        var nodeStart = normalizeAngle(node.startAngle);
+        var nodeEnd = normalizeAngle(node.endAngle);
+        var testAngle = normalizeAngle(angle);
+
+        // Handle wrap-around case
+        var inArc = false;
+        if (nodeStart <= nodeEnd) {
+          inArc = testAngle >= nodeStart && testAngle <= nodeEnd;
         } else {
-          // d is parent of node
-          var e = node
-          while (e) {
-            if (e == d) return true
-            e = e.parent
-          }
-          return false
+          // Arc wraps around 0
+          inArc = testAngle >= nodeStart || testAngle <= nodeEnd;
         }
-      })
-      .style('opacity', 1)
-  }
 
-  function _mouseout(d) {
-    if (path) svg.selectAll('path').style('opacity', 0.8)
-
-    if (currentNode) updateCore(currentNode)
-  }
-
-  function zoomIn(p) {
-    // Prevent zooming into "Other files" synthetic nodes
-    if (p._isOtherFiles) return
-
-    if (p.depth > 1) {
-      p = p.parent
-    }
-    if (!p.children) return
-
-    // zoom(p, p)
-    State.navigateTo(keys(p))
-  }
-
-  function zoomOut(p) {
-    if (!p || !p.parent) return
-    // zoom(p.parent, p)
-    State.navigateTo(keys(p.parent))
-  }
-
-  // Zoom to the specified node
-  // updating the reference new root
-  // uses a previous node for animation
-  function zoom(node, prevNode) {
-    core_center.html(format(node.sum))
-    core_top.html(node.name)
-
-    max_level = 0
-    current_level = 0
-    setNodeFilter(node)
-
-    var tmp = node.parent
-    while (tmp) {
-      current_level++
-      tmp = tmp.parent
+        if (inArc) {
+          return { type: "arc", node: node.data };
+        }
+      }
     }
 
-    currentNode = node
-    // console.log('current_level', current_level)
-
-    // Rescale outside angles to match the new layout.
-    var enterArc,
-      exitArc,
-      outsideAngle = d3.scale.linear().domain([0, 2 * Math.PI])
-
-    function insideArc(d) {
-      var pkey = key(prevNode),
-        dkey = key(d)
-      return pkey > dkey
-        ? { depth: d.depth - 1, x: 0, dx: 0 }
-        : pkey < dkey
-        ? { depth: d.depth - 1, x: 2 * Math.PI, dx: 0 }
-        : { depth: 0, x: 0, dx: 2 * Math.PI }
-    }
-
-    function outsideArc(d) {
-      return { depth: d.depth + 1, x: outsideAngle(d.x), dx: outsideAngle(d.x + d.dx) - outsideAngle(d.x) }
-    }
-
-    center
-      .datum(node)
-      .on('mouseover', mouseover)
-      .on('mouseout', mouseout)
-
-    // When zooming in, arcs enter from the outside and exit to the inside.
-    // Entering outside arcs start from the old layout.
-    if (node === prevNode)
-      (enterArc = outsideArc), (exitArc = insideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
-
-    const flatten_nodes = partition.nodes(node).slice(1)
-
-    // When zooming out, arcs enter from the inside and exit to the outside.
-    // Exiting outside arcs transition to the new layout.
-    if (node !== prevNode)
-      (enterArc = insideArc), (exitArc = outsideArc), outsideAngle.range([prevNode.x, prevNode.x + prevNode.dx])
-
-    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, max_level)
-
-    var transition_time = d3.event && d3.event.altKey ? 7500 : 750
-
-    path = svg.selectAll('path').data(flatten_nodes, key)
-
-    // exit
-    path
-      .exit()
-      .transition()
-      .duration(transition_time)
-      .style('fill-opacity', function(d) {
-        return d.depth === 1 + (node === prevNode) ? 1 : 0
-      })
-      .attrTween('d', function(d) {
-        return arcTween.call(this, exitArc(d))
-      })
-      .remove()
-
-    // enter
-    path
-      .enter()
-      .append('path')
-      .attr('class', 'area')
-      .style('fill', fill)
-      .style('stroke', '#c8c8c8')
-      .style('stroke-opacity', 0.6)
-      .style('stroke-width', function(d) { return Math.max(0.25, 1.0 - d.depth * 0.08) })
-      .style('fill-opacity', d => {
-        // return 1
-        return d.depth === 2 - (node === prevNode) ? 1 : 0
-      })
-      .on('click', zoomIn)
-      .each(function(d) {
-        this._current = enterArc(d)
-      })
-      .on('mouseover', mouseover)
-      .on('mouseout', mouseout)
-      // update
-      .merge(path)
-      .attr('d', arc)
-      .style('stroke', '#c8c8c8')
-      .style('stroke-opacity', 0.6)
-      .style('stroke-width', function(d) { return Math.max(0.25, 1.0 - d.depth * 0.08) })
-      .transition()
-      .duration(transition_time)
-      .style('fill-opacity', 1)
-      .attrTween('d', function(d) {
-        return arcTween.call(this, updateArc(d))
-      })
+    return null;
   }
 
-  function redraw(node) {
-    if (!rootNode) return
-    node = node || currentNode
-    zoom(node, node)
+  function normalizeAngle(angle) {
+    while (angle < 0) angle += Math.PI * 2;
+    while (angle >= Math.PI * 2) angle -= Math.PI * 2;
+    return angle;
   }
 
-  var jsoned = false
+  // ============== Event Handlers ==============
+  function onMouseMove(e) {
+    if (!currentNode) return;
 
+    var rect = canvas.getBoundingClientRect();
+    var mouseX = e.clientX - rect.left;
+    var mouseY = e.clientY - rect.top;
+
+    var hit = hitTest(mouseX, mouseY);
+    var newHovered = hit ? hit.node : null;
+
+    if (newHovered !== hoveredNode) {
+      hoveredNode = newHovered;
+      if (hoveredNode) {
+        updateCore(hoveredNode);
+        State.highlightPath(keys(hoveredNode));
+      } else {
+        if (currentNode) updateCore(currentNode);
+        State.highlightPath();
+      }
+      scheduleDraw();
+    }
+  }
+
+  function onMouseOut() {
+    if (hoveredNode) {
+      hoveredNode = null;
+      if (currentNode) updateCore(currentNode);
+      State.highlightPath();
+      scheduleDraw();
+    }
+  }
+
+  function onClick(e) {
+    if (!currentNode) return;
+
+    var rect = canvas.getBoundingClientRect();
+    var mouseX = e.clientX - rect.left;
+    var mouseY = e.clientY - rect.top;
+
+    var hit = hitTest(mouseX, mouseY);
+    if (!hit) return;
+
+    if (hit.type === "center") {
+      // Zoom out
+      if (currentNode && currentNode.parent) {
+        State.navigateTo(keys(currentNode.parent));
+      }
+    } else if (hit.type === "arc") {
+      // Zoom in
+      var node = hit.node;
+
+      // Prevent zooming into "Other files" or "Free Space" synthetic nodes
+      if (node._isOtherFiles || node._isFreeSpace) return;
+
+      // If clicking on depth > 1, zoom to parent instead
+      if (node.depth - currentNode.depth > 1) {
+        node = node.parent;
+      }
+
+      if (node && (node._children || node.children)) {
+        State.navigateTo(keys(node));
+      }
+    }
+  }
+
+  // ============== Core Display ==============
+  function updateCore(d) {
+    if (!d) return;
+
+    var baseNode = currentNode || rootNode;
+    var percent = baseNode
+      ? ((d.sum / baseNode.sum) * 100).toFixed(2) + "%"
+      : "";
+
+    if (core_top) core_top.innerHTML = d.name || "";
+    if (core_center)
+      core_center.innerHTML = format(d.sum).split(" ").join("<br/>");
+    if (core_tag) core_tag.innerHTML = percent + "<br/>";
+  }
+
+  // ============== Navigation ==============
+  function navigateTo(targetKeys) {
+    if (!rootNode) return;
+    var targetNode = getNodeFromPath(targetKeys, rootNode);
+    if (targetNode) {
+      zoom(targetNode);
+    }
+  }
+
+  function zoom(node) {
+    if (!node) return;
+
+    // Save current state for animation
+    var oldNodes = visibleNodes.slice();
+    var oldNodeMap = new Map();
+    oldNodes.forEach(function (n) {
+      oldNodeMap.set(key(n.data), n);
+    });
+
+    currentNode = node;
+    updateCore(node);
+
+    // Compute new layout
+    computeVisibleNodes(node);
+
+    // Setup animation interpolation
+    visibleNodes.forEach(function (n) {
+      var k = key(n.data);
+      var old = oldNodeMap.get(k);
+      if (old) {
+        // Existing node - animate from old position
+        n.fromStartAngle = old.startAngle;
+        n.fromEndAngle = old.endAngle;
+        n.fromInnerR = old.innerR;
+        n.fromOuterR = old.outerR;
+      } else {
+        // New node - animate from center/collapsed state
+        var midAngle = (n.startAngle + n.endAngle) / 2;
+        n.fromStartAngle = midAngle;
+        n.fromEndAngle = midAngle;
+        n.fromInnerR = CORE_RADIUS;
+        n.fromOuterR = CORE_RADIUS;
+      }
+    });
+
+    isAnimating = true;
+    animationStart = Date.now();
+
+    scheduleDraw();
+  }
+
+  function computeVisibleNodes(node) {
+    if (!node) return;
+
+    // Use d3 partition to compute layout
+    setNodeFilter(node);
+    var nodes = partition.nodes(node).slice(1); // skip root (the current node itself)
+
+    // Calculate max depth for FLEXI_LEVEL
+    var maxDepth = 0;
+    nodes.forEach(function (n) {
+      var relativeDepth = n.depth - node.depth;
+      if (relativeDepth > maxDepth) maxDepth = relativeDepth;
+    });
+
+    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, maxDepth);
+    if (FLEXI_LEVEL < 1) FLEXI_LEVEL = 1;
+
+    // Convert to render format
+    visibleNodes = [];
+    var ADJUSTMENT = -Math.PI / 2; // Rotate so 0 degrees is at top
+
+    nodes.forEach(function (d) {
+      var relativeDepth = d.depth - node.depth;
+
+      // Skip nodes beyond visible depth
+      if (relativeDepth > LEVELS || relativeDepth < 1) return;
+
+      var innerR =
+        CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * (relativeDepth - 1);
+      var outerR =
+        CORE_RADIUS + (OUTER_RADIUS / FLEXI_LEVEL) * relativeDepth - 1;
+
+      // Ensure valid radii
+      if (innerR < 0) innerR = 0;
+      if (outerR <= innerR) return;
+
+      visibleNodes.push({
+        data: d,
+        startAngle: d.x + ADJUSTMENT,
+        endAngle: d.x + d.dx + ADJUSTMENT - 0.005, // small gap between segments
+        innerR: innerR,
+        outerR: outerR,
+        // Animation from values (set later)
+        fromStartAngle: d.x + ADJUSTMENT,
+        fromEndAngle: d.x + d.dx + ADJUSTMENT - 0.005,
+        fromInnerR: innerR,
+        fromOuterR: outerR,
+      });
+    });
+
+    // Sort by depth (back to front) for proper rendering
+    visibleNodes.sort(function (a, b) {
+      return a.data.depth - b.data.depth;
+    });
+  }
+
+  // ============== Generate ==============
   function generateSunburst(root) {
-    var oldLineage
-    // if (currentNode) oldLineage = keys(currentNode)
+    rootNode = root;
+    currentNode = root;
 
-    currentNode = root
-    rootNode = root
-
-    partition = d3.layout.partition()
+    partition = d3.layout.partition();
 
     partition
-      .value(d => d.size)
-      .sort(namesort) // namesort countsort sizesort
-      .size([2 * Math.PI, radius]) // use r*r for equal area
+      .value(function (d) {
+        return d.size;
+      })
+      .sort(namesort)
+      .size([2 * Math.PI, radius]);
 
-    computeNodeCount(root)
-    computeNodeSize(root)
+    computeNodeCount(root);
+    computeNodeSize(root);
 
-    console.time('color')
-    colorByTypes(root)
-    console.timeEnd('color')
+    console.time("color");
+    colorByTypes(root);
+    console.timeEnd("color");
 
-    console.log('Root count', root.count, 'ROOT size', format(root.value))
+    console.log("Root count", root.count, "ROOT size", format(root.value));
 
-    console.time('compute3')
-    // Now redefine the value function to use the previously-computed sum.
+    // Set up node filter with sum values
+    setNodeFilter(root).value(function (d) {
+      return USE_COUNT ? d.count : d.sum;
+    });
 
-    max_level = 0
+    // Compute initial visible nodes
+    computeVisibleNodes(root);
+    updateCore(root);
 
-    setNodeFilter(root).value(function(d) {
-      // decide count or sum
-      max_level = Math.max(d.depth, max_level)
-      return USE_COUNT ? d.count : d.sum
-    })
+    // No animation on initial load - set from = to
+    visibleNodes.forEach(function (n) {
+      n.fromStartAngle = n.startAngle;
+      n.fromEndAngle = n.endAngle;
+      n.fromInnerR = n.innerR;
+      n.fromOuterR = n.outerR;
+    });
 
-    console.timeEnd('compute3')
-
-    // if (jsoned) {
-    //   // this attempts to place you in the same view after you refresh the data
-    //   if (oldLineage) {
-    //     const node = getNodeFromPath(oldLineage, root)
-    //     return redraw(node)
-    //   }
-
-    //   updateCore(root)
-    //   return redraw()
-    // }
-    jsoned = true
-
-    center = svg
-      .append('g')
-      .attr('id', 'core')
-      .on('click', zoomOut)
-
-    center.append('circle').attr('r', CORE_RADIUS)
-
-    center.append('title').text('zoom out')
-
-    if (RENDER_3D) plot3d(partition.nodes(root))
-    redraw()
-  }
-
-  function arcTween(b) {
-    var i = d3.interpolate(this._current, b)
-    this._current = i(0)
-    return function(t) {
-      return arc(i(t))
+    // Render 3D if enabled
+    if (RENDER_3D) {
+      plot3d(partition.nodes(root));
     }
+
+    scheduleDraw();
   }
 
-  function updateArc(d) {
-    return { depth: d.depth, x: d.x, dx: d.dx }
+  // ============== Utilities ==============
+  function scheduleDraw() {
+    drawer.run();
   }
 
-  // Export plugin interface
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function isAncestorOrDescendant(a, b) {
+    if (!a || !b) return false;
+
+    // Check if a is ancestor of b
+    var node = b;
+    while (node) {
+      if (node === a) return true;
+      node = node.parent;
+    }
+
+    // Check if b is ancestor of a
+    node = a;
+    while (node) {
+      if (node === b) return true;
+      node = node.parent;
+    }
+
+    return false;
+  }
+
+  // ============== Initialize ==============
+  init();
+
+  // ============== Plugin Interface ==============
   return {
-    resize: onResize,
-    generate: generateSunburst,
-    showMore: function() {
-      LEVELS++
-      redraw()
-    },
-    showLess: function() {
-      if (LEVELS <= 1) return
-      LEVELS--
-      redraw()
-    },
-    cleanup: function() {
-      // if (rootNode) {
-      //   partition
-      //   .nodes(rootNode)
-      //   .forEach(function(d) {
-      //     d.children = d._children // revert children
-      //   })
-
-      if (path) {
-        // do some GC()!!!
-        path.remove()
-        center.remove()
-
-        // d3
-        //   .select('#sequence')
-        //   .select('div')
-        //   .selectAll('a')
-        //   .remove()
-
-        rootNode = currentNode = null
-        path = center = null
-
-        jsoned = false
+    resize: function () {
+      calcDimensions();
+      if (currentNode) {
+        computeVisibleNodes(currentNode);
+        // No animation on resize
+        visibleNodes.forEach(function (n) {
+          n.fromStartAngle = n.startAngle;
+          n.fromEndAngle = n.endAngle;
+          n.fromInnerR = n.innerR;
+          n.fromOuterR = n.outerR;
+        });
+        scheduleDraw();
       }
     },
-    navigateTo: function(keys) {
-      if (!rootNode) return
-      var n = getNodeFromPath(keys, rootNode)
-      zoom(n, currentNode)
+
+    generate: generateSunburst,
+
+    showMore: function () {
+      LEVELS++;
+      if (currentNode) {
+        computeVisibleNodes(currentNode);
+        visibleNodes.forEach(function (n) {
+          n.fromStartAngle = n.startAngle;
+          n.fromEndAngle = n.endAngle;
+          n.fromInnerR = n.innerR;
+          n.fromOuterR = n.outerR;
+        });
+        scheduleDraw();
+      }
     },
-    highlightPath: highlightPath
-  }
+
+    showLess: function () {
+      if (LEVELS <= 1) return;
+      LEVELS--;
+      if (currentNode) {
+        computeVisibleNodes(currentNode);
+        visibleNodes.forEach(function (n) {
+          n.fromStartAngle = n.startAngle;
+          n.fromEndAngle = n.endAngle;
+          n.fromInnerR = n.innerR;
+          n.fromOuterR = n.outerR;
+        });
+        scheduleDraw();
+      }
+    },
+
+    cleanup: function () {
+      rootNode = null;
+      currentNode = null;
+      hoveredNode = null;
+      visibleNodes = [];
+      if (ctx) {
+        var dpr = window.devicePixelRatio || 1;
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, width, height);
+        ctx.restore();
+      }
+    },
+
+    navigateTo: function (targetKeys) {
+      if (!rootNode) return;
+      var n = getNodeFromPath(targetKeys, rootNode);
+      if (n) {
+        zoom(n);
+      }
+    },
+
+    highlightPath: function (path, node) {
+      var newHovered = node || null;
+      if (newHovered !== hoveredNode) {
+        hoveredNode = newHovered;
+        if (hoveredNode) {
+          updateCore(hoveredNode);
+        } else if (currentNode) {
+          updateCore(currentNode);
+        }
+        scheduleDraw();
+      }
+    },
+  };
 }

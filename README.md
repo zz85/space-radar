@@ -1,69 +1,70 @@
-Space Radar Electron
-====
+# Space Radar
+
 SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts.
 
-Downloads
-==
-Download Mac and Windows at the [releases page](https://github.com/zz85/space-radar-electron/releases)
+## Downloads
 
-Features
-==
-- space visualizations using sunburst and treemap charts
-- previews visualization as disk is being scanned
-- fast (completes disk scanner faster than du)
-- cross platform (at least on Mac OS X and Windows)
-- allow drilldown of directories
-- breadcrumbs and navigation
-- opens files and directories
-- analyze disk contents from a remote server (see section [Reading from a file](#reading-file))
+Download Mac, Windows, and Linux builds at the [releases page](https://github.com/zz85/space-radar/releases)
 
-Screenshots
-==
+## Features
+
+- Space visualizations using sunburst, treemap, and flamegraph charts
+- Previews visualization as disk is being scanned
+- Fast scanning (completes faster than `du`)
+- Cross platform (macOS, Windows, Linux)
+- Apple Silicon native support (arm64)
+- Cancel and pause/resume scanning
+- Free space visualization
+- Directory drilldown with breadcrumbs and navigation
+- Opens files and directories in system file manager
+- Analyze disk contents from a remote server (see [Reading from a file](#reading-from-a-file))
+- Memory usage breakdown (cross-platform)
+- Auto-updates
+
+## Screenshots
+
 ![space-radar-4](https://cloud.githubusercontent.com/assets/314997/11022585/5c847364-869d-11e5-8079-0a16e7d747e4.gif)
 
 ![screenshot 2015-11-09 04 45 27](https://cloud.githubusercontent.com/assets/314997/11022582/3cc0bc90-869d-11e5-85c2-e79a0bf7c27f.png)
 
 ![screenshot 2015-11-09 04 45 36](https://cloud.githubusercontent.com/assets/314997/11022581/33822b50-869d-11e5-9fe6-2db6b7a81505.png)
 
+## Reading from a file
 
-Reading from a file <a id="reading-file"></a>
-==
 To create a file to be read from use `du -ak`, for example:
+
 - `du -ak /var/log /usr | gzip -c > /tmp/sizes.txt.gz`
 - `du -ak /opt /home /tmp > /tmp/sizes.txt`
 
 Compressed files can be read directly. To detect them, the file name has to end with `.gz`.
 
-Future Enhancements
-==
-- more target for scanning
-- color by file types
-- filter hidden files
-- moar!!
-- let me know what you think
+## What's New
 
-Futher Explorations
-==
-- More efficient memory usage
-- More efficient scanning process
-- 3D visualization
+### V6
 
-History
-==
+- **Electron 40** - Major upgrade from Electron 28
+- **Apple Silicon** - Native arm64 builds for M1/M2/M3 Macs
+- **Canvas Sunburst** - Rewritten visualization using Canvas 2D for much better performance
+- **Cancel/Pause Scanning** - Stop or pause ongoing scans, view partial results
+- **Free Space Visualization** - See available disk space in the sunburst chart
+- **Accurate Scanning** - Skip symlinks, dedupe hardlinks, exclude problematic paths (OneDrive caches, system files)
+- **Real-time Stats** - See file/directory counts, scan speed, and errors during scanning
+- **Memory Visualization** - Cross-platform support (macOS, Windows, Linux)
+- **Color Schemes** - New Seaborn palettes, colorblind-friendly options
+- **3D Mode** - Experimental 3D sunburst visualization
+- **Auto-updates** - Automatic update notifications via electron-updater
+- **GitHub Actions CI/CD** - Automated builds for all platforms
 
-This project started as quick prototype for me to test drive [electron](https://www.electronjs.org/) (& some es6 syntax), [d3.js](https://d3js.org) and for me to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the ui thread, ipc calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+### V5
 
-
-Whats New
-==
-V5
 - Import from DU file
 - Upgrade electron
 - Flamegraphs (BETA)
 - Directory Listview
 - Update libs - Electron, D3
 
-V4
+### V4
+
 - Treemap view
 - Memory monitoring
 - Mac App look using [Photon](http://photonkit.com)
@@ -71,7 +72,8 @@ V4
 - Navigation controls (back/fwd/up)
 - Switched disk scanning jobs to invisible renderer process
 
-Version 3
+### V3
+
 - App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
 - Many Bug fixes
 - Disk scanning is moved to a webview process
@@ -84,41 +86,58 @@ Version 3
 - Locate path in Finder
 - Env Debug Flags
 
-Version 2
+### V2
+
 - Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
 - Runs disk scanning as a separate headless renderer process
 - Json is passed back via IPC
 - Remove Async npm dependency
 
-Issues
-==
-Please raise on [github issue tracker](https://github.com/zz85/space-radar-electron/issues) or contact [@blurspline on twitter](http://twitter.com/blurspline)
+## Development
 
-Development
-==
+Install dependencies:
 
-Run
-
+```bash
+npm install
 ```
+
+Run in development mode:
+
+```bash
 npm run debug
 ```
 
-or
+Or simply:
 
-```
-npm run app
-```
-
-Check that dependencies are installed, otherwise run (this may take awhile for electron binaries)
-
-```
-npm run install
+```bash
+npm start
 ```
 
-Thanks
-==
+Build for distribution:
+
+```bash
+npm run build        # Current platform
+npm run build:mac    # macOS
+npm run build:win    # Windows
+npm run build:linux  # Linux
+```
+
+## History
+
+This project started as quick prototype for me to test drive [Electron](https://www.electronjs.org/) (& some ES6 syntax), [D3.js](https://d3js.org) and to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the UI thread, IPC calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+
+## Issues
+
+Please raise on [GitHub issue tracker](https://github.com/zz85/space-radar/issues) or contact [@blurspline on Twitter](http://twitter.com/blurspline)
+
+## Thanks
+
 - [Jill](http://jilln.com/) for designing the app logo
 - Jianwei for his comments on the app
 - Chee Aun for helping alpha test the app
 - WM for his talk on Electron that got me started
 - [Contributors](https://github.com/zz85/space-radar/graphs/contributors)
+
+## License
+
+MIT
