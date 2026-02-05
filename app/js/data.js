@@ -55,8 +55,47 @@ function setNodeFilter(data) {
     }
     if (!d._children) return null
 
-    const children = d._children.filter(c => (c.sum / data.sum) * 100 > HIDE_THRESHOLD)
-    return children
+    // Separate children into visible and hidden based on threshold
+    const visibleChildren = []
+    const hiddenChildren = []
+    
+    d._children.forEach(c => {
+      if ((c.sum / data.sum) * 100 > HIDE_THRESHOLD) {
+        visibleChildren.push(c)
+      } else {
+        hiddenChildren.push(c)
+      }
+    })
+    
+    // If there are hidden children, create an aggregate "Other files" node
+    if (hiddenChildren.length > 0) {
+      // Calculate total size and count of hidden items
+      let otherSum = 0
+      let otherCount = 0
+      hiddenChildren.forEach(c => {
+        otherSum += c.sum
+        otherCount += c.count
+      })
+      
+      // Create synthetic "Other files" node
+      const otherNode = {
+        name: 'Other files (' + hiddenChildren.length + ' items)',
+        sum: otherSum,
+        count: otherCount,
+        size: otherSum,
+        value: otherSum,
+        depth: d.depth + 1,
+        parent: d,
+        _children: null,  // Other files node has no children
+        children: null,
+        _isOtherFiles: true,  // Mark this as a synthetic node
+        color: d3.lab(85, 0, 0)  // Light gray color to distinguish it
+      }
+      
+      visibleChildren.push(otherNode)
+    }
+    
+    return visibleChildren
     // return depth < LEVELS ? d._children : null;
   })
 }
