@@ -82,7 +82,7 @@ function setNodeFilter(data) {
       
       // Create synthetic "Other files" node
       const otherNode = {
-        name: 'Other files (' + hiddenChildren.length + ' items)',
+        name: `Other files (${hiddenChildren.length} items)`,
         sum: otherSum,
         count: otherCount,
         size: otherSum,
