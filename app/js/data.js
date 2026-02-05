@@ -56,11 +56,13 @@ function setNodeFilter(data) {
     if (!d._children) return null
 
     // Separate children into visible and hidden based on threshold
+    // NOTE: Threshold is calculated relative to the parent node (d.sum), not the root.
+    // This ensures correct filtering behavior when zoomed into subdirectories.
     const visibleChildren = []
     const hiddenChildren = []
     
     d._children.forEach(c => {
-      if ((c.sum / data.sum) * 100 > HIDE_THRESHOLD) {
+      if ((c.sum / d.sum) * 100 > HIDE_THRESHOLD) {
         visibleChildren.push(c)
       } else {
         hiddenChildren.push(c)
@@ -68,6 +70,7 @@ function setNodeFilter(data) {
     })
     
     // If there are hidden children, create an aggregate "Other files" node
+    // This ensures the visual representation accurately reflects the actual space usage
     if (hiddenChildren.length > 0) {
       // Calculate total size and count of hidden items
       let otherSum = 0
