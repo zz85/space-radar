@@ -2,6 +2,7 @@
 
 const { shell } = require("electron");
 const path = require("path");
+const si = require("systeminformation");
 
 const LASTLOAD_FILE = path.join(__dirname, "lastload.json");
 
@@ -51,6 +52,48 @@ function updateStatsDisplay(fileCount, dirCount, size, errorCount) {
   bottomStatus.textContent = statusText;
 }
 
+// Function to get disk space info for a given path
+function getDiskSpaceInfo(scanPath, callback) {
+  si.fsSize()
+    .then(drives => {
+      // Normalize paths for cross-platform comparison
+      const normalizedScanPath = scanPath.replace(/\\/g, "/");
+
+      // Find the drive with the longest matching mount point
+      // This handles nested mount points correctly (e.g., /home vs /)
+      let bestMatch = null;
+      let longestMatchLength = 0;
+
+      drives.forEach(d => {
+        const normalizedMount = d.mount.replace(/\\/g, "/");
+        if (normalizedScanPath.startsWith(normalizedMount)) {
+          if (normalizedMount.length > longestMatchLength) {
+            longestMatchLength = normalizedMount.length;
+            bestMatch = d;
+          }
+        }
+      });
+
+      // Fallback to first drive if no match found
+      const drive = bestMatch || drives[0];
+
+      if (drive) {
+        callback(null, {
+          total: drive.size,
+          used: drive.used,
+          available: drive.available,
+          usePercent: drive.use
+        });
+      } else {
+        callback(new Error("No drive found"));
+      }
+    })
+    .catch(err => {
+      console.error("Error getting disk space info:", err);
+      callback(err);
+    });
+}
+
 function startScan(path) {
   cleanup();
   hidePrompt();
@@ -62,6 +105,25 @@ function startScan(path) {
 
   var stat = fs.lstatSync(path);
   log("file", stat.isFile(), "dir", stat.isDirectory());
+
+  // Get and display disk space info
+  getDiskSpaceInfo(path, (err, diskInfo) => {
+    const diskSpaceElement = document.getElementById("disk_space_info");
+    if (!diskSpaceElement) return;
+
+    if (err || !diskInfo) {
+      diskSpaceElement.textContent = "Disk info unavailable";
+      return;
+    }
+
+    // Handle potential null/undefined usePercent
+    const usePercent =
+      diskInfo.usePercent != null ? diskInfo.usePercent.toFixed(2) : "0.00";
+    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(
+      diskInfo.available
+    )} | Used: ${format(diskInfo.used)} (${usePercent}%)`;
+    diskSpaceElement.textContent = diskInfoText;
+  });
 
   // return sendIpcMsg('go', path);
   if (stat.isFile()) {
