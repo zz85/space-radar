@@ -16,7 +16,7 @@ function buildProcessTree(processList) {
   let rss_sum = 0;
 
   // Build lookup table
-  processList.forEach(proc => {
+  processList.forEach((proc) => {
     const pid = proc.pid;
     const ppid = proc.parentPid;
     // memRss is in KB, convert to bytes
@@ -32,20 +32,20 @@ function buildProcessTree(processList) {
       pid: pid,
       ppid: ppid,
       rss: rss,
-      comm: comm
+      comm: comm,
     };
   });
 
   const app = {
     name: "App Memory",
-    children: []
+    children: [],
   };
 
   // Build tree structure
   Object.keys(all)
-    .map(k => all[k])
+    .map((k) => all[k])
     .sort((a, b) => a.pid - b.pid)
-    .forEach(a => {
+    .forEach((a) => {
       let parent;
       if (a.ppid in all) {
         parent = all[a.ppid];
@@ -58,7 +58,7 @@ function buildProcessTree(processList) {
         parent.children.push({
           name: parent.name,
           size: parent.rss,
-          parent: 1
+          parent: 1,
         });
         delete parent.size;
       }
@@ -76,7 +76,7 @@ function buildProcessTree(processList) {
   return {
     app: app,
     sum: rss_sum,
-    count: c
+    count: c,
   };
 }
 
@@ -99,7 +99,7 @@ function mem(callback) {
         inactive: memData.inactive || 0,
         speculative: memData.speculative || 0,
         "wired down": memData.wired || 0,
-        "occupied by compressor": memData.compressed || 0
+        "occupied by compressor": memData.compressed || 0,
       };
 
       // systeminformation returns: all, running, blocked, sleeping, unknown, list
@@ -110,7 +110,7 @@ function mem(callback) {
       const top = combine(processInfo, memInfo);
       callback(null, top);
     })
-    .catch(error => {
+    .catch((error) => {
       console.error("Memory scan error:", error);
       callback(error);
     });
@@ -134,29 +134,37 @@ occupied by compressor 499.375
 function combine(app, vm_stat) {
   const top = {
     name: "Memory",
-    children: []
+    children: [],
   };
 
+  // Calculate difference between system-reported active memory and process RSS sum
+  // This can be negative if process RSS exceeds active memory (due to shared memory, etc.)
   const diff = vm_stat.active - app.sum;
   const active = {
     name: "Active Memory",
-    children: [app.app]
+    children: [app.app],
   };
 
   top.children.push(active);
 
-  // app.app
-  active.children.push({
-    name: "Kernel / others?",
-    size: diff
-  });
+  // Only add "Kernel / others" if the difference is positive
+  // Negative values indicate measurement discrepancy, not actual memory
+  if (diff > 0) {
+    active.children.push({
+      name: "Kernel / others",
+      size: diff,
+    });
+  }
+
   ["free", "inactive", "speculative", "wired down", "occupied by compressor"]
     //, 'purgeable', 'stored in compressor', 'active',
-    .forEach(function(n) {
-      top.children.push({
-        name: n,
-        size: vm_stat[n]
-      });
+    .forEach(function (n) {
+      if (vm_stat[n] > 0) {
+        top.children.push({
+          name: n,
+          size: vm_stat[n],
+        });
+      }
     });
 
   return top;
