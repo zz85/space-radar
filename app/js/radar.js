@@ -31,12 +31,23 @@ function getDiskSpaceInfo(scanPath, callback) {
       // Normalize paths for cross-platform comparison
       const normalizedScanPath = scanPath.replace(/\\/g, '/')
       
-      // Find the drive that contains the scan path
-      const drive = drives.find(d => {
+      // Find the drive with the longest matching mount point
+      // This handles nested mount points correctly (e.g., /home vs /)
+      let bestMatch = null
+      let longestMatchLength = 0
+      
+      drives.forEach(d => {
         const normalizedMount = d.mount.replace(/\\/g, '/')
-        // Check if the scan path starts with the mount point
-        return normalizedScanPath.startsWith(normalizedMount)
-      }) || drives[0] // fallback to first drive if no match
+        if (normalizedScanPath.startsWith(normalizedMount)) {
+          if (normalizedMount.length > longestMatchLength) {
+            longestMatchLength = normalizedMount.length
+            bestMatch = d
+          }
+        }
+      })
+      
+      // Fallback to first drive if no match found
+      const drive = bestMatch || drives[0]
       
       if (drive) {
         callback(null, {
