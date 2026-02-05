@@ -83,6 +83,7 @@ function scanner() {
           onprogress: progress,
           // onrefresh: refresh
           excludePaths: [
+            // Cloud storage paths that can cause hangs or incomplete data
             pjoin(homeDir, "Library/CloudStorage"),
             pjoin(homeDir, "Library/Containers/com.microsoft.OneDrive"),
             pjoin(homeDir, "Library/Containers/com.microsoft.OneDrive-mac"),
@@ -93,7 +94,23 @@ function scanner() {
             pjoin(
               homeDir,
               "Library/Containers/com.microsoft.OneDrive-mac.FinderSync"
-            )
+            ),
+            // macOS system paths that often cause permission issues or hangs
+            "/System/Volumes/Data/.Spotlight-V100",
+            "/private/var/db",
+            "/private/var/folders",
+            "/.Spotlight-V100",
+            "/.fseventsd",
+            "/dev",
+            "/System/Volumes/VM",
+            "/System/Volumes/Preboot",
+            "/System/Volumes/Update",
+            pjoin(homeDir, "Library/Caches"),
+            pjoin(homeDir, "Library/Saved Application State"),
+            // Time Machine
+            "/Volumes/.timemachine",
+            "/.MobileBackups",
+            "/.MobileBackups.trash"
           ]
         },
         complete
@@ -142,9 +159,17 @@ function scanner() {
       du.resetCounters();
     }
 
-    function progress(path, name, size, fileCount, dirCount) {
+    function progress(path, name, size, fileCount, dirCount, errorCount) {
       refreshTask.check();
-      ipc_transfer("progress", path, name, size, fileCount, dirCount);
+      ipc_transfer(
+        "progress",
+        path,
+        name,
+        size,
+        fileCount,
+        dirCount,
+        errorCount
+      );
     }
   }
 

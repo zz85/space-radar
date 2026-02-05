@@ -31,17 +31,24 @@ function formatNumber(num) {
 }
 
 // Update stats display in footer
-function updateStatsDisplay(fileCount, dirCount, size) {
+function updateStatsDisplay(fileCount, dirCount, size, errorCount) {
   const elapsed = (performance.now() - start_time) / 1000; // seconds
   const totalItems = fileCount + dirCount;
   const itemsPerSec = elapsed > 0 ? Math.round(totalItems / elapsed) : 0;
   const bytesPerSec = elapsed > 0 ? size / elapsed : 0;
 
-  bottomStatus.textContent = `Scanning: ${formatNumber(
-    fileCount
-  )} files | ${formatNumber(dirCount)} dirs | ${format(size)} | ${formatNumber(
-    itemsPerSec
-  )} items/sec | ${format(bytesPerSec)}/sec`;
+  let statusText = `Scanning: ${formatNumber(fileCount)} files | ${formatNumber(
+    dirCount
+  )} dirs | ${format(size)} | ${formatNumber(itemsPerSec)} items/sec | ${format(
+    bytesPerSec
+  )}/sec`;
+
+  // Show error count if there are any errors
+  if (errorCount && errorCount > 0) {
+    statusText += ` | ${formatNumber(errorCount)} errors`;
+  }
+
+  bottomStatus.textContent = statusText;
 }
 
 function startScan(path) {
@@ -92,20 +99,25 @@ function start_read() {
   );
 }
 
-function progress(dir, name, size, fileCount, dirCount) {
+function progress(dir, name, size, fileCount, dirCount, errorCount) {
   // log('[' + ipc_name + '] progress', name)
-  // may take a little while
+  // Show current scanning path in legend for visibility
   legend.html(
-    "<h2>Scanning... <i>(try grabbing a drink..)</i></h2><p>" +
+    "<h2>Scanning... <i>(try grabbing a drink..)</i></h2>" +
+      "<p style='font-size: 0.8em; word-break: break-all; max-height: 60px; overflow: hidden;'>" +
       dir +
-      "</p><br/>Scanned: " +
-      format(size)
+      "</p>" +
+      "<br/>Scanned: " +
+      format(size) +
+      (errorCount > 0
+        ? " <span style='color: #c44;'>(" + errorCount + " errors)</span>"
+        : "")
   );
   current_size = size;
 
   // Update footer stats display
   if (fileCount !== undefined && dirCount !== undefined) {
-    updateStatsDisplay(fileCount, dirCount, size);
+    updateStatsDisplay(fileCount, dirCount, size, errorCount);
   }
 }
 
@@ -162,13 +174,22 @@ function complete(json, finalStats) {
     const timeStr =
       elapsed < 60 ? elapsed.toFixed(1) + "s" : (elapsed / 60).toFixed(1) + "m";
 
-    bottomStatus.textContent = `Scanned: ${formatNumber(
+    let statusText = `Scanned: ${formatNumber(
       finalStats.fileCount
     )} files | ${formatNumber(finalStats.dirCount)} dirs | ${format(
       finalStats.current_size
     )} in ${timeStr} (${formatNumber(itemsPerSec)} items/sec, ${format(
       bytesPerSec
     )}/sec)`;
+
+    // Show error count if there were any errors
+    if (finalStats.errorCount && finalStats.errorCount > 0) {
+      statusText += ` | ${formatNumber(
+        finalStats.errorCount
+      )} errors (permission denied, etc.)`;
+    }
+
+    bottomStatus.textContent = statusText;
   }
 
   // webview.remove()

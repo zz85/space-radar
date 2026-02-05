@@ -4,17 +4,32 @@
   const fs = require("fs");
   const path = require("path");
 
-  let counter, current_size, fileCount, dirCount;
+  let counter, current_size, fileCount, dirCount, errorCount;
+  let currentPath = ""; // Track current path being scanned
+  let lastProgressTime = Date.now();
+  let stuckThreshold = 30000; // 30 seconds without progress = potentially stuck
 
   function resetCounters() {
     counter = 0;
     current_size = 0;
     fileCount = 0;
     dirCount = 0;
+    errorCount = 0;
+    currentPath = "";
+    lastProgressTime = Date.now();
   }
 
   function getStats() {
-    return { counter, current_size, fileCount, dirCount };
+    return {
+      counter,
+      current_size,
+      fileCount,
+      dirCount,
+      errorCount,
+      currentPath,
+      lastProgressTime,
+      possiblyStuck: Date.now() - lastProgressTime > stuckThreshold
+    };
   }
 
   resetCounters();
@@ -33,10 +48,21 @@
       name = options.name;
     }
 
+    // Track current path for visibility
+    currentPath = dir;
+    lastProgressTime = Date.now();
+
     counter++;
     if (counter % 10000 === 0) {
       if (options.onprogress)
-        options.onprogress(dir, name, current_size, fileCount, dirCount);
+        options.onprogress(
+          dir,
+          name,
+          current_size,
+          fileCount,
+          dirCount,
+          errorCount
+        );
       if (counter % 100000 === 0)
         if (options.onrefresh) options.onrefresh(dir, name);
     }
@@ -66,7 +92,9 @@
 
     fs.lstat(dir, (err, stat) => {
       if (err) {
-        console.log(err.stack);
+        // Log error but continue scanning
+        console.warn("[du] lstat error:", dir, err.code || err.message);
+        errorCount++;
         return done(dir);
       }
 
@@ -75,7 +103,26 @@
         current_size += stat.blocks * 512;
       }
 
+      // Skip symbolic links
       if (stat.isSymbolicLink()) return done(dir);
+
+      // Skip special files that could cause hangs (sockets, FIFOs, devices)
+      if (stat.isSocket()) {
+        console.log("[du] Skipping socket:", dir);
+        return done(dir);
+      }
+      if (stat.isFIFO()) {
+        console.log("[du] Skipping FIFO:", dir);
+        return done(dir);
+      }
+      if (stat.isBlockDevice()) {
+        console.log("[du] Skipping block device:", dir);
+        return done(dir);
+      }
+      if (stat.isCharacterDevice()) {
+        console.log("[du] Skipping character device:", dir);
+        return done(dir);
+      }
 
       // Prepare inode dedupe set
       if (!options.seenInodes) options.seenInodes = new Set();
@@ -106,12 +153,12 @@
           }
         }
         node.name = name;
-        // node.size = size;
         node.children = [];
 
         fs.readdir(dir, (err, list) => {
           if (err) {
-            console.error(err.stack);
+            console.warn("[du] readdir error:", dir, err.code || err.message);
+            errorCount++;
             return done(dir);
           }
 
@@ -145,6 +192,8 @@
         return;
       }
 
+      // Unknown file type - skip it
+      console.log("[du] Skipping unknown file type:", dir);
       return done(dir);
     });
   }
