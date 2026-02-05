@@ -1,7 +1,7 @@
 {
   "name": "space-radar",
   "productName": "SpaceRadar",
-  "version": "6.0.0-alpha.4",
+  "version": "6.0.0-alpha.5",
   "description": "Disk Usage Electron App",
   "main": "app/main.js",
   "scripts": {
@@ -144,7 +144,8 @@
         }
       ],
       "category": "Utility",
-      "icon": "Icon.png"
+      "icon": "Icon.png",
+      "maintainer": "Joshua Koo <zz85nus@gmail.com>"
     },
     "publish": {
       "provider": "github",
