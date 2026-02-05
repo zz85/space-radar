@@ -12,6 +12,7 @@ if (browser) {
 
 function scanner() {
   const path = require("path");
+  const os = require("os");
   const du = require("./du");
   const duPipe = require("./duPipe");
   const duFromFile = require("./duFromFile");
@@ -21,6 +22,9 @@ function scanner() {
   const TimeoutTask = utils.TimeoutTask;
   const TaskChecker = utils.TaskChecker;
   const zlib = require("zlib");
+
+  // Use temp directory for IPC file (writable, not in asar)
+  const IPC_FILE = path.join(os.tmpdir(), "space-radar-fs-ipc.json");
 
   let ipc;
 
@@ -275,8 +279,8 @@ function scanner() {
 
     log("process fs ipc");
     err = null;
-    // fs ipc
-    const p = path.join(__dirname, "fs-ipc.json");
+    // fs ipc - use temp directory (writable, not in asar)
+    const p = IPC_FILE;
     const before_size = json_str.length;
     const zlib_json_str = zlib.deflateSync(json_str);
     log(

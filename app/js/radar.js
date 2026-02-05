@@ -2,9 +2,30 @@
 
 const { shell } = require("electron");
 const path = require("path");
+const os = require("os");
 // si (systeminformation) is already loaded by mem.js
 
-const LASTLOAD_FILE = path.join(__dirname, "lastload.json");
+// Use app data directory for writable files (not asar)
+// Falls back to temp directory if app data is not accessible
+function getAppDataPath() {
+  const appName = "SpaceRadar";
+  if (process.platform === "darwin") {
+    return path.join(os.homedir(), "Library", "Application Support", appName);
+  } else if (process.platform === "win32") {
+    return path.join(process.env.APPDATA || os.homedir(), appName);
+  } else {
+    return path.join(os.homedir(), ".config", appName);
+  }
+}
+
+const APP_DATA_DIR = getAppDataPath();
+// Ensure directory exists
+try {
+  fs.mkdirSync(APP_DATA_DIR, { recursive: true });
+} catch (e) {
+  console.warn("[radar] Could not create app data dir:", e.message);
+}
+const LASTLOAD_FILE = path.join(APP_DATA_DIR, "lastload.json");
 
 // Track scanning state
 var isScanning = false;
