@@ -77,7 +77,9 @@ function startScan(path) {
       return
     }
     
-    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${diskInfo.usePercent.toFixed(2)}%)`
+    // Handle potential null/undefined usePercent
+    const usePercent = diskInfo.usePercent != null ? diskInfo.usePercent.toFixed(2) : '0.00'
+    const diskInfoText = `Total: ${format(diskInfo.total)} | Free: ${format(diskInfo.available)} | Used: ${format(diskInfo.used)} (${usePercent}%)`
     diskSpaceElement.textContent = diskInfoText
   })
 

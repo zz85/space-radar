@@ -288,3 +288,8 @@ line {
   text-overflow: ellipsis;
   /* todo some kind of flex width */
 }
+
+#disk_space_info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
