@@ -368,6 +368,10 @@ function switchColorScheme(scheme) {
         switchColorMode(value);
       } else if (type === "darkMode") {
         toggleDarkMode(value);
+      } else if (type === "3dMode") {
+        if (window.toggle3D) {
+          window.toggle3D(value);
+        }
       }
     });
   } catch (e) {

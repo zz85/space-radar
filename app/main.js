@@ -7,7 +7,7 @@ const {
   dialog,
   BrowserWindow,
   Menu,
-  shell
+  shell,
 } = require("electron");
 app.commandLine.appendSwitch("js-flags", "--expose_gc");
 
@@ -22,7 +22,7 @@ crashReporter.start({
 })
 */
 
-app.on("window-all-closed", function() {
+app.on("window-all-closed", function () {
   app.quit();
 });
 
@@ -43,8 +43,8 @@ function buildAppMenu() {
         { role: "paste" },
         { role: "pasteandmatchstyle" },
         { role: "delete" },
-        { role: "selectall" }
-      ]
+        { role: "selectall" },
+      ],
     },
     {
       label: "View",
@@ -57,12 +57,12 @@ function buildAppMenu() {
         { role: "zoomin" },
         { role: "zoomout" },
         { type: "separator" },
-        { role: "togglefullscreen" }
-      ]
+        { role: "togglefullscreen" },
+      ],
     },
     {
       role: "window",
-      submenu: [{ role: "minimize" }, { role: "close" }]
+      submenu: [{ role: "minimize" }, { role: "close" }],
     },
     {
       role: "help",
@@ -71,10 +71,10 @@ function buildAppMenu() {
           label: "Learn More",
           click() {
             shell.openExternal("https://github.com/nicedoc/space-radar");
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   // macOS-specific menu items
@@ -90,8 +90,8 @@ function buildAppMenu() {
         { role: "hideothers" },
         { role: "unhide" },
         { type: "separator" },
-        { role: "quit" }
-      ]
+        { role: "quit" },
+      ],
     });
 
     // Edit menu - add Speech submenu
@@ -99,8 +99,8 @@ function buildAppMenu() {
       { type: "separator" },
       {
         label: "Speech",
-        submenu: [{ role: "startspeaking" }, { role: "stopspeaking" }]
-      }
+        submenu: [{ role: "startspeaking" }, { role: "stopspeaking" }],
+      },
     );
 
     // Window menu
@@ -109,7 +109,7 @@ function buildAppMenu() {
       { role: "minimize" },
       { role: "zoom" },
       { type: "separator" },
-      { role: "front" }
+      { role: "front" },
     ];
   }
 
@@ -123,35 +123,35 @@ function buildAppMenu() {
           {
             type: "radio",
             label: "Deep",
-            click: () => sendColorChange("scheme", "seabornDeep")
+            click: () => sendColorChange("scheme", "seabornDeep"),
           },
           {
             type: "radio",
             label: "Muted",
-            click: () => sendColorChange("scheme", "seabornMuted")
+            click: () => sendColorChange("scheme", "seabornMuted"),
           },
           {
             type: "radio",
             label: "Pastel (Default)",
             checked: true,
-            click: () => sendColorChange("scheme", "seabornPastel")
+            click: () => sendColorChange("scheme", "seabornPastel"),
           },
           {
             type: "radio",
             label: "Bright",
-            click: () => sendColorChange("scheme", "seabornBright")
+            click: () => sendColorChange("scheme", "seabornBright"),
           },
           {
             type: "radio",
             label: "Dark",
-            click: () => sendColorChange("scheme", "seabornDark")
+            click: () => sendColorChange("scheme", "seabornDark"),
           },
           {
             type: "radio",
             label: "Colorblind-friendly",
-            click: () => sendColorChange("scheme", "seabornColorblind")
-          }
-        ]
+            click: () => sendColorChange("scheme", "seabornColorblind"),
+          },
+        ],
       },
       { type: "separator" },
       {
@@ -160,19 +160,19 @@ function buildAppMenu() {
           {
             type: "radio",
             label: "Classic - 11 Categories",
-            click: () => sendColorChange("scheme", "schemeCat11")
+            click: () => sendColorChange("scheme", "schemeCat11"),
           },
           {
             type: "radio",
             label: "Classic - 6 Categories",
-            click: () => sendColorChange("scheme", "schemeCat6")
+            click: () => sendColorChange("scheme", "schemeCat6"),
           },
           {
             type: "radio",
             label: "Rainbow (Hash-based)",
-            click: () => sendColorChange("scheme", "schemeHue")
-          }
-        ]
+            click: () => sendColorChange("scheme", "schemeHue"),
+          },
+        ],
       },
       { type: "separator" },
       {
@@ -181,44 +181,49 @@ function buildAppMenu() {
           {
             type: "radio",
             label: "By File Type",
-            click: () => sendColorChange("mode", "colorByProp")
+            click: () => sendColorChange("mode", "colorByProp"),
           },
           {
             type: "radio",
             label: "By Size (Color Gradient)",
-            click: () => sendColorChange("mode", "colorBySize")
+            click: () => sendColorChange("mode", "colorBySize"),
           },
           {
             type: "radio",
             label: "By Size (Greyscale)",
-            click: () => sendColorChange("mode", "colorBySizeBw")
+            click: () => sendColorChange("mode", "colorBySizeBw"),
           },
           {
             type: "radio",
             label: "By Root Directory (Default)",
             checked: true,
-            click: () => sendColorChange("mode", "colorByParent")
+            click: () => sendColorChange("mode", "colorByParent"),
           },
           {
             type: "radio",
             label: "By Parent Name",
-            click: () => sendColorChange("mode", "colorByParentName")
+            click: () => sendColorChange("mode", "colorByParentName"),
           },
           { type: "separator" },
           {
             type: "radio",
             label: "Random / Confetti",
-            click: () => sendColorChange("mode", "colorByRandom")
-          }
-        ]
+            click: () => sendColorChange("mode", "colorByRandom"),
+          },
+        ],
       },
       { type: "separator" },
       {
         type: "checkbox",
         label: "Dark Mode",
-        click: menuItem => sendColorChange("darkMode", menuItem.checked)
-      }
-    ]
+        click: (menuItem) => sendColorChange("darkMode", menuItem.checked),
+      },
+      {
+        type: "checkbox",
+        label: "3D Mode (Experimental)",
+        click: (menuItem) => sendColorChange("3dMode", menuItem.checked),
+      },
+    ],
   });
 
   const menu = Menu.buildFromTemplate(template);
@@ -232,11 +237,11 @@ function sendColorChange(type, value) {
   }
 }
 
-app.on("ready", function() {
+app.on("ready", function () {
   mainWindow = require("./js/start")();
 
   // Quit app when main window is closed
-  mainWindow.on("closed", function() {
+  mainWindow.on("closed", function () {
     app.quit();
   });
 
@@ -249,22 +254,22 @@ app.on("ready", function() {
     process.versions.electron,
     "Platform",
     process.platform,
-    process.arch
+    process.arch,
   );
 
   // Create hidden scanner window for background scanning
   scannerWin = new BrowserWindow({
     show: false,
-    webPreferences: { nodeIntegration: true, contextIsolation: false }
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
   });
   scannerWin.loadURL("file://" + __dirname + "/headless.html");
 
   // IPC handler to open folder selection dialog
-  ipcMain.handle("select-folder", async event => {
+  ipcMain.handle("select-folder", async (event) => {
     try {
       const win = BrowserWindow.getFocusedWindow();
       const result = await dialog.showOpenDialog(win, {
-        properties: ["openDirectory"]
+        properties: ["openDirectory"],
       });
       if (result.canceled) return null;
       return (result.filePaths && result.filePaths[0]) || null;
