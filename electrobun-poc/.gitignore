@@ -1,15 +1,12 @@
-# Bun
+# Dependencies
 node_modules/
 bun.lockb
+*.lock
 
-# Build outputs
+# Electrobun build outputs
 dist/
 build/
-*.app
-*.dmg
-*.exe
-*.AppImage
-*.deb
+.electrobun/
 
 # OS files
 .DS_Store
@@ -19,12 +16,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
-*.swo
 
 # Logs
 *.log
-npm-debug.log*
-
-# Environment
-.env
-.env.local

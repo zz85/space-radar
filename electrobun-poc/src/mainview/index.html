@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Radar - Electrobun POC</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌌 Space Radar</h1>
+            <p class="subtitle">Electrobun Proof-of-Concept</p>
+        </header>
+        
+        <div class="controls">
+            <input 
+                type="text" 
+                id="pathInput" 
+                placeholder="Enter path to scan (e.g., /tmp)"
+                value="/tmp"
+            />
+            <button id="scanBtn" class="primary-btn">Scan Directory</button>
+            <button id="cancelBtn" class="secondary-btn" style="display: none;">Cancel</button>
+        </div>
+
+        <div class="stats" id="statsContainer" style="display: none;">
+            <div class="stat-item">
+                <span class="stat-label">Files:</span>
+                <span class="stat-value" id="fileCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Directories:</span>
+                <span class="stat-value" id="dirCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Total Size:</span>
+                <span class="stat-value" id="totalSize">0 B</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Errors:</span>
+                <span class="stat-value" id="errorCount">0</span>
+            </div>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="visualization-container">
+            <canvas id="sunburstCanvas" width="600" height="600"></canvas>
+        </div>
+
+        <footer>
+            <p class="info">
+                <strong>Electrobun Features Demonstrated:</strong>
+                <br>
+                ✓ BrowserWindow API
+                <br>
+                ✓ Typed RPC between main and renderer
+                <br>
+                ✓ Bun's fast fs APIs in main process
+                <br>
+                ✓ Real-time progress updates via RPC messages
+            </p>
+        </footer>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+</html>

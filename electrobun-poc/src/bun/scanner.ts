@@ -90,6 +90,13 @@ export class DiskScanner {
   }
 
   /**
+   * Set the progress callback function
+   */
+  setProgressCallback(callback: (stats: ScanStats) => void) {
+    this.options.onProgress = callback;
+  }
+
+  /**
    * Check if path should be excluded
    */
   private shouldExclude(path: string): boolean {
