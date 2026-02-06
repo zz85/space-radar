@@ -19,3 +19,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Mock modules (local development only)
+node_modules/electrobun/
+
+# Old files
+*.old.md

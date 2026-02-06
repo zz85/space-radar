@@ -4,13 +4,9 @@
   "description": "Space Radar Electrobun - Proof of Concept",
   "type": "module",
   "scripts": {
-    "dev": "electrobun dev",
-    "build": "electrobun build"
+    "dev": "bun run src/bun/index.ts",
+    "test": "bun run src/bun/scanner.ts /tmp"
   },
-  "dependencies": {
-    "electrobun": "^0.7.0"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
