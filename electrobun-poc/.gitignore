@@ -1,0 +1,30 @@
+# Bun
+node_modules/
+bun.lockb
+
+# Build outputs
+dist/
+build/
+*.app
+*.dmg
+*.exe
+*.AppImage
+*.deb
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local

@@ -1,0 +1,15 @@
+{
+  "name": "space-radar-electrobun-poc",
+  "version": "0.1.0",
+  "description": "Space Radar Electrobun Proof of Concept",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/bun/scanner.ts",
+    "test:scanner": "bun run src/bun/scanner.ts /tmp"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
