@@ -8,6 +8,14 @@
 import { readdirSync, statSync, lstatSync } from 'fs';
 import { join } from 'path';
 
+/**
+ * Represents a file or directory in the scanned tree
+ * @property name - File or directory name (without path)
+ * @property path - Absolute path to the file or directory
+ * @property size - Size in bytes. For directories, this is the sum of all children
+ * @property children - Child nodes (only present for directories)
+ * @property isDirectory - Whether this node is a directory
+ */
 interface FileNode {
   name: string;
   path: string;
@@ -233,7 +241,7 @@ export class DiskScanner {
   /**
    * Format bytes to human-readable string
    */
-  private formatBytes(bytes: number): string {
+  public formatBytes(bytes: number): string {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let size = bytes;
     let unitIndex = 0;
@@ -287,7 +295,7 @@ if (import.meta.main) {
       const sorted = [...result.children].sort((a, b) => b.size - a.size);
       console.log('\nTop 10 largest items:');
       sorted.slice(0, 10).forEach((item, i) => {
-        const size = scanner['formatBytes'](item.size);
+        const size = scanner.formatBytes(item.size);
         const type = item.isDirectory ? 'DIR ' : 'FILE';
         console.log(`  ${i + 1}. [${type}] ${item.name.padEnd(40)} ${size.padStart(12)}`);
       });

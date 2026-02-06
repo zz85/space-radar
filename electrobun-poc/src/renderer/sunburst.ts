@@ -239,7 +239,7 @@ export class SunburstChart {
     // Fill
     this.ctx.fillStyle = arc.color;
     if (isHovered) {
-      // Brighten on hover
+      // Highlight on hover by reducing opacity slightly
       this.ctx.globalAlpha = 0.8;
     } else {
       this.ctx.globalAlpha = 1.0;
