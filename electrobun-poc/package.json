@@ -6,7 +6,5 @@
   "scripts": {
     "dev": "bun run src/bun/index.ts",
     "test": "bun run src/bun/scanner.ts /tmp"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  }
 }
