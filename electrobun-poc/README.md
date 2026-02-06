@@ -63,7 +63,7 @@ import { BrowserWindow, BrowserView } from "electrobun/bun";
 const rpc = BrowserView.defineRPC<MyRPC>({
   handlers: {
     requests: {
-      doSomething: async (params) => { /* ... */ }
+      scanDirectory: async (params) => { /* ... */ }
     }
   }
 });
@@ -76,7 +76,7 @@ const window = new BrowserWindow({
 // Renderer process - Electrobun
 import { BrowserView } from "electrobun/view";
 const rpc = BrowserView.getRPC<MyRPC>();
-const result = await rpc.request.doSomething(params);
+const result = await rpc.request.scanDirectory(params);
 ```
 
 ### Electron
