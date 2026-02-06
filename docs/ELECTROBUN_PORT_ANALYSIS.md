@@ -5,7 +5,7 @@
 
 ## Executive Summary
 
-Porting Space Radar from Electron to Electrobun would require **moderate to significant effort** (estimated 2-4 weeks of development time). While Electrobun offers compelling benefits in bundle size and performance, the port would require rewriting substantial portions of the codebase and comes with trade-offs that need careful consideration.
+Porting Space Radar from Electron to Electrobun would require **moderate to significant effort** (estimated 4-7 weeks of development time). While Electrobun offers compelling benefits in bundle size and performance, the port would require rewriting substantial portions of the codebase and comes with trade-offs that need careful consideration.
 
 **Recommendation:** Consider a **proof-of-concept** implementation first to validate performance claims and assess compatibility with Space Radar's specific requirements before committing to a full port.
 
