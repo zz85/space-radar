@@ -5,29 +5,18 @@
     <title>Space Radar</title>
   </head>
   <body>
-    <script>
-      var d3 = require("d3");
-      Object.assign(
-        d3,
-        require("d3-hierarchy"),
-        require("d3-scale"),
-        require("d3-selection"),
-        require("d3-tip"),
-        require("d3-ease"),
-      );
-    </script>
     <link rel="stylesheet" href="css/style.css" type="text/css" />
     <link rel="stylesheet" href="css/throbber.css" type="text/css" />
     <link rel="stylesheet" href="css/breadcrumb.css" type="text/css" />
     <link
       rel="stylesheet"
-      href="node_modules/photonkit/dist/css/photon.css"
+      href="vendor/photon.css"
       ype="text/css"
     />
     <link
       rel="stylesheet"
       type="text/css"
-      href="node_modules/d3-flame-graph/dist/d3-flamegraph.css"
+      href="vendor/d3-flamegraph.css"
     />
 
     <!-- <webview id="webview" src="headless.html" style="display: static; width:1px; height:1px" nodeintegration="on"></webview> -->
@@ -438,27 +427,5 @@
     </div>
     <!-- end window -->
 
-    <script src="js/utils.js"></script>
-    <script src="js/mem.js"></script>
-    <script src="js/graphs.js"></script>
-
-    <script src="vendor/three.min.js"></script>
-    <script src="node_modules/d3-flame-graph/dist/d3-flamegraph.js"></script>
-    <script src="node_modules/d3-flame-graph/dist/d3-flamegraph-tooltip.js"></script>
-    <script src="js/file_extensions.js"></script>
-    <script src="js/colors.js"></script>
-    <script src="js/chart.js"></script>
-    <script src="js/listview.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/sunburst.js"></script>
-    <script src="js/sunburst3d.js"></script>
-    <script src="js/treemap.js"></script>
-    <script src="js/flamegraph.js"></script>
-    <script src="js/duFromFile.js"></script>
-    <script src="js/ipc.js"></script>
-    <script src="js/radar.js"></script>
-    <script src="js/menu.js"></script>
-    <script src="js/breadcrumbs.js"></script>
-    <script src="js/router.js"></script>
   </body>
 </html>

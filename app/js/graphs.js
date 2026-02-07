@@ -56,3 +56,11 @@ function getNodeFromPath(keys, root) {
 
   return n
 }
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.PATH_DELIMITER = PATH_DELIMITER
+  globalThis.keys = keys
+  globalThis.key = key
+  globalThis.getPath = getPath
+  globalThis.getNodeFromPath = getNodeFromPath
+}

@@ -28,4 +28,8 @@ class Chart {
   }
 }
 
+if (typeof globalThis !== "undefined") {
+  globalThis.Chart = Chart;
+}
+
 module.exports = Chart

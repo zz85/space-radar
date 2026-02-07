@@ -360,7 +360,7 @@ function switchColorScheme(scheme) {
 // Listen for color change messages from main process
 (() => {
   try {
-    const { ipcRenderer } = require("electron");
+    const { ipcRenderer } = require("./electrobun");
     ipcRenderer.on("color-change", (event, { type, value }) => {
       if (type === "scheme") {
         switchColorScheme(value);

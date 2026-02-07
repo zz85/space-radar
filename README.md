@@ -1,6 +1,6 @@
 # Space Radar
 
-SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts.
+SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts, now powered by Electrobun.
 
 ## Downloads
 
@@ -19,7 +19,7 @@ Download Mac, Windows, and Linux builds at the [releases page](https://github.co
 - Opens files and directories in system file manager
 - Analyze disk contents from a remote server (see [Reading from a file](#reading-from-a-file))
 - Memory usage breakdown (cross-platform)
-- Auto-updates
+- Electrobun-powered desktop runtime
 
 ## Screenshots
 
@@ -104,22 +104,13 @@ npm install
 Run in development mode:
 
 ```bash
-npm run debug
-```
-
-Or simply:
-
-```bash
-npm start
+npm run dev
 ```
 
 Build for distribution:
 
 ```bash
-npm run build        # Current platform
-npm run build:mac    # macOS
-npm run build:win    # Windows
-npm run build:linux  # Linux
+npm run build
 ```
 
 ## History
