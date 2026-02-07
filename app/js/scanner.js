@@ -1,16 +1,12 @@
 "use strict";
 
-let browser = typeof window !== "undefined";
+const browser = typeof window !== "undefined";
 
-if (browser) {
-  // it's electron, so typeof(module) !== 'undefined' is true :)
-  module.exports = scanner;
-} else {
-  // pure node (when forked inside electron)
-  scanner();
-}
+module.exports = createScanner;
 
-function scanner() {
+function createScanner(options = {}) {
+  const send = typeof options.send === "function" ? options.send : null;
+  const listenForProcess = options.listenForProcess !== false;
   const path = require("path");
   const os = require("os");
   const du = require("./du");
@@ -29,7 +25,7 @@ function scanner() {
   let ipc;
 
   if (browser) {
-    ipc = require("electron").ipcRenderer;
+    ipc = require("./electrobun").ipcRenderer;
     const ipc_name = "du";
 
     ipc.on("scan", function (_, target) {
@@ -57,7 +53,7 @@ function scanner() {
         du.resume();
       }
     });
-  } else {
+  } else if (listenForProcess) {
     process.on("disconnect", function () {
       // exit when parent disconnects (killed / exit)
       console.log("parent exited");
@@ -233,6 +229,10 @@ function scanner() {
   }
 
   function ipc_transfer(...args) {
+    if (send) {
+      send(args);
+      return;
+    }
     const json_str = JSON.stringify(args);
     var err;
 
@@ -299,4 +299,17 @@ function scanner() {
     }
     return;
   }
+
+  return {
+    start: go,
+    cancel() {
+      if (du && du.cancel) du.cancel();
+    },
+    pause() {
+      if (du && du.pause) du.pause();
+    },
+    resume() {
+      if (du && du.resume) du.resume();
+    },
+  };
 }

@@ -181,7 +181,16 @@ class SpacePluginManager {
   }
 
   loadLast() {
-    this.generate(_loadLast());
+    try {
+      const cached = _loadLast();
+      if (!cached) {
+        alert("No cached scan found yet.");
+        return;
+      }
+      this.generate(cached);
+    } catch (error) {
+      alert("No cached scan found yet.");
+    }
   }
 
   deactivate(graph) {

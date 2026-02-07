@@ -278,3 +278,7 @@ function mem(callback) {
     mem_systeminformation(callback);
   }
 }
+
+if (typeof module !== "undefined") {
+  module.exports = mem;
+}

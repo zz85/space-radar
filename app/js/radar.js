@@ -1,40 +1,17 @@
 "use strict";
 
-const { shell } = require("electron");
-const path = require("path");
-const os = require("os");
-// si (systeminformation) is already loaded by mem.js
-
-// Use app data directory for writable files (not asar)
-// Falls back to temp directory if app data is not accessible
-function getAppDataPath() {
-  const appName = "SpaceRadar";
-  if (process.platform === "darwin") {
-    return path.join(os.homedir(), "Library", "Application Support", appName);
-  } else if (process.platform === "win32") {
-    return path.join(process.env.APPDATA || os.homedir(), appName);
-  } else {
-    return path.join(os.homedir(), ".config", appName);
-  }
-}
-
-const APP_DATA_DIR = getAppDataPath();
-// Ensure directory exists
-try {
-  fs.mkdirSync(APP_DATA_DIR, { recursive: true });
-} catch (e) {
-  console.warn("[radar] Could not create app data dir:", e.message);
-}
-const LASTLOAD_FILE = path.join(APP_DATA_DIR, "lastload.json");
+const { shell, ipcRenderer } = require("./electrobun");
+const PATH_SEPARATOR = process.platform === "win32" ? "\\" : "/";
+// si (systeminformation) is provided by electrobun RPC
 
 // Track scanning state
 var isScanning = false;
 var isPaused = false;
+const ipc_name = "viz";
 
 // IPC handling
 function sendIpcMsg(cmd, msg) {
   try {
-    const { ipcRenderer } = require("electron");
     if (cmd === "go") {
       console.log("[renderer] sending scan-go", msg);
       ipcRenderer.send("scan-go", msg);
@@ -176,9 +153,6 @@ function startScan(path) {
   isPaused = false;
   updateScanButtons();
 
-  var stat = fs.lstatSync(path);
-  log("file", stat.isFile(), "dir", stat.isDirectory());
-
   // Get and display disk space info
   currentDiskInfo = null; // Reset
   getDiskSpaceInfo(path, (err, diskInfo) => {
@@ -204,40 +178,7 @@ function startScan(path) {
     }
   });
 
-  // return sendIpcMsg('go', path);
-  if (stat.isFile()) {
-    const json = new duFromFile.iNode();
-    duFromFile(
-      {
-        parent: path,
-        node: json,
-        onprogress: progress,
-        // onrefresh: refresh
-      },
-      () => {
-        complete(json);
-      },
-    );
-  } else {
-    sendIpcMsg("go", path);
-  }
-}
-
-function start_read() {
-  console.log("start_read");
-
-  const json = new duFromFile.iNode();
-  duFromFile(
-    {
-      parent: "./output.txt",
-      node: json,
-      onprogress: progress,
-      // onrefresh: refresh
-    },
-    () => {
-      return complete(json);
-    },
-  );
+  sendIpcMsg("go", path);
 }
 
 function progress(dir, name, size, fileCount, dirCount, errorCount) {
@@ -433,8 +374,6 @@ function handleIPC(cmd, args) {
         console.log("[renderer] fs-ipc received", args && args[0]);
       } catch (e) {}
       return fsipc(args[0]);
-    case "du_pipe_start":
-      return start_read();
   }
 }
 
@@ -443,25 +382,16 @@ function runNext(f) {
 }
 
 function fsipc(filename) {
-  console.time("fsipc");
-  cleanup();
-  log(filename);
-
-  runNext(() => {
-    try {
-      var args = fs.readFileSync(filename);
-      args = zlib.inflateSync(args);
-      args = JSON.parse(args);
-      var cmd = args.shift();
-      try {
-        console.log("[renderer] fsipc dispatch", cmd);
-      } catch (e) {}
-      handleIPC(cmd, args);
-    } catch (e) {
-      console.error(e.stack);
-    }
-    console.timeEnd("fsipc");
-  });
+  if (!filename) return;
+  if (Array.isArray(filename)) {
+    const cmd = filename[0];
+    const args = filename.slice(1);
+    handleIPC(cmd, args);
+    return;
+  }
+  if (filename.cmd) {
+    handleIPC(filename.cmd, filename.args || []);
+  }
 }
 
 function ready() {
@@ -489,7 +419,7 @@ try {
 }
 
 function rerunPage() {
-  remote.getCurrentWindow().reload();
+  window.location.reload();
 }
 
 function showPrompt() {
@@ -511,14 +441,12 @@ function scanRoot() {
 
 function newWindow() {
   log("new window");
-  const { ipcRenderer } = require("electron");
   ipcRenderer.send("new-window");
 }
 
 function scanFolder() {
   try {
     console.log("[renderer] scanFolder invoked");
-    const { ipcRenderer } = require("electron");
     Promise.resolve(ipcRenderer.invoke("select-folder"))
       .then((selectedPath) => {
         console.log("[renderer] select-folder result", selectedPath);
@@ -537,13 +465,15 @@ function scanFolder() {
 }
 
 function readFile() {
-  var dialog = remote.dialog;
-  var selection = dialog.showOpenDialog({ properties: ["openFile"] });
-
-  if (selection && selection[0]) {
-    const file = selection[0];
-    selectPath(file);
-  }
+  Promise.resolve(ipcRenderer.invoke("select-file"))
+    .then((selectedPath) => {
+      if (selectedPath) {
+        selectPath(selectedPath);
+      }
+    })
+    .catch((err) => {
+      console.error("[renderer] select-file error", err);
+    });
 }
 
 function scanMemory() {
@@ -581,14 +511,17 @@ promptbox.ondrop = function (e) {
 
   console.log("file", file);
   // return
-  if (file) return selectPath(file.path);
+  if (file && file.path) return selectPath(file.path);
+  if (file) {
+    alert("Drag-and-drop is not supported for this file. Please use Scan Folder.");
+  }
 };
 
 /*** Selection Handling ****/
 
 function openDirectory() {
   let loc = Navigation.currentPath();
-  if (loc) shell.showItemInFolder(loc.join(path.sep));
+  if (loc) shell.showItemInFolder(loc.join(PATH_SEPARATOR));
 }
 
 function openSelection() {
@@ -662,18 +595,21 @@ function onJson(error, data) {
   }
 
   const jsonStr = JSON.stringify(data);
-  const before = Buffer.byteLength(jsonStr);
-  const zJsonStr = zlib.deflateSync(jsonStr);
-  const after = Buffer.byteLength(zJsonStr);
-  console.log("ONJSON", before, after, ((before - after) / after).toFixed(2));
-
-  fs.writeFileSync(LASTLOAD_FILE, zJsonStr);
+  try {
+    localStorage.setItem("lastload", jsonStr);
+  } catch (e) {
+    console.warn("[renderer] Failed to cache last load:", e.message);
+  }
   PluginManager.generate(data);
   // PluginManager.loadLast()
 }
 
 function _loadLast() {
-  return JSON.parse(zlib.inflateSync(fs.readFileSync(LASTLOAD_FILE)));
+  const stored = localStorage.getItem("lastload");
+  if (!stored) {
+    throw new Error("No cached data found");
+  }
+  return JSON.parse(stored);
 }
 
 function hideAll() {
@@ -727,6 +663,29 @@ function showFlamegraph() {
 
   deactivateCharts();
   PluginManager.activate(flamegraphGraph);
+}
+
+if (typeof window !== "undefined") {
+  Object.assign(window, {
+    handleIPC,
+    scanRoot,
+    scanFolder,
+    scanMemory,
+    readFile,
+    newWindow,
+    cancelScan,
+    pauseScan,
+    resumeScan,
+    showSunburst,
+    showTreemap,
+    showFlamegraph,
+    welcomeDialog,
+    openDirectory,
+    openSelection,
+    externalSelection,
+    showSelection,
+    trashSelection,
+  });
 }
 
 d3.select(window).on("resize", function () {

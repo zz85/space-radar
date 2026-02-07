@@ -101,6 +101,14 @@ function log() {
   console.log.apply(console, args);
 }
 
+if (typeof globalThis !== "undefined") {
+  globalThis.format = format;
+  globalThis.log = log;
+  globalThis.mempoller = mempoller;
+  globalThis.TimeoutTask = TimeoutTask;
+  globalThis.TaskChecker = TaskChecker;
+}
+
 function memory() {
   gc();
 
