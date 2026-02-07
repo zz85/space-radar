@@ -43,5 +43,5 @@ function build_reverse_map(map) {
   return reverse_map
 }
 
-global.extension_categories_11 = build_reverse_map(extension_categories_11)
-global.extension_categories_6 = build_reverse_map(extension_categories_6)
+window.extension_categories_11 = build_reverse_map(extension_categories_11)
+window.extension_categories_6 = build_reverse_map(extension_categories_6)
