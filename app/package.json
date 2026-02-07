@@ -1,14 +1,10 @@
 {
   "name": "space-radar",
   "productName": "SpaceRadar",
-  "version": "6.0.0",
-  "description": "Disk Usage Electron App",
+  "version": "7.0.0",
+  "description": "Disk Usage Electrobun App (legacy Electron app files - see src/ for Electrobun version)",
   "author": "Joshua Koo",
   "main": "main.js",
-  "scripts": {
-    "app": "electron .",
-    "debug": "DEBUG=1 npm run app"
-  },
   "dependencies": {
     "d3": "^3.5.6",
     "d3-ease": "^1.0.3",
@@ -19,9 +15,6 @@
     "d3-selection": "^1.1.0",
     "d3-shape": "^0.5.1",
     "d3-tip": "^0.7.1",
-    "electron-updater": "^6.7.3",
-    "photonkit": "^0.1.2",
-    "systeminformation": "^5.30.7",
-    "tail-stream": "^0.3.3"
+    "photonkit": "^0.1.2"
   }
 }

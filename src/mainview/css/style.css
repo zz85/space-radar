@@ -1,0 +1,432 @@
+body {
+  margin: auto;
+  position: relative;
+  overflow: none;
+
+  /* Use System Fonts */
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif !important;
+}
+
+/* Make toolbar draggable on macOS with hidden title bar */
+.toolbar-header {
+  -webkit-app-region: drag;
+}
+
+/* Keep interactive elements clickable */
+.toolbar-header button,
+.toolbar-header input,
+.toolbar-header select,
+.toolbar-header .btn-group,
+.toolbar-footer {
+  -webkit-app-region: no-drag;
+}
+
+#photon-window {
+  z-index: 400;
+}
+
+path {
+  stroke: #fff;
+  fill-rule: evenodd;
+}
+
+circle,
+path {
+}
+
+circle {
+  pointer-events: all;
+  fill: #eee;
+  opacity: 0.2;
+}
+
+circle:hover {
+  fill: none;
+}
+
+#core:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+/* treemap */
+
+/*
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+pre {
+  font-size: 18px;
+}
+
+line {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.string,
+.regexp {
+  color: #f39;
+}
+
+.keyword {
+  color: #00c;
+}
+
+.comment {
+  color: #777;
+  font-style: oblique;
+}
+
+.number {
+  color: #369;
+}
+
+.class,
+.special {
+  color: #1181b8;
+}
+*/
+
+/* end treemap */
+
+.cell > rect:hover {
+  fill: yellow;
+}
+
+/* flame graph tool tip */
+.d3-flame-graph-tip {
+  z-index: 1000;
+}
+
+/* legend */
+
+#explanation {
+  position: absolute;
+  /*top: 260px;
+  left: 305px*/
+  width: 140px;
+  height: 140px;
+  margin: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  color: #333;
+  z-index: -1;
+  /*z-index: -1;*/
+
+  font-weight: 200;
+}
+
+#core_top {
+  font-size: 1.3em;
+}
+
+#core_center {
+  font-size: 2em;
+}
+
+#legend {
+  text-align: center;
+  padding-top: 20px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  z-index: 50;
+  background: #ddd;
+  display: none;
+}
+
+#legend h2 {
+  font-size: 1.2em;
+  font-style: inherit;
+  margin: 0;
+  padding: 0;
+  /*text-transform: uppercase;
+  font-variant:small-caps;*/
+}
+#legend p {
+  font-size: 0.9em;
+  margin: 0;
+  padding: 0;
+}
+
+#loading {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: fixed;
+  display: inline-block;
+  margin: auto;
+  z-index: 250;
+  width: 100px;
+  height: 100px;
+  display: none;
+}
+
+.area {
+  /*opacity: 0.8;*/
+  cursor: pointer;
+}
+
+.area:hover {
+  stroke: #999;
+  stroke-width: 2px;
+  opacity: 1;
+}
+
+#flame-graph {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: top;
+}
+
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  /*padding-bottom: 100%;*/ /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
+}
+
+/* Sunburst canvas styles */
+#sunburst-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#sunburst-chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#sunburst-chart #explanation {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+  /*top: 10px;*/
+  /*left: 0;*/
+}
+
+#sequence {
+  /*display: inline-block;*/
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  /*width: 600px;
+  height: 70px;*/
+}
+
+#chart {
+  position: relative;
+}
+
+#chart path {
+  stroke: #fff;
+}
+
+/* Side bar */
+#sidebar {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  transition: width 0.6s;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+#sidebar:hover {
+  width: 400px;
+}
+
+.nav-group-item:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Center aligned Flex Box */
+
+.Aligner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Aligner-item {
+  max-width: 50%;
+  background: #ddd;
+  opacity: 1;
+  border-radius: 4px;
+}
+
+.Aligner-item--top {
+  align-self: flex-start;
+}
+
+.Aligner-item--bottom {
+  align-self: flex-end;
+}
+
+#shades {
+  z-index: 200;
+  width: 100%;
+  height: 100%;
+  background: #333;
+  /*opacity: 0.3;*/
+  position: absolute;
+  display: none;
+}
+
+#promptbox {
+  width: 100%;
+  height: 400px;
+  text-align: center;
+  padding: 20px;
+  height: 200px;
+}
+
+#bottom_status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* todo some kind of flex width */
+}
+
+#disk_space_info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =============================================================================
+   DARK MODE STYLES
+   ============================================================================= */
+
+body.dark-mode {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+body.dark-mode .window {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode .toolbar-header,
+body.dark-mode .toolbar-footer {
+  background: linear-gradient(to bottom, #2d2d2d, #252525);
+  border-color: #3a3a3a;
+}
+
+body.dark-mode .toolbar-header .title {
+  color: #e0e0e0;
+}
+
+body.dark-mode .btn {
+  background: linear-gradient(to bottom, #404040, #353535);
+  border-color: #505050;
+  color: #e0e0e0;
+}
+
+body.dark-mode .btn:hover {
+  background: linear-gradient(to bottom, #4a4a4a, #404040);
+}
+
+body.dark-mode .btn:active,
+body.dark-mode .btn.active {
+  background: linear-gradient(to bottom, #353535, #404040);
+  border-color: #606060;
+}
+
+body.dark-mode .window-content {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode #sidebar {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .nav-group-item {
+  color: #ccc;
+}
+
+body.dark-mode .nav-group-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode #legend {
+  background: #2d2d2d;
+  color: #e0e0e0;
+}
+
+body.dark-mode #shades {
+  background: #1a1a1a;
+}
+
+body.dark-mode .Aligner-item {
+  background: #2d2d2d;
+}
+
+body.dark-mode #promptbox {
+  color: #e0e0e0;
+}
+
+body.dark-mode #explanation {
+  color: #ccc;
+}
+
+/* Sunburst strokes for dark mode - use darker strokes for contrast */
+body.dark-mode path {
+  stroke: rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode #chart path {
+  stroke: rgba(0, 0, 0, 0.4);
+}
+
+/* Breadcrumb dark mode */
+body.dark-mode .breadcrumb {
+  background: #2d2d2d;
+}
+
+body.dark-mode .breadcrumb a {
+  background: #404040;
+  color: #e0e0e0;
+}
+
+body.dark-mode .breadcrumb a:hover {
+  background: #505050;
+}
+
+/* Loading overlay dark mode */
+body.dark-mode #loading {
+  color: #e0e0e0;
+}
+
+/* Better contrast for scan stats in footer */
+#bottom_status {
+  font-weight: 500;
+}
+
+body.dark-mode #bottom_status {
+  color: #b0b0b0;
+}
