@@ -1,46 +1,89 @@
 // RPC Schema for SpaceRadar communication between Bun main process and webview
 // This file defines the typed interface for bidirectional communication
 
-export interface SpaceRadarRPC {
-  requests: {
-    // Bun-side handlers (called by the view)
-    selectFolder: () => { path: string | null };
-    selectFile: () => { path: string | null };
-    startScan: (args: { targetPath: string }) => { started: boolean };
-    cancelScan: () => { cancelled: boolean };
-    pauseScan: () => { paused: boolean };
-    resumeScan: () => { resumed: boolean };
-    openDirectory: (args: { dirPath: string }) => { success: boolean };
-    openExternal: (args: { url: string }) => { success: boolean };
-    trashItem: (args: { filePath: string }) => { success: boolean };
-    loadLast: () => { data: any };
-    confirmAction: (args: { message: string }) => { confirmed: boolean };
-  };
-  messages: {
-    // Bun-side message handlers (fire-and-forget from view)
-    logFromView: (args: { msg: string }) => void;
-    // View-side message handlers (fire-and-forget from Bun)
-    scanProgress: (args: {
-      path: string;
-      name: string;
-      size: number;
-      fileCount: number;
-      dirCount: number;
-      errorCount: number;
-    }) => void;
-    scanComplete: (args: {
-      data: any;
-      stats: {
+import type { RPCSchema } from "electrobun";
+
+export type SpaceRadarRPC = {
+  // Bun-side schema: requests handled by bun, messages received by bun
+  bun: RPCSchema<{
+    requests: {
+      selectFolder: {
+        params: void;
+        response: { path: string | null };
+      };
+      selectFile: {
+        params: void;
+        response: { path: string | null };
+      };
+      startScan: {
+        params: { targetPath: string };
+        response: { started: boolean };
+      };
+      cancelScan: {
+        params: void;
+        response: { cancelled: boolean };
+      };
+      pauseScan: {
+        params: void;
+        response: { paused: boolean };
+      };
+      resumeScan: {
+        params: void;
+        response: { resumed: boolean };
+      };
+      openDirectory: {
+        params: { dirPath: string };
+        response: { success: boolean };
+      };
+      openExternal: {
+        params: { url: string };
+        response: { success: boolean };
+      };
+      trashItem: {
+        params: { filePath: string };
+        response: { success: boolean };
+      };
+      loadLast: {
+        params: void;
+        response: { data: any };
+      };
+      confirmAction: {
+        params: { message: string };
+        response: { confirmed: boolean };
+      };
+    };
+    messages: {
+      logFromView: {
+        msg: string;
+      };
+    };
+  }>;
+  // Webview-side schema: requests handled by webview, messages received by webview
+  webview: RPCSchema<{
+    requests: {};
+    messages: {
+      scanProgress: {
+        path: string;
+        name: string;
+        size: number;
         fileCount: number;
         dirCount: number;
         errorCount: number;
-        currentSize: number;
-        cancelled: boolean;
       };
-    }) => void;
-    colorChange: (args: {
-      type: string;
-      value: string;
-    }) => void;
-  };
-}
+      scanComplete: {
+        data: any;
+        stats: {
+          fileCount: number;
+          dirCount: number;
+          errorCount: number;
+          currentSize: number;
+          cancelled: boolean;
+        };
+      };
+      colorChange: {
+        type: string;
+        value: string;
+      };
+    };
+  }>;
+};
