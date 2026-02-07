@@ -1,26 +1,17 @@
 {
   "name": "space-radar",
   "productName": "SpaceRadar",
-  "version": "6.0.0",
-  "description": "Disk Usage Electron App",
-  "main": "app/main.js",
+  "version": "7.0.0",
+  "description": "Disk Usage Electrobun App",
   "scripts": {
-    "postinstall": "cd app && npm install",
-    "format": "prettier app/js/*.js app/css/*.css tools/*.js --single-quote --no-semi --print-width=120 --write",
-    "start": "electron .",
-    "app": "electron .",
-    "debug": "DEBUG=1 electron .",
+    "dev": "electrobun dev",
+    "start": "electrobun dev",
+    "build": "electrobun build",
+    "build:dev": "electrobun build",
+    "build:stable": "electrobun build --env=stable",
+    "format": "prettier src/**/*.ts src/**/*.js src/**/*.css --single-quote --no-semi --print-width=120 --write",
     "clean": "rm -rf dist builds",
-    "deep_clean": "rm -rf node_modules package-lock.json app/node_modules app/package-lock.json dist",
-    "build": "electron-builder",
-    "build:all": "electron-builder --mac --linux --win",
-    "build:mac": "electron-builder --mac",
-    "build:mac-arm64": "electron-builder --mac --arm64",
-    "build:mac-universal": "electron-builder --mac --universal",
-    "build:win": "electron-builder --win",
-    "build:linux": "electron-builder --linux",
-    "dist": "electron-builder",
-    "release": "electron-builder --publish always"
+    "deep_clean": "rm -rf node_modules bun.lock dist"
   },
   "keywords": [
     "space",
@@ -31,7 +22,8 @@
     "sunburst",
     "treemap",
     "flamecharts",
-    "d3"
+    "d3",
+    "electrobun"
   ],
   "author": {
     "name": "Joshua Koo",
@@ -42,115 +34,19 @@
     "type": "git",
     "url": "https://github.com/zz85/space-radar.git"
   },
-  "devDependencies": {
-    "electron": "^40.1.0",
-    "electron-builder": "^26.0.0",
-    "prettier": "^3.8.1"
+  "dependencies": {
+    "electrobun": "latest",
+    "d3": "^3.5.6",
+    "d3-ease": "^1.0.3",
+    "d3-flame-graph": "4.1.3",
+    "d3-hierarchy": "^1.1.5",
+    "d3-path": "^0.1.5",
+    "d3-scale": "^1.0.6",
+    "d3-selection": "^1.1.0",
+    "d3-shape": "^0.5.1"
   },
-  "build": {
-    "appId": "com.zz85.spaceradar",
-    "productName": "SpaceRadar",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-    "generateUpdatesFilesForAllChannels": true,
-    "directories": {
-      "app": "app",
-      "output": "dist",
-      "buildResources": "build"
-    },
-    "files": [
-      "**/*",
-      "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!node_modules/.bin"
-    ],
-    "mac": {
-      "category": "public.app-category.utilities",
-      "icon": "Icon.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "Icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "deb",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "category": "Utility",
-      "icon": "Icon.png",
-      "maintainer": "Joshua Koo <zz85nus@gmail.com>"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "zz85",
-      "repo": "space-radar"
-    }
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.8.1"
   }
 }

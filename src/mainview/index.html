@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Space Radar</title>
+    <!-- D3 and other modules are loaded via the bundled index.ts -->
+    <script src="index.js"></script>
+  </head>
+  <body>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+    <link rel="stylesheet" href="css/throbber.css" type="text/css" />
+    <link rel="stylesheet" href="css/breadcrumb.css" type="text/css" />
+
+    <div class="window" id="photon-window">
+      <header class="toolbar toolbar-header">
+        <h1 class="title">Space Radar</h1>
+
+        <div class="toolbar-actions">
+          <div class="btn-group">
+            <button class="btn btn-default btn-large" onclick="scanRoot()">
+              <span class="icon icon-drive icon-text"></span>
+              Scan Drive
+            </button>
+
+            <button class="btn btn-default btn-large" onclick="scanFolder()">
+              <span class="icon icon-folder icon-text"></span>
+              Scan Folder
+            </button>
+
+            <button class="btn btn-default btn-large" onclick="scanMemory()">
+              <span class="icon icon-target icon-text"></span>
+              Scan Memory
+            </button>
+          </div>
+
+          <div class="btn-group">
+            <button
+              class="btn btn-default btn-large"
+              onclick="PluginManager.showLess()"
+            >
+              <span class="icon icon-minus"></span>
+            </button>
+            <button
+              class="btn btn-default btn-large"
+              onclick="PluginManager.showMore()"
+            >
+              <span class="icon icon-plus"></span>
+            </button>
+          </div>
+
+          <button
+            class="btn btn-default btn-large"
+            onclick="PluginManager.navigateUp()"
+          >
+            <span class="icon icon-up-circled"></span>
+          </button>
+
+          <!-- Large button group -->
+          <div class="btn-group pull-right">
+            <button
+              class="btn btn-large btn-default active mode_buttons"
+              id="sunburst_button"
+              onclick="showSunburst()"
+            >
+              <span class="icon icon-cd"></span>
+            </button>
+
+            <button
+              class="btn btn-large btn-default mode_buttons"
+              id="flamegraph_button"
+              onclick="showFlamegraph()"
+            >
+              <span class="icon icon-water"></span>
+            </button>
+
+            <button
+              class="btn btn-default btn-large mode_buttons"
+              id="treemap_button"
+              onclick="showTreemap()"
+            >
+              <span class="icon icon-layout"></span>
+            </button>
+          </div>
+          <div></div>
+          <!-- thin padding -->
+        </div>
+      </header>
+
+      <!-- Your app's content goes inside .window-content -->
+      <div class="window-content" style="overflow-y: hidden">
+        <div id="shades" class="Aligner">
+          <div class="Aligner-item">
+            <div id="promptbox">
+              <h4>Scan Space</h4>
+              <p>
+                Pick one of the following to scan, or drag a target folder here.
+              </p>
+
+              <div class="">
+                <button class="btn btn-default btn-large" onclick="scanRoot()">
+                  <span class="icon icon-drive icon-text"></span>
+                  Scan Drive
+                </button>
+
+                <button
+                  class="btn btn-default btn-large"
+                  onclick="scanFolder()"
+                >
+                  <span class="icon icon-folder icon-text"></span>
+                  Scan Folder
+                </button>
+
+                <br />
+
+                <button
+                  class="btn btn-default btn-large"
+                  onclick="scanMemory()"
+                >
+                  <span class="icon icon-target icon-text"></span>
+                  Scan Memory
+                </button>
+
+                <button
+                  class="btn btn-default btn-large"
+                  onclick="
+                    hidePrompt();
+                    State.clearNavigation();
+                    PluginManager.loadLast();
+                  "
+                >
+                  <span class="icon icon-back icon-text"></span>
+                  Last loaded
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="canvas" class="graph-container"></canvas>
+
+        <canvas
+          id="three-canvas"
+          class="graph-container"
+          style="display: none; z-index: 1000; position: absolute; opacity: 0.5"
+        ></canvas>
+
+        <canvas id="sunburst-canvas" class="graph-container"></canvas>
+
+        <div id="sunburst-chart" class="graph-container">
+          <div id="explanation">
+            <span id="core_top"></span><br />
+            <span id="core_center"></span><br />
+            <span id="core_tag"></span>
+          </div>
+        </div>
+
+        <div id="flame-chart" class="svg-container graph-container"></div>
+
+        <div id="sidebar">
+          <nav class="nav-group"></nav>
+        </div>
+
+        <div id="loading">
+          Refreshing...
+          <div class="throbber-loader">Loading…</div>
+        </div>
+
+        <div id="legend"></div>
+
+        <div id="sequence">
+          <div class="breadcrumb flat"></div>
+        </div>
+      </div>
+      <!-- end window-content -->
+      <footer class="toolbar toolbar-footer">
+        <div class="toolbar-actions" style="display: flex">
+          <div class="btn-group">
+            <button class="btn btn-default" onclick="Navigation.back()">
+              <span class="icon icon-left-bold"></span>
+            </button>
+            <button class="btn btn-default" onclick="Navigation.forward()">
+              <span class="icon icon-right-bold"></span>
+            </button>
+          </div>
+
+          <span
+            id="disk_space_info"
+            style="
+              align-self: center;
+              font-size: 11px;
+              padding-left: 8px;
+              white-space: nowrap;
+            "
+          ></span>
+          <span
+            id="bottom_status"
+            style="
+              flex: 1;
+              align-self: center;
+              font-size: 11px;
+              padding-left: 8px;
+              white-space: nowrap;
+              overflow: auto;
+            "
+          ></span>
+          <button
+            class="btn btn-default pull-right"
+            id="dir_opener"
+            onclick="openDirectory()"
+          >
+            Locate Directory
+          </button>
+
+          <button
+            class="btn btn-negative pull-right"
+            id="cancel_scan_btn"
+            onclick="cancelScan()"
+            style="display: none; margin-right: 5px"
+          >
+            Cancel Scan
+          </button>
+
+          <button
+            class="btn btn-default pull-right"
+            id="pause_scan_btn"
+            onclick="pauseScan()"
+            style="display: none; margin-right: 5px"
+          >
+            Pause Scan
+          </button>
+        </div>
+      </footer>
+    </div>
+    <!-- end window -->
+
+    <script src="vendor/three.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/mem.js"></script>
+    <script src="js/graphs.js"></script>
+    <script src="js/file_extensions.js"></script>
+    <script src="js/colors.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/listview.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/sunburst.js"></script>
+    <script src="js/sunburst3d.js"></script>
+    <script src="js/treemap.js"></script>
+    <script src="js/flamegraph.js"></script>
+    <script src="js/breadcrumbs.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/radar.js"></script>
+  </body>
+</html>

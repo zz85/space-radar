@@ -1,9 +1,5 @@
 lastload.json
 
-js/fs-ipc.json
-package-lock.json
-app/package-lock.json
-
 # Node modules
 node_modules/
 app/node_modules/
@@ -16,10 +12,13 @@ app/lastload.json
 app/js/fs-ipc.json
 logs/
 *.log
-*.lock
 
 # Build outputs
 builds/
 dist/
 SpaceRadar-*/
 *.zip
+
+# Electrobun
+.electrobun/
+bun.lock

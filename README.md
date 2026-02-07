@@ -2,6 +2,8 @@
 
 SpaceRadar allows interactive visualization of disk space and memory. It currently supports Sunburst, Treemap, and Flamegraph charts.
 
+Built with [Electrobun](https://electrobun.dev) — ultra fast, tiny, cross-platform desktop apps with TypeScript.
+
 ## Downloads
 
 Download Mac, Windows, and Linux builds at the [releases page](https://github.com/zz85/space-radar/releases)
@@ -12,14 +14,12 @@ Download Mac, Windows, and Linux builds at the [releases page](https://github.co
 - Previews visualization as disk is being scanned
 - Fast scanning (completes faster than `du`)
 - Cross platform (macOS, Windows, Linux)
-- Apple Silicon native support (arm64)
 - Cancel and pause/resume scanning
-- Free space visualization
 - Directory drilldown with breadcrumbs and navigation
 - Opens files and directories in system file manager
-- Analyze disk contents from a remote server (see [Reading from a file](#reading-from-a-file))
 - Memory usage breakdown (cross-platform)
-- Auto-updates
+- Color Schemes — Seaborn palettes, colorblind-friendly options
+- 3D Mode — Experimental 3D sunburst visualization
 
 ## Screenshots
 
@@ -40,6 +40,14 @@ Compressed files can be read directly. To detect them, the file name has to end 
 
 ## What's New
 
+### V7
+
+- **Electrobun Migration** — Transitioned from Electron to [Electrobun](https://electrobun.dev) for smaller app size, faster startup, and native system webview
+- **Bun Runtime** — Main process now runs on Bun for blazing fast TypeScript execution
+- **Typed RPC** — Communication between main and view processes uses typed RPC instead of Electron IPC
+- **Native File Dialogs** — Uses Electrobun's native file dialog APIs
+- **Simplified Architecture** — No more hidden scanner windows; scanning runs directly in the Bun process
+
 ### V6
 
 - **Electron 40** - Major upgrade from Electron 28
@@ -47,84 +55,66 @@ Compressed files can be read directly. To detect them, the file name has to end 
 - **Canvas Sunburst** - Rewritten visualization using Canvas 2D for much better performance
 - **Cancel/Pause Scanning** - Stop or pause ongoing scans, view partial results
 - **Free Space Visualization** - See available disk space in the sunburst chart
-- **Accurate Scanning** - Skip symlinks, dedupe hardlinks, exclude problematic paths (OneDrive caches, system files)
+- **Accurate Scanning** - Skip symlinks, dedupe hardlinks, exclude problematic paths
 - **Real-time Stats** - See file/directory counts, scan speed, and errors during scanning
-- **Memory Visualization** - Cross-platform support (macOS, Windows, Linux)
 - **Color Schemes** - New Seaborn palettes, colorblind-friendly options
 - **3D Mode** - Experimental 3D sunburst visualization
-- **Auto-updates** - Automatic update notifications via electron-updater
-- **GitHub Actions CI/CD** - Automated builds for all platforms
 
 ### V5
 
 - Import from DU file
-- Upgrade electron
 - Flamegraphs (BETA)
 - Directory Listview
-- Update libs - Electron, D3
 
 ### V4
 
 - Treemap view
 - Memory monitoring
-- Mac App look using [Photon](http://photonkit.com)
 - Context Menus for locating + opening + deleting files / directories
 - Navigation controls (back/fwd/up)
-- Switched disk scanning jobs to invisible renderer process
-
-### V3
-
-- App icon finally! Thanks [Jill](http://jilln.com/) for the help with this :)
-- Many Bug fixes
-- Disk scanning is moved to a webview process
-- Investigated various RPC methods. Now uses LocalStorage + FileSystem IPC message passing
-- Reduce memory usage (and Electron crashes) by not caching key paths
-- Tested on > 100GB & 2M files
-- Improvements to user interactivity esp on hover states
-- To prevent renderer process from hitting heap mem limit (1.5GB), all previous data is null, with dom elements removed to reduce memory pressure
-- Allow target selection for disk usage scanning
-- Locate path in Finder
-- Env Debug Flags
-
-### V2
-
-- Major speed up scanning directories. About 10x from version 1, and almost as fast or faster than du.
-- Runs disk scanning as a separate headless renderer process
-- Json is passed back via IPC
-- Remove Async npm dependency
 
 ## Development
 
-Install dependencies:
+### Prerequisites
+
+- [Bun](https://bun.sh) runtime
+- macOS, Windows, or Linux
+
+### Install dependencies:
 
 ```bash
-npm install
+bun install
 ```
 
-Run in development mode:
+### Run in development mode:
 
 ```bash
-npm run debug
+bun run dev
 ```
 
 Or simply:
 
 ```bash
-npm start
+bun start
 ```
 
-Build for distribution:
+### Build for distribution:
 
 ```bash
-npm run build        # Current platform
-npm run build:mac    # macOS
-npm run build:win    # Windows
-npm run build:linux  # Linux
+bun run build
 ```
+
+## Architecture
+
+SpaceRadar uses Electrobun's architecture:
+
+- **Bun Main Process** (`src/bun/index.ts`): Handles window management, file scanning, native dialogs, and system operations
+- **Webview** (`src/mainview/`): The UI with D3.js visualizations, communicates with the main process via typed RPC
+- **RPC Schema** (`src/mainview/rpc.ts`): Type-safe interface for bidirectional communication
 
 ## History
 
-This project started as quick prototype for me to test drive [Electron](https://www.electronjs.org/) (& some ES6 syntax), [D3.js](https://d3js.org) and to explore the question of "what's taking up my disk space". Turns out writing a disk visualization app isn't that simple as I dwell into figuring out how to make disk scanning not block the UI thread, IPC calls go faster, smoother rendering, lesser memory usage, more sensible interactions...
+This project started as a quick prototype for testing [Electron](https://www.electronjs.org/) and [D3.js](https://d3js.org). In V7 it was migrated to [Electrobun](https://electrobun.dev) for a smaller, faster, more modern desktop app experience.
 
 ## Issues
 
@@ -133,9 +123,6 @@ Please raise on [GitHub issue tracker](https://github.com/zz85/space-radar/issue
 ## Thanks
 
 - [Jill](http://jilln.com/) for designing the app logo
-- Jianwei for his comments on the app
-- Chee Aun for helping alpha test the app
-- WM for his talk on Electron that got me started
 - [Contributors](https://github.com/zz85/space-radar/graphs/contributors)
 
 ## License

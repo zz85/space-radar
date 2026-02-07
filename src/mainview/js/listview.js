@@ -1,0 +1,166 @@
+function elm(tag, attrs, children, props) {
+  const el = document.createElement(tag);
+  for (const k in attrs) {
+    el.setAttribute(k, attrs[k]);
+  }
+
+  if (children) {
+    children = Array.isArray(children) ? children : [children];
+    for (let child of children) {
+      if (typeof child === "string") {
+        child = document.createTextNode(child);
+      }
+      el.appendChild(child);
+    }
+  }
+
+  if (props) {
+    for (const k in props) {
+      el[k] = props[k];
+    }
+  }
+  return el;
+}
+
+class ListView extends Chart {
+  navigateTo(path, current) {
+    this.path = path;
+    this.current = current;
+
+    const nodes = current._children || current.children || [];
+    this.nodes = nodes.slice().sort((a, b) => {
+      const aVal = a.sum ?? a.value ?? a.size ?? 0;
+      const bVal = b.sum ?? b.value ?? b.size ?? 0;
+      if (aVal < bVal) return 1;
+      if (aVal > bVal) return -1;
+      return 0;
+    });
+
+    this.draw(this.path, this.current);
+  }
+
+  draw(path, current) {
+    // Guard against undefined current
+    if (!current) {
+      return;
+    }
+
+    const INITIAL_LOAD = 10;
+    const currentSize = current.sum ?? current.value ?? current.size ?? 0;
+
+    const navs = [
+      elm(
+        "h5",
+        { class: "nav-group-title" },
+        `${path.join("/")} ${format(currentSize)}`,
+        {
+          onclick: () => State.navigateTo(path.slice(0, -1)),
+        },
+      ),
+    ];
+
+    const highlighted = this.highlightedPath;
+
+    const check_path =
+      highlighted &&
+      highlighted.length > path.length &&
+      !path.some((p, i) => p !== highlighted[i])
+        ? highlighted[path.length]
+        : null;
+
+    // let str = '----------\n'
+    const nodes = this.nodes;
+    nodes.slice(0, INITIAL_LOAD).forEach((child) => {
+      // str += child.name + '\t' + format(child.value) + '\n'
+      const childSize = child.sum ?? child.value ?? child.size ?? 0;
+
+      navs.push(
+        elm(
+          "span",
+          {
+            class: `nav-group-item${check_path == child.name ? " active" : ""}`,
+            href: "#",
+          },
+          [
+            elm("span", {
+              class: "icon icon-record",
+              style: `color: ${fill(child)};`,
+            }),
+            child.name || "",
+            elm(
+              "span",
+              { class: "", style: "float:right;" },
+              format(childSize),
+            ),
+          ],
+          {
+            onmousedown: () => {
+              console.log("click", child);
+              child.children && State.navigateTo([...path, child.name]);
+            },
+            onmouseenter: () => State.highlightPath([...path, child.name]),
+            onmouseleave: () => State.highlightPath(),
+          },
+        ),
+      );
+    });
+
+    const remaining = nodes.length - INITIAL_LOAD;
+    if (remaining > 0) {
+      navs.push(
+        elm("span", { class: "nav-group-item", href: "#" }, [
+          elm("span", { class: "icon icon-record" }),
+          `and ${remaining} other items....`,
+        ]),
+      );
+    }
+
+    // log(str)
+    [...sidebar.childNodes].forEach((v) => v.remove());
+    const nav = elm("nav", { class: "nav-group" }, navs);
+    sidebar.appendChild(nav);
+  }
+
+  highlightPath(path) {
+    const oldHighlight = this.highlightedPath;
+    this.highlightedPath = path;
+
+    // Skip if path and current aren't set
+    if (!this.path || !this.current) return;
+
+    // Optimization: just update active class instead of full redraw
+    const highlighted = path;
+    const check_path =
+      highlighted &&
+      highlighted.length > this.path.length &&
+      !this.path.some((p, i) => p !== highlighted[i])
+        ? highlighted[this.path.length]
+        : null;
+
+    const oldCheck =
+      oldHighlight &&
+      oldHighlight.length > this.path.length &&
+      !this.path.some((p, i) => p !== oldHighlight[i])
+        ? oldHighlight[this.path.length]
+        : null;
+
+    // Only do DOM updates if the highlighted item changed
+    if (check_path !== oldCheck) {
+      const items = sidebar.querySelectorAll(".nav-group-item");
+      items.forEach((item) => {
+        const itemName = item.childNodes[1];
+        if (itemName && itemName.textContent === check_path) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+    }
+  }
+
+  cleanup() {
+    this.path = null;
+    this.current = null;
+    this.highlightedPath = null;
+  }
+}
