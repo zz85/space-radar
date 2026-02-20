@@ -89,6 +89,11 @@ export type SpaceRadarRPC = {
         };
         response: void;
       };
+      /** Load the in-progress scan preview from temp file */
+      loadScanPreview: {
+        params: {};
+        response: string | null; // JSON string of tree data
+      };
       /** Show a native context menu */
       showContextMenu: {
         params: {
@@ -126,13 +131,10 @@ export type SpaceRadarRPC = {
         dirCount: number;
         errorCount: number;
       };
-      /** Scan refresh (intermediate preview of data) */
-      scanRefresh: {
-        data: string; // JSON tree data
-      };
-      /** Scan completed */
+      /** Scan refresh — tree data flushed to file, webview should pull it */
+      scanRefresh: {};
+      /** Scan completed — tree data flushed to file, webview should pull it */
       scanComplete: {
-        data: string; // JSON tree data
         stats: {
           fileCount: number;
           dirCount: number;

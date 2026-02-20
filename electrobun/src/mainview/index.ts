@@ -54,27 +54,53 @@ const rpc = Electroview.defineRPC<SpaceRadarRPC>({
           params.errorCount,
         );
       },
-      scanRefresh(params) {
-        try {
-          const json = JSON.parse(params.data);
-          refresh(json);
-        } catch (e) {
-          console.error("[renderer] Failed to parse scanRefresh data:", e);
-        }
+      scanRefresh(_params) {
+        // Tree data was flushed to file — pull it on demand
+        electroview.rpc.request
+          .loadScanPreview({})
+          .then((data) => {
+            if (data) {
+              try {
+                const json = JSON.parse(data);
+                refresh(json);
+              } catch (e) {
+                console.error(
+                  "[renderer] Failed to parse scanRefresh data:",
+                  e,
+                );
+              }
+            }
+          })
+          .catch((e) =>
+            console.error("[renderer] Failed to load scan preview:", e),
+          );
       },
       scanComplete(params) {
-        try {
-          const json = JSON.parse(params.data);
-          complete(json, {
-            fileCount: params.stats.fileCount,
-            dirCount: params.stats.dirCount,
-            current_size: params.stats.currentSize,
-            errorCount: params.stats.errorCount,
-            cancelled: params.stats.cancelled,
-          });
-        } catch (e) {
-          console.error("[renderer] Failed to parse scanComplete data:", e);
-        }
+        // Tree data was flushed to file — pull it on demand
+        electroview.rpc.request
+          .loadScanPreview({})
+          .then((data) => {
+            if (data) {
+              try {
+                const json = JSON.parse(data);
+                complete(json, {
+                  fileCount: params.stats.fileCount,
+                  dirCount: params.stats.dirCount,
+                  current_size: params.stats.currentSize,
+                  errorCount: params.stats.errorCount,
+                  cancelled: params.stats.cancelled,
+                });
+              } catch (e) {
+                console.error(
+                  "[renderer] Failed to parse scanComplete data:",
+                  e,
+                );
+              }
+            }
+          })
+          .catch((e) =>
+            console.error("[renderer] Failed to load scan preview:", e),
+          );
       },
       scanError(params) {
         console.error("[renderer] Scan error:", params.error);

@@ -52,6 +52,34 @@ function ensureAppDataDir(): string {
 }
 
 const LAST_SCAN_FILE = "lastload.json.z";
+const SCAN_PREVIEW_FILE = "scanpreview.json.z";
+
+/** Write tree to a compressed temp file so the webview can pull it on demand. */
+function saveTreeToPreview(tree: any): void {
+  try {
+    const dataDir = ensureAppDataDir();
+    const filePath = join(dataDir, SCAN_PREVIEW_FILE);
+    const json = JSON.stringify(tree);
+    const compressed = deflateSync(Buffer.from(json, "utf-8"));
+    writeFileSync(filePath, compressed);
+  } catch (err) {
+    console.error("[saveTreeToPreview] error:", err);
+  }
+}
+
+/** Read the scan preview file (returns decompressed JSON string or null). */
+function readScanPreview(): string | null {
+  try {
+    const dataDir = ensureAppDataDir();
+    const filePath = join(dataDir, SCAN_PREVIEW_FILE);
+    if (!existsSync(filePath)) return null;
+    const compressed = readFileSync(filePath);
+    return inflateSync(compressed).toString("utf-8");
+  } catch (err) {
+    console.error("[readScanPreview] error:", err);
+    return null;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Scanner instance (one per app, runs in-process)
@@ -349,9 +377,8 @@ function createAppWindow(): BrowserWindow<any> {
                   "[scanDirectory] refresh preview, children:",
                   tree.children?.length,
                 );
-                targetWin?.webview.rpc?.send.scanRefresh({
-                  data: JSON.stringify(tree),
-                });
+                saveTreeToPreview(tree);
+                targetWin?.webview.rpc?.send.scanRefresh({});
               },
               onComplete: (tree, stats) => {
                 console.log(
@@ -361,8 +388,8 @@ function createAppWindow(): BrowserWindow<any> {
                   stats.dirCount,
                   "dirs",
                 );
+                saveTreeToPreview(tree);
                 targetWin?.webview.rpc?.send.scanComplete({
-                  data: JSON.stringify(tree),
                   stats: {
                     fileCount: stats.fileCount,
                     dirCount: stats.dirCount,
@@ -493,6 +520,10 @@ function createAppWindow(): BrowserWindow<any> {
             console.error("[loadLastScan] error:", err);
             return null;
           }
+        },
+
+        loadScanPreview: async () => {
+          return readScanPreview();
         },
 
         saveScanData: async ({ data }) => {
