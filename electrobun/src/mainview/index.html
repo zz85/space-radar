@@ -1,0 +1,228 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Space Radar</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+  </head>
+  <body>
+    <div class="window" id="photon-window">
+      <header class="toolbar toolbar-header">
+        <h1 class="title">Space Radar</h1>
+
+        <div class="toolbar-actions">
+          <button class="btn btn-default btn-large" id="btn-new-window">
+            <span class="icon icon-popup icon-text"></span>
+            Open
+          </button>
+
+          <div class="btn-group">
+            <button class="btn btn-default btn-large" id="btn-scan-root">
+              <span class="icon icon-drive icon-text"></span>
+              Scan Drive
+            </button>
+
+            <button class="btn btn-default btn-large" id="btn-scan-folder">
+              <span class="icon icon-folder icon-text"></span>
+              Scan Folder
+            </button>
+
+            <button class="btn btn-default btn-large" id="btn-read-file">
+              <span class="icon icon-folder icon-text"></span>
+              Load DU file
+            </button>
+
+            <button class="btn btn-default btn-large" id="btn-scan-memory">
+              <span class="icon icon-target icon-text"></span>
+              Scan Memory
+            </button>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-default btn-large" id="btn-show-less">
+              <span class="icon icon-minus"></span>
+            </button>
+            <button class="btn btn-default btn-large" id="btn-show-more">
+              <span class="icon icon-plus"></span>
+            </button>
+          </div>
+
+          <button class="btn btn-default btn-large" id="btn-navigate-up">
+            <span class="icon icon-up-circled"></span>
+          </button>
+
+          <!-- Large button group -->
+          <div class="btn-group pull-right">
+            <button
+              class="btn btn-large btn-default active mode_buttons"
+              id="sunburst_button"
+            >
+              <span class="icon icon-cd"></span>
+            </button>
+
+            <button
+              class="btn btn-large btn-default mode_buttons"
+              id="flamegraph_button"
+            >
+              <span class="icon icon-water"></span>
+            </button>
+
+            <button
+              class="btn btn-default btn-large mode_buttons"
+              id="treemap_button"
+            >
+              <span class="icon icon-layout"></span>
+            </button>
+          </div>
+          <div></div>
+          <!-- thin padding -->
+        </div>
+      </header>
+
+      <!-- Your app's content goes inside .window-content -->
+      <div class="window-content" style="overflow-y: hidden">
+        <div id="shades" class="Aligner">
+          <div class="Aligner-item">
+            <div id="promptbox">
+              <h4>Scan Space</h4>
+              <p>
+                Pick one of the following to scan, or drag a target folder here.
+              </p>
+
+              <div class="">
+                <button class="btn btn-default btn-large" id="prompt-scan-root">
+                  <span class="icon icon-drive icon-text"></span>
+                  Scan Drive
+                </button>
+
+                <button
+                  class="btn btn-default btn-large"
+                  id="prompt-scan-folder"
+                >
+                  <span class="icon icon-folder icon-text"></span>
+                  Scan Folder
+                </button>
+
+                <br />
+
+                <button class="btn btn-default btn-large" id="prompt-read-file">
+                  <span class="icon icon-folder icon-text"></span>
+                  Load DU file
+                </button>
+
+                <button
+                  class="btn btn-default btn-large"
+                  id="prompt-scan-memory"
+                >
+                  <span class="icon icon-target icon-text"></span>
+                  Scan Memory
+                </button>
+
+                <button class="btn btn-default btn-large" id="prompt-load-last">
+                  <span class="icon icon-back icon-text"></span>
+                  Last loaded
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!--
+  Graph Charting Plugins HERE
+-->
+
+        <canvas id="canvas" class="graph-container"></canvas>
+
+        <canvas
+          id="three-canvas"
+          class="graph-container"
+          style="display: none; z-index: 1000; position: absolute; opacity: 0.5"
+        ></canvas>
+
+        <canvas id="sunburst-canvas" class="graph-container"></canvas>
+
+        <div id="sunburst-chart" class="graph-container">
+          <div id="explanation">
+            <span id="core_top"><!-- Loading... --></span><br />
+            <span id="core_center"></span><br />
+            <span id="core_tag"></span>
+          </div>
+        </div>
+
+        <div id="flame-chart" class="svg-container graph-container"></div>
+
+        <div id="sidebar">
+          <nav class="nav-group"></nav>
+        </div>
+
+        <div id="loading">
+          Refreshing...
+          <div class="throbber-loader">Loading...</div>
+        </div>
+
+        <div id="legend"></div>
+
+        <div id="sequence">
+          <div class="breadcrumb flat"></div>
+        </div>
+      </div>
+      <!-- end window-content -->
+      <footer class="toolbar toolbar-footer">
+        <div class="toolbar-actions" style="display: flex">
+          <div class="btn-group">
+            <button class="btn btn-default" id="btn-nav-back">
+              <span class="icon icon-left-bold"></span>
+            </button>
+            <button class="btn btn-default" id="btn-nav-forward">
+              <span class="icon icon-right-bold"></span>
+            </button>
+          </div>
+
+          <span
+            id="disk_space_info"
+            style="
+              align-self: center;
+              font-size: 11px;
+              padding-left: 8px;
+              white-space: nowrap;
+            "
+          ></span>
+          <span
+            id="bottom_status"
+            style="
+              flex: 1;
+              align-self: center;
+              font-size: 11px;
+              padding-left: 8px;
+              white-space: nowrap;
+              overflow: auto;
+            "
+            ><!-- Welcome to Space Radar --></span
+          >
+          <button class="btn btn-default pull-right" id="dir_opener">
+            Locate Directory
+          </button>
+
+          <button
+            class="btn btn-negative pull-right"
+            id="cancel_scan_btn"
+            style="display: none; margin-right: 5px"
+          >
+            Cancel Scan
+          </button>
+
+          <button
+            class="btn btn-default pull-right"
+            id="pause_scan_btn"
+            style="display: none; margin-right: 5px"
+          >
+            Pause Scan
+          </button>
+        </div>
+      </footer>
+    </div>
+    <!-- end window -->
+
+    <script src="index.js"></script>
+  </body>
+</html>
