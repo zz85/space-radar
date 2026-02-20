@@ -158,6 +158,9 @@ const STUCK_THRESHOLD = 30_000;
 /** Report progress every N items. */
 const PROGRESS_INTERVAL = 10_000;
 
+/** Yield to the event loop every N items to prevent UI lockup. */
+const YIELD_INTERVAL = 1_000;
+
 /** Refresh interval constants. */
 const START_REFRESH_INTERVAL = 5_000;
 const MAX_REFRESH_INTERVAL = 15 * 60 * 1_000;
@@ -176,6 +179,7 @@ export class Scanner {
   private paused = false;
   private pauseResolvers: Array<() => void> = [];
   private scanning = false;
+  private refreshScheduler: RefreshScheduler | null = null;
 
   // ---- handlers ----
   private handlers: ScannerHandlers;
@@ -224,13 +228,13 @@ export class Scanner {
     // ---- Refresh scheduler ----
     let refreshInterval = START_REFRESH_INTERVAL;
 
-    const refreshScheduler = new RefreshScheduler((reschedule) => {
+    this.refreshScheduler = new RefreshScheduler((reschedule) => {
       this.handlers.onRefresh?.(tree);
       refreshInterval *= REFRESH_MULTIPLIER;
       reschedule(Math.min(refreshInterval, MAX_REFRESH_INTERVAL));
     }, refreshInterval);
 
-    refreshScheduler.schedule();
+    this.refreshScheduler.schedule();
 
     // ---- Walk ----
     const startTime = Date.now();
@@ -250,7 +254,8 @@ export class Scanner {
       this.handlers.onError?.(msg);
     }
 
-    refreshScheduler.cancel();
+    this.refreshScheduler.cancel();
+    this.refreshScheduler = null;
 
     const elapsed = Date.now() - startTime;
     console.log(
@@ -399,6 +404,14 @@ export class Scanner {
         this.dirCount,
         this.errorCount,
       );
+    }
+
+    // Check if a refresh preview is due
+    this.refreshScheduler?.check();
+
+    // Yield to the event loop periodically so RPC / UI stays responsive
+    if (this.counter % YIELD_INTERVAL === 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
     }
 
     // Exclusion check

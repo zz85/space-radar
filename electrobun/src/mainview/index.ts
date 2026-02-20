@@ -40,6 +40,7 @@ const d3Merged: any = Object.assign(
 // =============================================================================
 
 const rpc = Electroview.defineRPC<SpaceRadarRPC>({
+  maxRequestTime: 300_000, // 5 minutes — must match bun side for long operations like selectFolder
   handlers: {
     requests: {},
     messages: {

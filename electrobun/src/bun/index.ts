@@ -21,6 +21,7 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
 import type { SpaceRadarRPC } from "../shared/types";
+import { Scanner } from "./scanner";
 
 const execAsync = promisify(exec);
 
@@ -53,10 +54,10 @@ function ensureAppDataDir(): string {
 const LAST_SCAN_FILE = "lastload.json.z";
 
 // ---------------------------------------------------------------------------
-// Scanner worker (one per app for now)
+// Scanner instance (one per app, runs in-process)
 // ---------------------------------------------------------------------------
 
-let scannerWorker: Worker | null = null;
+let activeScanner: Scanner | null = null;
 
 // ---------------------------------------------------------------------------
 // Memory scanning (port of app/js/mem.js)
@@ -311,58 +312,82 @@ function createAppWindow(): BrowserWindow<any> {
 
         scanDirectory: async ({ path: targetPath }) => {
           try {
-            // Terminate any existing scanner worker
-            if (scannerWorker) {
-              scannerWorker.terminate();
-              scannerWorker = null;
+            // Cancel any in-progress scan
+            if (activeScanner) {
+              activeScanner.cancel();
+              activeScanner = null;
             }
 
             const targetWin = windowRef.current;
-
-            scannerWorker = new Worker(
-              new URL("./scanner-worker.ts", import.meta.url).href,
+            console.log("[scanDirectory] starting scan:", targetPath);
+            console.log("[scanDirectory] window ref:", !!targetWin);
+            console.log(
+              "[scanDirectory] rpc send:",
+              !!targetWin?.webview.rpc?.send,
             );
 
-            scannerWorker.onmessage = (event: MessageEvent) => {
-              const msg = event.data;
-              switch (msg.type) {
-                case "progress":
-                  targetWin?.webview.rpc?.send.scanProgress({
-                    dir: msg.dir,
-                    name: msg.name,
-                    size: msg.size,
-                    fileCount: msg.fileCount,
-                    dirCount: msg.dirCount,
-                    errorCount: msg.errorCount,
-                  });
-                  break;
-                case "refresh":
-                  targetWin?.webview.rpc?.send.scanRefresh({
-                    data: msg.data,
-                  });
-                  break;
-                case "complete":
-                  targetWin?.webview.rpc?.send.scanComplete({
-                    data: msg.data,
-                    stats: msg.stats,
-                  });
-                  break;
-                case "error":
-                  targetWin?.webview.rpc?.send.scanError({
-                    error: msg.error,
-                  });
-                  break;
-              }
-            };
+            activeScanner = new Scanner({
+              onProgress: (
+                dir,
+                name,
+                size,
+                fileCount,
+                dirCount,
+                errorCount,
+              ) => {
+                targetWin?.webview.rpc?.send.scanProgress({
+                  dir,
+                  name,
+                  size,
+                  fileCount,
+                  dirCount,
+                  errorCount,
+                });
+              },
+              onRefresh: (tree) => {
+                console.log(
+                  "[scanDirectory] refresh preview, children:",
+                  tree.children?.length,
+                );
+                targetWin?.webview.rpc?.send.scanRefresh({
+                  data: JSON.stringify(tree),
+                });
+              },
+              onComplete: (tree, stats) => {
+                console.log(
+                  "[scanDirectory] complete:",
+                  stats.fileCount,
+                  "files,",
+                  stats.dirCount,
+                  "dirs",
+                );
+                targetWin?.webview.rpc?.send.scanComplete({
+                  data: JSON.stringify(tree),
+                  stats: {
+                    fileCount: stats.fileCount,
+                    dirCount: stats.dirCount,
+                    currentSize: stats.currentSize,
+                    errorCount: stats.errorCount,
+                    cancelled: stats.cancelled,
+                  },
+                });
+                activeScanner = null;
+              },
+              onError: (error) => {
+                console.error("[scanDirectory] scanner error:", error);
+                targetWin?.webview.rpc?.send.scanError({ error });
+                activeScanner = null;
+              },
+            });
 
-            scannerWorker.onerror = (event) => {
-              console.error("[scannerWorker] error:", event);
+            // Fire-and-forget — progress is reported via RPC messages
+            activeScanner.scan(targetPath).catch((err) => {
+              console.error("[scanDirectory] unhandled scan error:", err);
               targetWin?.webview.rpc?.send.scanError({
-                error: event.message || "Scanner worker error",
+                error: err instanceof Error ? err.message : String(err),
               });
-            };
-
-            scannerWorker.postMessage({ type: "scan", path: targetPath });
+              activeScanner = null;
+            });
 
             return { started: true };
           } catch (err) {
@@ -373,20 +398,20 @@ function createAppWindow(): BrowserWindow<any> {
         },
 
         cancelScan: async () => {
-          if (scannerWorker) {
-            scannerWorker.postMessage({ type: "cancel" });
+          if (activeScanner) {
+            activeScanner.cancel();
           }
         },
 
         pauseScan: async () => {
-          if (scannerWorker) {
-            scannerWorker.postMessage({ type: "pause" });
+          if (activeScanner) {
+            activeScanner.pause();
           }
         },
 
         resumeScan: async () => {
-          if (scannerWorker) {
-            scannerWorker.postMessage({ type: "resume" });
+          if (activeScanner) {
+            activeScanner.resume();
           }
         },
 
