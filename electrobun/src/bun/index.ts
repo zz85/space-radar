@@ -20,7 +20,6 @@ import { deflateSync, inflateSync } from "node:zlib";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
-import { Scanner } from "./scanner";
 import type { SpaceRadarRPC } from "../shared/types";
 
 const execAsync = promisify(exec);
@@ -54,10 +53,10 @@ function ensureAppDataDir(): string {
 const LAST_SCAN_FILE = "lastload.json.z";
 
 // ---------------------------------------------------------------------------
-// Active scanner instance (one per app for now)
+// Scanner worker (one per app for now)
 // ---------------------------------------------------------------------------
 
-let activeScanner: Scanner | null = null;
+let scannerWorker: Worker | null = null;
 
 // ---------------------------------------------------------------------------
 // Memory scanning (port of app/js/mem.js)
@@ -312,55 +311,58 @@ function createAppWindow(): BrowserWindow<any> {
 
         scanDirectory: async ({ path: targetPath }) => {
           try {
-            // Cancel any existing scan
-            if (activeScanner) {
-              activeScanner.cancel();
+            // Terminate any existing scanner worker
+            if (scannerWorker) {
+              scannerWorker.terminate();
+              scannerWorker = null;
             }
 
             const targetWin = windowRef.current;
 
-            activeScanner = new Scanner({
-              onProgress: (
-                dir,
-                name,
-                size,
-                fileCount,
-                dirCount,
-                errorCount,
-              ) => {
-                targetWin?.webview.rpc?.send.scanProgress({
-                  dir,
-                  name,
-                  size,
-                  fileCount,
-                  dirCount,
-                  errorCount,
-                });
-              },
-              onRefresh: (tree) => {
-                targetWin?.webview.rpc?.send.scanRefresh({
-                  data: JSON.stringify(tree),
-                });
-              },
-              onComplete: (tree, stats) => {
-                targetWin?.webview.rpc?.send.scanComplete({
-                  data: JSON.stringify(tree),
-                  stats: {
-                    fileCount: stats.fileCount,
-                    dirCount: stats.dirCount,
-                    currentSize: stats.currentSize,
-                    errorCount: stats.errorCount,
-                    cancelled: stats.cancelled,
-                  },
-                });
-              },
-              onError: (error) => {
-                targetWin?.webview.rpc?.send.scanError({ error });
-              },
-            });
+            scannerWorker = new Worker(
+              new URL("./scanner-worker.ts", import.meta.url).href,
+            );
 
-            // Start scan in background (don't await - it runs asynchronously)
-            activeScanner.scan(targetPath);
+            scannerWorker.onmessage = (event: MessageEvent) => {
+              const msg = event.data;
+              switch (msg.type) {
+                case "progress":
+                  targetWin?.webview.rpc?.send.scanProgress({
+                    dir: msg.dir,
+                    name: msg.name,
+                    size: msg.size,
+                    fileCount: msg.fileCount,
+                    dirCount: msg.dirCount,
+                    errorCount: msg.errorCount,
+                  });
+                  break;
+                case "refresh":
+                  targetWin?.webview.rpc?.send.scanRefresh({
+                    data: msg.data,
+                  });
+                  break;
+                case "complete":
+                  targetWin?.webview.rpc?.send.scanComplete({
+                    data: msg.data,
+                    stats: msg.stats,
+                  });
+                  break;
+                case "error":
+                  targetWin?.webview.rpc?.send.scanError({
+                    error: msg.error,
+                  });
+                  break;
+              }
+            };
+
+            scannerWorker.onerror = (event) => {
+              console.error("[scannerWorker] error:", event);
+              targetWin?.webview.rpc?.send.scanError({
+                error: event.message || "Scanner worker error",
+              });
+            };
+
+            scannerWorker.postMessage({ type: "scan", path: targetPath });
 
             return { started: true };
           } catch (err) {
@@ -371,20 +373,20 @@ function createAppWindow(): BrowserWindow<any> {
         },
 
         cancelScan: async () => {
-          if (activeScanner) {
-            activeScanner.cancel();
+          if (scannerWorker) {
+            scannerWorker.postMessage({ type: "cancel" });
           }
         },
 
         pauseScan: async () => {
-          if (activeScanner) {
-            activeScanner.pause();
+          if (scannerWorker) {
+            scannerWorker.postMessage({ type: "pause" });
           }
         },
 
         resumeScan: async () => {
-          if (activeScanner) {
-            activeScanner.resume();
+          if (scannerWorker) {
+            scannerWorker.postMessage({ type: "resume" });
           }
         },
 
