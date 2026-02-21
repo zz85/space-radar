@@ -116,12 +116,35 @@ const rpc = Electroview.defineRPC<SpaceRadarRPC>({
                   "[renderer] Failed to parse scanComplete data:",
                   e,
                 );
+                // Reset scanning state so the UI doesn't stay stuck
+                isScanning = false;
+                isPaused = false;
+                updateScanButtons();
+                legend.style("display", "none");
+                lightbox(false);
+                bottomStatus.textContent =
+                  "Error: failed to parse scan results";
               }
+            } else {
+              // No data returned — still reset scanning state
+              isScanning = false;
+              isPaused = false;
+              updateScanButtons();
+              legend.style("display", "none");
+              lightbox(false);
+              bottomStatus.textContent = "Scan complete but no data returned";
             }
           })
-          .catch((e) =>
-            console.error("[renderer] Failed to load scan preview:", e),
-          );
+          .catch((e) => {
+            console.error("[renderer] Failed to load scan preview:", e);
+            // Reset scanning state so the UI doesn't stay stuck
+            isScanning = false;
+            isPaused = false;
+            updateScanButtons();
+            legend.style("display", "none");
+            lightbox(false);
+            bottomStatus.textContent = "Error: failed to load scan results";
+          });
       },
       scanError(params) {
         console.error("[renderer] Scan error:", params.error);

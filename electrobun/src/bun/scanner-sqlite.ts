@@ -241,12 +241,14 @@ export class SqliteScanner {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this.handlers.onError?.(`Cannot access path: ${msg}`);
+      this.db.exec("PRAGMA locking_mode=NORMAL");
       this.scanning = false;
       return;
     }
 
     if (!stat.isDirectory()) {
       this.handlers.onError?.("Only directory scanning is currently supported");
+      this.db.exec("PRAGMA locking_mode=NORMAL");
       this.scanning = false;
       return;
     }
@@ -280,46 +282,71 @@ export class SqliteScanner {
 
     this.beginBatch();
 
+    let scanFailed = false;
+
     try {
-      await this.descendFS(
-        null, // parent_id (null for root)
-        resolvedPath,
-        resolvedPath, // root name = full path
-        0, // depth
-        excludePaths,
-        new Set<string>(),
+      try {
+        await this.descendFS(
+          null, // parent_id (null for root)
+          resolvedPath,
+          resolvedPath, // root name = full path
+          0, // depth
+          excludePaths,
+          new Set<string>(),
+        );
+      } catch (err) {
+        scanFailed = true;
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[sqlite-scanner] Unhandled error: ${msg}`);
+        this.handlers.onError?.(msg);
+      }
+
+      // Flush remaining inserts
+      this.commitBatch();
+      this.refreshScheduler?.cancel();
+      this.refreshScheduler = null;
+
+      // Create indexes after bulk insert for better performance
+      try {
+        this.createIndexes();
+      } catch (err) {
+        console.error("[sqlite-scanner] Failed to create indexes:", err);
+      }
+
+      // Compute cumulative directory sizes bottom-up
+      if (!this.cancelled && !scanFailed) {
+        try {
+          console.log("[sqlite-scanner] Computing directory sizes...");
+          this.computeDirectorySizes();
+        } catch (err) {
+          console.error(
+            "[sqlite-scanner] Failed to compute directory sizes:",
+            err,
+          );
+        }
+      }
+
+      const elapsed = Date.now() - startTime;
+      const stats = this.getStats();
+      console.log(
+        `[sqlite-scanner] Scan finished in ${elapsed}ms — ` +
+          `${stats.fileCount} files, ${stats.dirCount} dirs, ` +
+          `${stats.errorCount} errors, cancelled=${stats.cancelled}`,
       );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[sqlite-scanner] Unhandled error: ${msg}`);
-      this.handlers.onError?.(msg);
+
+      // Only send onComplete if we didn't already send onError
+      if (!scanFailed) {
+        this.handlers.onComplete?.(stats);
+      }
+    } finally {
+      // Always clean up — even if an unexpected exception escaped above
+      try {
+        this.db.exec("PRAGMA locking_mode=NORMAL");
+      } catch (_) {}
+      this.refreshScheduler?.cancel();
+      this.refreshScheduler = null;
+      this.scanning = false;
     }
-
-    // Flush remaining inserts
-    this.commitBatch();
-    this.refreshScheduler.cancel();
-    this.refreshScheduler = null;
-
-    // Create indexes after bulk insert for better performance
-    this.createIndexes();
-
-    // Compute cumulative directory sizes bottom-up
-    if (!this.cancelled) {
-      console.log("[sqlite-scanner] Computing directory sizes...");
-      this.computeDirectorySizes();
-    }
-
-    const elapsed = Date.now() - startTime;
-    const stats = this.getStats();
-    console.log(
-      `[sqlite-scanner] Scan finished in ${elapsed}ms — ` +
-        `${stats.fileCount} files, ${stats.dirCount} dirs, ` +
-        `${stats.errorCount} errors, cancelled=${stats.cancelled}`,
-    );
-
-    this.db.exec("PRAGMA locking_mode=NORMAL");
-    this.handlers.onComplete?.(stats);
-    this.scanning = false;
   }
 
   cancel(): void {
@@ -574,7 +601,14 @@ export class SqliteScanner {
 
   private commitBatch(): void {
     if (this.inTransaction) {
-      this.db.exec("COMMIT");
+      try {
+        this.db.exec("COMMIT");
+      } catch (err) {
+        console.error("[sqlite-scanner] COMMIT failed:", err);
+        try {
+          this.db.exec("ROLLBACK");
+        } catch (_) {}
+      }
       this.inTransaction = false;
       this.batchCount = 0;
     }
@@ -588,7 +622,13 @@ export class SqliteScanner {
     depth: number,
   ): number {
     const id = this.nextId++;
-    this.insertStmt.run(id, parentId, name, size, isDir ? 1 : 0, depth);
+    try {
+      this.insertStmt.run(id, parentId, name, size, isDir ? 1 : 0, depth);
+    } catch (err) {
+      console.error("[sqlite-scanner] Insert failed:", err);
+      this.errorCount++;
+      return id;
+    }
     this.batchCount++;
 
     if (this.batchCount >= BATCH_SIZE) {

@@ -403,9 +403,11 @@ function createAppWindow(): BrowserWindow<any> {
 
               db.scan(targetPath).catch((err) => {
                 console.error("[scanDirectory] unhandled scan error:", err);
-                targetWin?.webview.rpc?.send.scanError({
-                  error: err instanceof Error ? err.message : String(err),
-                });
+                try {
+                  targetWin?.webview.rpc?.send.scanError({
+                    error: err instanceof Error ? err.message : String(err),
+                  });
+                } catch (_) {}
               });
             } else {
               // ----- In-memory tree scanner (original approach) -----
@@ -471,9 +473,11 @@ function createAppWindow(): BrowserWindow<any> {
 
               activeInMemoryScanner.scan(targetPath).catch((err) => {
                 console.error("[scanDirectory] unhandled scan error:", err);
-                targetWin?.webview.rpc?.send.scanError({
-                  error: err instanceof Error ? err.message : String(err),
-                });
+                try {
+                  targetWin?.webview.rpc?.send.scanError({
+                    error: err instanceof Error ? err.message : String(err),
+                  });
+                } catch (_) {}
                 activeInMemoryScanner = null;
               });
             }
