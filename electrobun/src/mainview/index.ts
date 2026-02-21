@@ -19,8 +19,6 @@ import * as d3Hierarchy from "d3-hierarchy";
 import * as d3Scale from "d3-scale";
 import * as d3Selection from "d3-selection";
 import * as d3Ease from "d3-ease";
-import { flamegraph } from "d3-flame-graph";
-import { defaultFlamegraphTooltip } from "d3-flame-graph/dist/d3-flamegraph-tooltip.js";
 
 // Merge d3 modules (d3 v3 base + newer modules)
 // Note: Cannot Object.assign onto d3 directly because Bun's bundler wraps
@@ -1982,82 +1980,116 @@ function TreeMap() {
 // FLAMEGRAPH (from app/js/flamegraph.js)
 // =============================================================================
 
-function getFlameNodePath(node: any): string[] {
-  const fullname: string[] = [];
-  while (node.parent) {
-    fullname.push(node.data.name);
-    node = node.parent;
-  }
-  fullname.push(node.data.name);
-  return fullname.reverse();
-}
+// (FlameGraph is now canvas-based — no external library needed)
 
 class FlameGraph extends Chart {
-  chart: any;
-  graph: any;
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
   data: any = null;
+  flatNodes: Array<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    node: any;
+    label: string;
+  }> = [];
+  hoveredNode: any = null;
   currentPath: string = "";
+  CELL_HEIGHT = 20;
+  LEVELS = 30;
 
   constructor() {
     super();
-    this.chart = d3Merged.select("#flame-chart");
+    this.canvas = document.getElementById("flame-chart") as HTMLCanvasElement;
+    // Replace the div with a canvas element
+    if (this.canvas.tagName !== "CANVAS") {
+      const canvasEl = document.createElement("canvas");
+      canvasEl.id = "flame-chart";
+      canvasEl.className = this.canvas.className;
+      this.canvas.parentNode!.replaceChild(canvasEl, this.canvas);
+      this.canvas = canvasEl;
+    }
+    this.ctx = this.canvas.getContext("2d")!;
 
-    this.graph = flamegraph()
-      .height(400)
-      .width(460)
-      .cellHeight(20)
-      .transitionDuration(350)
-      .transitionEase(d3Merged.easeCubic);
-
-    const tip = defaultFlamegraphTooltip().text((d: any) => {
-      const fullpath = getFlameNodePath(d).join("/");
-      return (
-        fullpath +
-        " - " +
-        format(d.data.value) +
-        " " +
-        `(${((d.data.value / this.data.value) * 100).toFixed(2)}%)`
-      );
-    });
-
-    this.graph.tooltip(tip).onClick((e: any) => {
-      if (e) {
-        const movingTo = getFlameNodePath(e).join("/");
-        const route = Navigation.currentPath().join("/");
-        if (route !== movingTo) {
-          console.log("movingTo", movingTo, route);
-        }
-        this.currentPath = movingTo;
-        State.navigateTo(getFlameNodePath(e));
+    this.canvas.addEventListener("mousemove", (e) => this.onMouseMove(e));
+    this.canvas.addEventListener("click", (e) => this.onClick(e));
+    this.canvas.addEventListener("mouseleave", () => {
+      if (this.hoveredNode) {
+        this.hoveredNode = null;
+        this.draw();
       }
     });
   }
 
+  private getNodePath(node: any): string[] {
+    const path: string[] = [];
+    let n = node;
+    while (n) {
+      path.push(n.name);
+      n = n._parent;
+    }
+    return path.reverse();
+  }
+
+  private hitTest(
+    mx: number,
+    my: number,
+  ): { x: number; y: number; w: number; h: number; node: any } | null {
+    const dpr = window.devicePixelRatio || 1;
+    const px = mx * dpr;
+    const py = my * dpr;
+    // Iterate in reverse so topmost (deepest) nodes are checked first
+    for (let i = this.flatNodes.length - 1; i >= 0; i--) {
+      const n = this.flatNodes[i];
+      if (px >= n.x && px < n.x + n.w && py >= n.y && py < n.y + n.h) {
+        return n;
+      }
+    }
+    return null;
+  }
+
+  private onMouseMove(e: MouseEvent) {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const hit = this.hitTest(mx, my);
+    const newHovered = hit ? hit.node : null;
+    if (newHovered !== this.hoveredNode) {
+      this.hoveredNode = newHovered;
+      this.canvas.style.cursor = newHovered ? "pointer" : "default";
+      this.draw();
+    }
+  }
+
+  private onClick(e: MouseEvent) {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const hit = this.hitTest(mx, my);
+    if (hit && hit.node) {
+      const path = this.getNodePath(hit.node);
+      this.currentPath = path.join("/");
+      State.navigateTo(path);
+    }
+  }
+
   resize() {
+    const dpr = window.devicePixelRatio || 1;
     const w = globalWidth || window.innerWidth;
     const h = globalHeight || window.innerHeight - 200;
-    const newHeight = (h * 2) / 3;
-    this.graph.width(w).height(newHeight);
-    const svg = document.querySelector(".d3-flame-graph");
-    if (svg) {
-      svg.setAttribute("width", String(w));
-      svg.setAttribute("height", String(newHeight));
-    }
+    this.canvas.style.width = w + "px";
+    this.canvas.style.height = h + "px";
+    this.canvas.width = w * dpr;
+    this.canvas.height = h * dpr;
     this.draw();
   }
 
-  draw() {
-    if (!this.data) return;
-    this.chart.datum(this.data).call(this.graph);
-  }
-
-  navigateTo(path: string[]) {
-    if (path.join("/") === this.currentPath) return;
-  }
-
   generate(data: any) {
-    console.log("FlameGraph generate");
+    // Clone to avoid mutating the shared tree
+    const cloned = JSON.parse(JSON.stringify(data));
 
+    // Compute value bottom-up
     function computeValue(node: any): number {
       if (node.children && node.children.length > 0) {
         let sum = 0;
@@ -2066,34 +2098,146 @@ class FlameGraph extends Chart {
         }
         node.value = sum;
         return sum;
-      } else {
-        node.value = node.size || 0;
-        return node.value;
       }
+      node.value = node.size || 0;
+      return node.value;
     }
+    computeValue(cloned);
 
-    const clonedData = JSON.parse(JSON.stringify(data));
-    computeValue(clonedData);
-
+    // Filter small nodes (< 0.1% of total)
+    const totalValue = cloned.value || 1;
     const THRESHOLD = 0.001;
-    const totalValue = clonedData.value || 1;
-
-    function filterSmallNodes(node: any): any {
+    function filterSmall(node: any): any {
       if (node.children) {
         node.children = node.children
-          .filter((child: any) => child.value / totalValue >= THRESHOLD)
-          .map(filterSmallNodes);
+          .filter((c: any) => c.value / totalValue >= THRESHOLD)
+          .map(filterSmall);
       }
       return node;
     }
+    filterSmall(cloned);
 
-    filterSmallNodes(clonedData);
-    this.data = clonedData;
+    // Set parent references for path building
+    function setParents(node: any) {
+      if (node.children) {
+        for (const child of node.children) {
+          child._parent = node;
+          setParents(child);
+        }
+      }
+    }
+    setParents(cloned);
+
+    this.data = cloned;
+    this.draw();
+  }
+
+  draw() {
+    if (!this.data) return;
+    const ctx = this.ctx;
+    const dpr = window.devicePixelRatio || 1;
+    const canvasW = this.canvas.width;
+    const canvasH = this.canvas.height;
+    const cellH = this.CELL_HEIGHT * dpr;
+
+    ctx.clearRect(0, 0, canvasW, canvasH);
+    this.flatNodes = [];
+
+    const totalValue = this.data.value || 1;
+
+    // Lay out flame rectangles top-down (root at top)
+    const queue: Array<{
+      node: any;
+      depth: number;
+      x: number;
+      w: number;
+    }> = [{ node: this.data, depth: 0, x: 0, w: canvasW }];
+
+    while (queue.length > 0) {
+      const { node, depth, x, w } = queue.shift()!;
+      if (depth > this.LEVELS) continue;
+
+      const y = depth * cellH;
+      if (y + cellH > canvasH) continue;
+      if (w < 1) continue;
+
+      // Determine color
+      const isHovered = node === this.hoveredNode;
+      const color = this.getColor(node, depth, isHovered);
+
+      // Draw rectangle
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w - 1, cellH - 1);
+
+      // Draw label if wide enough
+      const label = node.name || "";
+      if (w > 40 * dpr) {
+        ctx.fillStyle = isHovered ? "#000" : "#333";
+        ctx.font = `${11 * dpr}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        const textW = w - 6 * dpr;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x + 3 * dpr, y, textW, cellH);
+        ctx.clip();
+        ctx.fillText(label, x + 3 * dpr, y + cellH - 5 * dpr);
+        ctx.restore();
+      }
+
+      // Store for hit testing
+      this.flatNodes.push({ x, y, w, h: cellH, node, label });
+
+      // Layout children
+      if (node.children && node.children.length > 0) {
+        let childX = x;
+        for (const child of node.children) {
+          const childW = (child.value / (node.value || 1)) * w;
+          if (childW >= 1) {
+            queue.push({
+              node: child,
+              depth: depth + 1,
+              x: childX,
+              w: childW,
+            });
+          }
+          childX += childW;
+        }
+      }
+    }
+  }
+
+  private getColor(node: any, depth: number, hovered: boolean): string {
+    if (node._isFreeSpace) return hovered ? "#ccc" : "#eee";
+    if (node._isOtherFiles) return hovered ? "#ddd" : "#f0f0f0";
+
+    // Warm flame palette: hue 30-50 (orange/yellow), varying by depth
+    const hue = 30 + ((depth * 7) % 20);
+    const sat = hovered ? 90 : 70;
+    const light = hovered ? 55 : 60 + (depth % 3) * 5;
+    return `hsl(${hue}, ${sat}%, ${light}%)`;
+  }
+
+  navigateTo(path: string[]) {
+    this.currentPath = path.join("/");
+  }
+
+  showMore() {
+    this.LEVELS++;
+    this.draw();
+  }
+
+  showLess() {
+    if (this.LEVELS <= 1) return;
+    this.LEVELS--;
     this.draw();
   }
 
   cleanup() {
-    this.chart.selectAll("*").remove();
+    this.flatNodes = [];
+    this.hoveredNode = null;
+    this.data = null;
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
   }
 }
 
@@ -3016,7 +3160,7 @@ function showTreemap() {
 function showFlamegraph() {
   hideAll();
   document.getElementById("flamegraph_button")!.classList.add("active");
-  document.getElementById("flame-chart")!.style.display = "inline-block";
+  document.getElementById("flame-chart")!.style.display = "block";
   deactivateCharts();
   PluginManager.activate(flamegraphGraph);
 }
