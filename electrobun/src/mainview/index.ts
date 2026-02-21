@@ -2769,11 +2769,10 @@ function refresh(json: any) {
       console.error("[renderer] refresh onJson error:", err);
     }
     lightbox(false);
-    // Hide the legend after preview renders — the progress handler will
-    // re-show it on the next scanProgress tick if the scan is still running.
-    // This prevents "Generating preview..." from lingering after the
-    // charts are already visible.
-    legend.style("display", "none");
+    // Replace "Generating preview..." with a brief status so the legend
+    // doesn't linger with stale text. The next scanProgress tick will
+    // overwrite this with real stats if the scan is still running.
+    legend.html("<h2>Scanning...</h2>");
   }, 1000);
 }
 
