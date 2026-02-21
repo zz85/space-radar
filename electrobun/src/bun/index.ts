@@ -735,7 +735,10 @@ function createAppWindow(): BrowserWindow<any> {
   latestWindow = newWin;
 
   newWin.on("close", () => {
-    process.exit(0);
+    // Don't exit here — Electrobun's built-in exitOnLastWindowClosed
+    // (default: true) will quit when the last BrowserWindow closes.
+    // Calling process.exit(0) on every close kills the app even when
+    // other windows are still open.
   });
 
   return newWin;

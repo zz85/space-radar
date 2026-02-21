@@ -922,12 +922,11 @@ function computeNodeSize(data: any): void {
   console.timeEnd("computeNodeSize");
 }
 
-function setNodeFilter(data: any): any {
-  const LEVELS = 11;
+function setNodeFilter(data: any, levels: number = 11): any {
   const HIDE_THRESHOLD = 0.1;
 
   return partition.children(function hideChildren(d: any, depth: number) {
-    if (depth >= LEVELS) return null;
+    if (depth >= levels) return null;
     if (!d._children) return null;
 
     const visibleChildren: any[] = [];
@@ -1305,7 +1304,7 @@ function SunBurst() {
   function computeVisibleNodes(node: any) {
     if (!node) return;
 
-    setNodeFilter(node);
+    setNodeFilter(node, LEVELS);
     const nodes = partition.nodes(node).slice(1);
 
     let maxDepth = 0;
@@ -1373,7 +1372,9 @@ function SunBurst() {
 
     log("Root count", root.count, "ROOT size", format(root.value));
 
-    setNodeFilter(root).value((d: any) => (USE_COUNT ? d.count : d.sum));
+    setNodeFilter(root, LEVELS).value((d: any) =>
+      USE_COUNT ? d.count : d.sum,
+    );
 
     computeVisibleNodes(root);
     updateCore(root);
