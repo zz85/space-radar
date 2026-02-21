@@ -3027,6 +3027,13 @@ function wireButton(id: string, handler: () => void) {
   if (el) el.addEventListener("click", handler);
 }
 
+// Prevent toolbar button clicks from triggering window drag
+// (Electrobun's drag region handler is on document.mousedown and uses
+//  target.closest() which would match .toolbar-header on any child click)
+document.querySelectorAll(".toolbar-actions").forEach((el) => {
+  el.addEventListener("mousedown", (e) => e.stopPropagation());
+});
+
 // Toolbar buttons
 wireButton("btn-new-window", newWindow);
 wireButton("btn-scan-root", scanRoot);
