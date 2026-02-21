@@ -2744,12 +2744,25 @@ function progress(
 }
 
 function refresh(json: any) {
+  // Don't refresh if the scan already completed — a late-arriving
+  // scanRefresh response would re-show the overlay after complete() hid it.
+  if (!isScanning) return;
+
   log("refresh..");
   lightbox(true);
   legend.html("Generating preview...");
 
   setTimeout(() => {
-    onJson(json);
+    // Re-check: scan may have completed while the timeout was pending
+    if (!isScanning) {
+      lightbox(false);
+      return;
+    }
+    try {
+      onJson(json);
+    } catch (err) {
+      console.error("[renderer] refresh onJson error:", err);
+    }
     lightbox(false);
   }, 1000);
 }
@@ -2767,7 +2780,11 @@ function complete(json: any, finalStats?: any) {
   updateScanButtons();
 
   console.time("a");
-  onJson(json);
+  try {
+    onJson(json);
+  } catch (err) {
+    console.error("[renderer] complete onJson error:", err);
+  }
   legend.style("display", "none");
   lightbox(false);
   requestAnimationFrame(() => console.timeEnd("a"));
