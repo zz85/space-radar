@@ -3083,8 +3083,24 @@ function onJson(data: any) {
 }
 
 /**
+/** Compute the max depth of loaded children below a node. Short-circuits
+ *  once LAZY_LOAD_DEPTH is reached so it doesn't walk the entire tree. */
+function getLoadedDepthBelow(node: any): number {
+  const children = node._children || node.children;
+  if (!children || children.length === 0) return 0;
+  let max = 0;
+  for (const child of children) {
+    const d = 1 + getLoadedDepthBelow(child);
+    if (d > max) max = d;
+    if (max >= LAZY_LOAD_DEPTH) return max; // early exit — enough depth loaded
+  }
+  return max;
+}
+
+/**
  * Fetch a depth-limited subtree from SQLite and replace the current view.
- * Used for drill-down into truncated directories and navigate-up past root.
+ * Used for drill-down when the loaded depth below a node is insufficient,
+ * or when navigating up past the current view root.
  */
 async function fetchAndDisplaySubtree(nodeId: number) {
   lightbox(true);
@@ -3137,27 +3153,34 @@ PluginManager.loadLast = function () {
   });
 };
 
-// Override navigateTo to handle lazy loading of truncated directories.
-// A truncated dir has _nodeId and no (or empty) children — it exists
-// in the SQLite DB but wasn't expanded in the current partial tree.
+// Override navigateTo to handle lazy loading of subtrees.
+// Fetches fresh data when:
+//   1. The target node is truncated (no children but has _nodeId and nonzero size)
+//   2. The loaded depth below the target is less than LAZY_LOAD_DEPTH
 const _originalPluginNavigateTo = PluginManager.navigateTo.bind(PluginManager);
 PluginManager.navigateTo = function (path: string[]) {
   if (!this.data) return;
   const current = getNodeFromPath(path, this.data);
 
-  const hasChildren =
-    (current._children && current._children.length > 0) ||
-    (current.children && current.children.length > 0);
+  if (current && current._nodeId && current !== this.data) {
+    const hasChildren =
+      (current._children && current._children.length > 0) ||
+      (current.children && current.children.length > 0);
 
-  if (
-    current &&
-    current._nodeId &&
-    current !== this.data &&
-    !hasChildren &&
-    (current.sum > 0 || current.value > 0 || current.size > 0)
-  ) {
-    fetchAndDisplaySubtree(current._nodeId);
-    return;
+    // Case 1: Truncated node (no children at all)
+    if (
+      !hasChildren &&
+      (current.sum > 0 || current.value > 0 || current.size > 0)
+    ) {
+      fetchAndDisplaySubtree(current._nodeId);
+      return;
+    }
+
+    // Case 2: Has children but not enough depth loaded for a useful view
+    if (hasChildren && getLoadedDepthBelow(current) < LAZY_LOAD_DEPTH) {
+      fetchAndDisplaySubtree(current._nodeId);
+      return;
+    }
   }
 
   _originalPluginNavigateTo(path);
