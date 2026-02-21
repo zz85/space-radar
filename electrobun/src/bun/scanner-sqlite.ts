@@ -209,13 +209,13 @@ export class SqliteScanner {
         is_dir    INTEGER NOT NULL DEFAULT 0,
         depth     INTEGER NOT NULL DEFAULT 0
       );
+      CREATE INDEX IF NOT EXISTS idx_parent ON nodes(parent_id);
     `);
   }
 
   private createIndexes(): void {
     this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_parent ON nodes(parent_id);
-      CREATE INDEX IF NOT EXISTS idx_depth  ON nodes(depth);
+      CREATE INDEX IF NOT EXISTS idx_depth ON nodes(depth);
     `);
   }
 
@@ -433,7 +433,14 @@ export class SqliteScanner {
     // have correct sizes from the DB so this loop is skipped entirely.
     const hasMissingSizes = rows.some((r) => r.is_dir && r.size === 0);
     if (hasMissingSizes) {
-      this.fillMissingSizes(rows, map, maxDepth);
+      // During a mid-scan refresh, skip the expensive Phase 1 (per-directory
+      // recursive CTEs for edge nodes). Phase 2 bottom-up aggregation from
+      // in-memory children is fast and gives a good approximation.
+      // Phase 1 is only worthwhile after the scan finishes (when called from
+      // scanComplete → getSubtree, computeDirectorySizes has already run so
+      // this branch is skipped anyway).
+      const skipExpensivePhase1 = this.scanning;
+      this.fillMissingSizes(rows, map, maxDepth, skipExpensivePhase1);
     }
 
     // Attach parent node ID so the frontend can navigate up past this subtree
@@ -452,6 +459,8 @@ export class SqliteScanner {
    * Phase 1 — edge directories (at maxDepth with size 0): run a recursive
    *   CTE per node to SUM all descendant file sizes. Uses a prepared
    *   statement so Bun's native SQLite binding avoids re-parsing.
+   *   Skipped during mid-scan refresh (too expensive: hundreds of recursive
+   *   CTEs on large tables).
    *
    * Phase 2 — inner directories: simple bottom-up aggregation from their
    *   already-sized children (deepest first).
@@ -460,25 +469,28 @@ export class SqliteScanner {
     rows: Array<NodeRow & { rel_depth: number }>,
     map: Map<number, any>,
     maxDepth: number,
+    skipPhase1 = false,
   ): void {
     // Phase 1: edge directories — query descendant file sizes from the DB
-    const descSizeStmt = this.db.query(`
-      WITH RECURSIVE desc AS (
-        SELECT id, size, is_dir FROM nodes WHERE parent_id = ?
-        UNION ALL
-        SELECT n.id, n.size, n.is_dir
-          FROM nodes n
-          JOIN desc d ON n.parent_id = d.id
-      )
-      SELECT COALESCE(SUM(CASE WHEN is_dir = 0 THEN size ELSE 0 END), 0) AS total
-        FROM desc
-    `);
+    if (!skipPhase1) {
+      const descSizeStmt = this.db.query(`
+        WITH RECURSIVE desc AS (
+          SELECT id, size, is_dir FROM nodes WHERE parent_id = ?
+          UNION ALL
+          SELECT n.id, n.size, n.is_dir
+            FROM nodes n
+            JOIN desc d ON n.parent_id = d.id
+        )
+        SELECT COALESCE(SUM(CASE WHEN is_dir = 0 THEN size ELSE 0 END), 0) AS total
+          FROM desc
+      `);
 
-    for (const r of rows) {
-      if (r.is_dir && r.size === 0 && r.rel_depth === maxDepth) {
-        const result = descSizeStmt.get(r.id) as { total: number } | null;
-        if (result && result.total > 0) {
-          map.get(r.id).size = result.total;
+      for (const r of rows) {
+        if (r.is_dir && r.size === 0 && r.rel_depth === maxDepth) {
+          const result = descSizeStmt.get(r.id) as { total: number } | null;
+          if (result && result.total > 0) {
+            map.get(r.id).size = result.total;
+          }
         }
       }
     }
