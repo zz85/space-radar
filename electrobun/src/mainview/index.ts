@@ -87,6 +87,11 @@ const rpc = Electroview.defineRPC<SpaceRadarRPC>({
           );
       },
       scanComplete(params) {
+        // Show immediate feedback — the getSubtree(depth:5) RPC can be slow
+        legend.html("<h2>Loading scan results...</h2>");
+        legend.style("display", "block");
+        lightbox(true);
+
         // Try SQLite first; fall back to file-based preview
         electroview.rpc.request
           .getScanRootId({})
@@ -2764,6 +2769,11 @@ function refresh(json: any) {
       console.error("[renderer] refresh onJson error:", err);
     }
     lightbox(false);
+    // Hide the legend after preview renders — the progress handler will
+    // re-show it on the next scanProgress tick if the scan is still running.
+    // This prevents "Generating preview..." from lingering after the
+    // charts are already visible.
+    legend.style("display", "none");
   }, 1000);
 }
 
