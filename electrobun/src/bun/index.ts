@@ -12,6 +12,7 @@ import Electrobun, {
   ApplicationMenu,
   ContextMenu,
   Utils,
+  Screen,
 } from "electrobun/bun";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -54,14 +55,15 @@ function ensureAppDataDir(): string {
 const LAST_SCAN_FILE = "lastload.json.z";
 const SCAN_PREVIEW_FILE = "scanpreview.json.z";
 
-/** Write tree to a compressed temp file so the webview can pull it on demand. */
-function saveTreeToPreview(tree: any): void {
+/** Write tree to a compressed temp file so the webview can pull it on demand.
+ *  Uses async Bun.write to avoid blocking the event loop. */
+async function saveTreeToPreview(tree: any): Promise<void> {
   try {
     const dataDir = ensureAppDataDir();
     const filePath = join(dataDir, SCAN_PREVIEW_FILE);
     const json = JSON.stringify(tree);
     const compressed = deflateSync(Buffer.from(json, "utf-8"));
-    writeFileSync(filePath, compressed);
+    await Bun.write(filePath, compressed);
   } catch (err) {
     console.error("[saveTreeToPreview] error:", err);
   }
@@ -568,18 +570,37 @@ function createAppWindow(): BrowserWindow<any> {
     },
   });
 
+  // Centre the window on the primary display's work area (excludes menu bar / dock)
+  const winWidth = 1200;
+  const winHeight = 800;
+  let winX = 100;
+  let winY = 100;
+  try {
+    const { workArea } = Screen.getPrimaryDisplay();
+    winX = Math.round(workArea.x + (workArea.width - winWidth) / 2);
+    winY = Math.round(workArea.y + (workArea.height - winHeight) / 2);
+  } catch (_) {
+    // Fall back to fixed position if Screen API unavailable
+  }
+
   const newWin = new BrowserWindow({
     title: "Space Radar",
     url: "views://mainview/index.html",
     frame: {
-      width: 1200,
-      height: 900,
-      x: 100,
-      y: 100,
+      width: winWidth,
+      height: winHeight,
+      x: winX,
+      y: winY,
     },
     titleBarStyle: "hiddenInset",
     rpc,
   });
+
+  // Force a WKWebView layout recalculation so the footer is visible on
+  // first paint (works around a viewport-height measurement race in WKWebView).
+  setTimeout(() => {
+    newWin.setSize(winWidth, winHeight);
+  }, 100);
 
   // Wire up the ref so RPC handlers can reach this window
   windowRef.current = newWin;

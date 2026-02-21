@@ -191,33 +191,39 @@
             id="bottom_status"
             style="
               flex: 1;
+              min-width: 0;
               align-self: center;
               font-size: 11px;
               padding-left: 8px;
               white-space: nowrap;
-              overflow: auto;
+              overflow: hidden;
+              text-overflow: ellipsis;
             "
             ><!-- Welcome to Space Radar --></span
           >
-          <button class="btn btn-default pull-right" id="dir_opener">
-            Locate Directory
-          </button>
-
-          <button
-            class="btn btn-negative pull-right"
-            id="cancel_scan_btn"
-            style="display: none; margin-right: 5px"
+          <div
+            style="flex-shrink: 0; display: flex; gap: 5px; margin-left: auto"
           >
-            Cancel Scan
-          </button>
+            <button class="btn btn-default" id="dir_opener">
+              Locate Directory
+            </button>
 
-          <button
-            class="btn btn-default pull-right"
-            id="pause_scan_btn"
-            style="display: none; margin-right: 5px"
-          >
-            Pause Scan
-          </button>
+            <button
+              class="btn btn-negative"
+              id="cancel_scan_btn"
+              style="display: none"
+            >
+              Cancel Scan
+            </button>
+
+            <button
+              class="btn btn-default"
+              id="pause_scan_btn"
+              style="display: none"
+            >
+              Pause Scan
+            </button>
+          </div>
         </div>
       </footer>
     </div>

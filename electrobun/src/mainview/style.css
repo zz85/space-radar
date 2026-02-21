@@ -27,12 +27,18 @@ body {
   padding: 0;
   position: relative;
   overflow: hidden;
+  height: 100%;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
     "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   font-size: 13px;
   color: #333;
   background: #fff;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* =============================================================================
@@ -43,8 +49,8 @@ body {
 .window {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
 }
 
 /* Toolbar / Header */
@@ -54,6 +60,7 @@ body {
   border-bottom: 1px solid #c4c4c4;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .toolbar-header {
@@ -85,6 +92,7 @@ body {
   border-top: 1px solid #c4c4c4;
   border-bottom: none;
   min-height: 32px;
+  flex-shrink: 0;
 }
 
 /* Buttons */

@@ -159,7 +159,7 @@ const STUCK_THRESHOLD = 30_000;
 const PROGRESS_INTERVAL = 10_000;
 
 /** Yield to the event loop every N items to prevent UI lockup. */
-const YIELD_INTERVAL = 1_000;
+const YIELD_INTERVAL = 5_000;
 
 /** Refresh interval constants. */
 const START_REFRESH_INTERVAL = 5_000;
