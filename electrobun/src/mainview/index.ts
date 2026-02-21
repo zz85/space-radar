@@ -380,9 +380,12 @@ function getNodeFromPath(pathKeys: string[], root: any): any {
   }
 
   while (i < pathKeys.length && (name = pathKeys[i++])) {
-    const children = n.children
-      ? n.children.filter((c: any) => c.name === name)
-      : [];
+    // Use _children (original unfiltered) when available, falling back to
+    // .children. After the sunburst's partition layout, .children contains
+    // only filtered visible nodes (>0.1% threshold), while _children holds
+    // the complete original set.
+    const pool = n._children || n.children;
+    const children = pool ? pool.filter((c: any) => c.name === name) : [];
     if (!children[0]) return n;
     n = children[0];
   }
