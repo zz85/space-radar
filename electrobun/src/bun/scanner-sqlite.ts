@@ -24,13 +24,13 @@ import * as os from "node:os";
 // ---------------------------------------------------------------------------
 
 /** Commit inserts every N rows. */
-const BATCH_SIZE = 5_000;
+const BATCH_SIZE = 20_000;
 
 /** Report progress every N items. */
 const PROGRESS_INTERVAL = 10_000;
 
-/** Yield to the event loop every N items. */
-const YIELD_INTERVAL = 5_000;
+/** Yield to the event loop every N items (sync batch size). */
+const YIELD_INTERVAL = 50_000;
 
 /** Refresh interval constants. */
 const START_REFRESH_INTERVAL = 5_000;
@@ -39,6 +39,9 @@ const REFRESH_MULTIPLIER = 3;
 
 /** Threshold (ms) after which we consider the scan possibly stuck. */
 const STUCK_THRESHOLD = 30_000;
+
+/** How many sibling directory entries are processed in parallel. */
+const SCAN_CONCURRENCY = 16;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -182,6 +185,7 @@ export class SqliteScanner {
     this.db.exec("PRAGMA synchronous=NORMAL");
     this.db.exec("PRAGMA cache_size=-64000"); // 64 MB
     this.db.exec("PRAGMA temp_store=MEMORY");
+    this.db.exec("PRAGMA mmap_size=268435456"); // 256 MB memory-mapped I/O
     this.setupSchema();
     this.handlers = handlers;
   }
@@ -205,6 +209,11 @@ export class SqliteScanner {
         is_dir    INTEGER NOT NULL DEFAULT 0,
         depth     INTEGER NOT NULL DEFAULT 0
       );
+    `);
+  }
+
+  private createIndexes(): void {
+    this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_parent ON nodes(parent_id);
       CREATE INDEX IF NOT EXISTS idx_depth  ON nodes(depth);
     `);
@@ -222,6 +231,7 @@ export class SqliteScanner {
 
     this.resetState();
     this.scanning = true;
+    this.db.exec("PRAGMA locking_mode=EXCLUSIVE");
 
     const resolvedPath = path.resolve(targetPath);
 
@@ -242,7 +252,8 @@ export class SqliteScanner {
     }
 
     // Clear previous scan data
-    this.db.exec("DELETE FROM nodes");
+    this.db.exec("DROP TABLE IF EXISTS nodes");
+    this.setupSchema();
     this.nextId = 1;
 
     // Prepare insert statement
@@ -289,6 +300,9 @@ export class SqliteScanner {
     this.refreshScheduler.cancel();
     this.refreshScheduler = null;
 
+    // Create indexes after bulk insert for better performance
+    this.createIndexes();
+
     // Compute cumulative directory sizes bottom-up
     if (!this.cancelled) {
       console.log("[sqlite-scanner] Computing directory sizes...");
@@ -303,6 +317,7 @@ export class SqliteScanner {
         `${stats.errorCount} errors, cancelled=${stats.cancelled}`,
     );
 
+    this.db.exec("PRAGMA locking_mode=NORMAL");
     this.handlers.onComplete?.(stats);
     this.scanning = false;
   }
@@ -603,10 +618,12 @@ export class SqliteScanner {
       ) WHERE is_dir = 1 AND depth = ?
     `);
 
-    // Bottom-up: deepest directories first
+    // Bottom-up: deepest directories first (wrapped in a transaction)
+    this.db.exec("BEGIN");
     for (let d = maxDepth; d >= 0; d--) {
       updateStmt.run(d);
     }
+    this.db.exec("COMMIT");
   }
 
   // ------------------------------------------------------------------
@@ -706,9 +723,9 @@ export class SqliteScanner {
       const nodeId = this.insertNode(parentId, name, 0, true, depth);
       if (parentId === null) this.rootId = nodeId;
 
-      let entries: string[];
+      let entries: fs.Dirent[];
       try {
-        entries = await fs.promises.readdir(dir);
+        entries = await fs.promises.readdir(dir, { withFileTypes: true });
       } catch (err) {
         const code =
           err instanceof Error && "code" in err
@@ -719,18 +736,111 @@ export class SqliteScanner {
         return;
       }
 
+      // Separate files (can be handled inline) from directories (need recursion)
+      const files: fs.Dirent[] = [];
+      const dirs: fs.Dirent[] = [];
+      const unknown: fs.Dirent[] = [];
+
       for (const entry of entries) {
+        if (entry.isFile()) {
+          files.push(entry);
+        } else if (entry.isDirectory()) {
+          dirs.push(entry);
+        } else if (
+          entry.isSymbolicLink() ||
+          entry.isSocket?.() ||
+          entry.isFIFO?.() ||
+          entry.isBlockDevice?.() ||
+          entry.isCharacterDevice?.()
+        ) {
+          // Skip special types entirely — no lstat needed
+        } else {
+          unknown.push(entry);
+        }
+      }
+
+      // Process files inline — they still need lstat for size and inode
+      for (const file of files) {
+        if (this.cancelled) return;
+        const filePath = path.join(dir, file.name);
+        this.counter++;
+        if (this.counter % PROGRESS_INTERVAL === 0) {
+          this.handlers.onProgress?.(
+            filePath,
+            file.name,
+            this.currentSize,
+            this.fileCount,
+            this.dirCount,
+            this.errorCount,
+          );
+        }
+        this.refreshScheduler?.check();
+        if (this.counter % YIELD_INTERVAL === 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
+
+        let fileStat: fs.Stats;
+        try {
+          fileStat = await fs.promises.lstat(filePath);
+        } catch {
+          this.errorCount++;
+          continue;
+        }
+
+        this.fileCount++;
+        if (fileStat.blocks) {
+          this.currentSize += fileStat.blocks * 512;
+        }
+
+        let size = fileStat.size;
+        const fileInodeKey =
+          fileStat.ino != null && fileStat.dev != null
+            ? `${fileStat.dev}:${fileStat.ino}`
+            : null;
+        if (fileInodeKey) {
+          if (seenInodes.has(fileInodeKey)) {
+            size = 0;
+          } else {
+            seenInodes.add(fileInodeKey);
+          }
+        }
+        this.insertNode(nodeId, file.name, size, false, depth + 1);
+      }
+
+      // Process unknown entries (need lstat to determine type) sequentially
+      for (const entry of unknown) {
         if (this.cancelled) return;
         await this.waitIfPaused();
         if (this.cancelled) return;
 
         await this.descendFS(
           nodeId,
-          path.join(dir, entry),
-          entry,
+          path.join(dir, entry.name),
+          entry.name,
           depth + 1,
           excludePaths,
           seenInodes,
+        );
+      }
+
+      // Process subdirectories with bounded concurrency
+      for (let i = 0; i < dirs.length; i += SCAN_CONCURRENCY) {
+        if (this.cancelled) return;
+        await this.waitIfPaused();
+        if (this.cancelled) return;
+
+        const batch = dirs.slice(i, i + SCAN_CONCURRENCY);
+        await Promise.all(
+          batch.map((entry) =>
+            this.descendFS(
+              nodeId,
+              path.join(dir, entry.name),
+              entry.name,
+              depth + 1,
+              excludePaths,
+              seenInodes,
+            ),
+          ),
         );
       }
     }

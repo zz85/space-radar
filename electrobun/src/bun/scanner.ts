@@ -165,6 +165,7 @@ const YIELD_INTERVAL = 5_000;
 const START_REFRESH_INTERVAL = 5_000;
 const MAX_REFRESH_INTERVAL = 15 * 60 * 1_000;
 const REFRESH_MULTIPLIER = 3;
+const SCAN_CONCURRENCY = 16;
 
 export class Scanner {
   // ---- state ----
@@ -445,21 +446,13 @@ export class Scanner {
     }
 
     // ---- Skip special file types ----
-    if (stat.isSymbolicLink()) return;
-    if (stat.isSocket()) {
-      console.log(`[scanner] Skipping socket: ${dir}`);
-      return;
-    }
-    if (stat.isFIFO()) {
-      console.log(`[scanner] Skipping FIFO: ${dir}`);
-      return;
-    }
-    if (stat.isBlockDevice()) {
-      console.log(`[scanner] Skipping block device: ${dir}`);
-      return;
-    }
-    if (stat.isCharacterDevice()) {
-      console.log(`[scanner] Skipping character device: ${dir}`);
+    if (
+      stat.isSymbolicLink() ||
+      stat.isSocket() ||
+      stat.isFIFO() ||
+      stat.isBlockDevice() ||
+      stat.isCharacterDevice()
+    ) {
       return;
     }
 
@@ -496,9 +489,9 @@ export class Scanner {
       node.name = name;
       node.children = [];
 
-      let entries: string[];
+      let entries: fs.Dirent[];
       try {
-        entries = await fs.promises.readdir(dir);
+        entries = await fs.promises.readdir(dir, { withFileTypes: true });
       } catch (err) {
         const code =
           err instanceof Error && "code" in err
@@ -509,10 +502,83 @@ export class Scanner {
         return;
       }
 
+      // Separate files from directories to handle them differently
+      const files: fs.Dirent[] = [];
+      const dirs: fs.Dirent[] = [];
+      const unknown: fs.Dirent[] = [];
+
       for (const entry of entries) {
+        if (entry.isFile()) {
+          files.push(entry);
+        } else if (entry.isDirectory()) {
+          dirs.push(entry);
+        } else if (
+          entry.isSymbolicLink() ||
+          entry.isSocket?.() ||
+          entry.isFIFO?.() ||
+          entry.isBlockDevice?.() ||
+          entry.isCharacterDevice?.()
+        ) {
+          // Skip special types — no lstat needed
+        } else {
+          unknown.push(entry);
+        }
+      }
+
+      // Process files — still need lstat for size and inode info
+      for (const file of files) {
         if (this.cancelled) return;
 
-        // Honour pause
+        const filePath = path.join(dir, file.name);
+        this.counter++;
+        if (this.counter % PROGRESS_INTERVAL === 0) {
+          this.handlers.onProgress?.(
+            filePath,
+            file.name,
+            this.currentSize,
+            this.fileCount,
+            this.dirCount,
+            this.errorCount,
+          );
+        }
+        this.refreshScheduler?.check();
+        if (this.counter % YIELD_INTERVAL === 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        }
+
+        let fileStat: fs.Stats;
+        try {
+          fileStat = await fs.promises.lstat(filePath);
+        } catch {
+          this.errorCount++;
+          continue;
+        }
+
+        this.fileCount++;
+        if (fileStat.blocks) {
+          this.currentSize += fileStat.blocks * 512;
+        }
+
+        let size = fileStat.size;
+        const fileInodeKey =
+          fileStat.ino != null && fileStat.dev != null
+            ? `${fileStat.dev}:${fileStat.ino}`
+            : null;
+        if (fileInodeKey) {
+          if (seenInodes.has(fileInodeKey)) {
+            size = 0;
+          } else {
+            seenInodes.add(fileInodeKey);
+          }
+        }
+
+        const childNode: TreeNode = { name: file.name, size };
+        node.children.push(childNode);
+      }
+
+      // Process unknown entries sequentially (need lstat to determine type)
+      for (const entry of unknown) {
+        if (this.cancelled) return;
         await this.waitIfPaused();
         if (this.cancelled) return;
 
@@ -521,11 +587,38 @@ export class Scanner {
 
         await this.descendFS({
           parent: dir,
-          name: entry,
+          name: entry.name,
           node: childNode,
           excludePaths,
           seenInodes,
         });
+      }
+
+      // Process subdirectories with bounded concurrency
+      for (let i = 0; i < dirs.length; i += SCAN_CONCURRENCY) {
+        if (this.cancelled) return;
+        await this.waitIfPaused();
+        if (this.cancelled) return;
+
+        const batch = dirs.slice(i, i + SCAN_CONCURRENCY);
+        // Pre-create child nodes so tree structure is maintained
+        const childNodes = batch.map(() => {
+          const childNode: TreeNode = { name: "" };
+          node.children!.push(childNode);
+          return childNode;
+        });
+
+        await Promise.all(
+          batch.map((entry, idx) =>
+            this.descendFS({
+              parent: dir,
+              name: entry.name,
+              node: childNodes[idx],
+              excludePaths,
+              seenInodes,
+            }),
+          ),
+        );
       }
 
       return;

@@ -213,9 +213,11 @@ function combineMemory(
 }
 
 async function scanMemoryMac(): Promise<any> {
-  const { stdout: vmStatOut } = await execAsync(MAC_VM_STAT);
+  const [{ stdout: vmStatOut }, { stdout: psOut }] = await Promise.all([
+    execAsync(MAC_VM_STAT),
+    execAsync(MAC_PS_CMD),
+  ]);
   const vmStat = parseVmStat(vmStatOut);
-  const { stdout: psOut } = await execAsync(MAC_PS_CMD);
   const processInfo = parseProcesses(psOut);
   return combineMemory(processInfo, vmStat);
 }
