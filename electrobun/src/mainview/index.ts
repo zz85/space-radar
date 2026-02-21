@@ -1311,7 +1311,7 @@ function SunBurst() {
       if (relativeDepth > maxDepth) maxDepth = relativeDepth;
     });
 
-    FLEXI_LEVEL = Math.min(LEVELS, INNER_LEVEL, maxDepth);
+    FLEXI_LEVEL = Math.min(LEVELS, maxDepth);
     if (FLEXI_LEVEL < 1) FLEXI_LEVEL = 1;
 
     visibleNodes = [];
@@ -1998,6 +1998,8 @@ class FlameGraph extends Chart {
   currentPath: string = "";
   CELL_HEIGHT = 20;
   LEVELS = 30;
+  rootData: any = null; // full tree root (for zooming back out)
+  viewRoot: any = null; // currently displayed root node
 
   constructor() {
     super();
@@ -2068,9 +2070,18 @@ class FlameGraph extends Chart {
     const my = e.clientY - rect.top;
     const hit = this.hitTest(mx, my);
     if (hit && hit.node) {
-      const path = this.getNodePath(hit.node);
+      if (hit.node._isFreeSpace || hit.node._isOtherFiles) return;
+      // If clicking the current view root, zoom back out to parent or full root
+      if (hit.node === this.viewRoot && hit.node._parent) {
+        this.viewRoot = hit.node._parent;
+      } else if (hit.node.children && hit.node.children.length > 0) {
+        // Zoom into this node — it becomes the new view root
+        this.viewRoot = hit.node;
+      }
+      const path = this.getNodePath(this.viewRoot);
       this.currentPath = path.join("/");
       State.navigateTo(path);
+      this.draw();
     }
   }
 
@@ -2136,11 +2147,14 @@ class FlameGraph extends Chart {
     setParents(cloned);
 
     this.data = cloned;
+    this.rootData = cloned;
+    this.viewRoot = cloned;
     this.draw();
   }
 
   draw() {
     if (!this.data) return;
+    const renderRoot = this.viewRoot || this.data;
     const ctx = this.ctx;
     const dpr = window.devicePixelRatio || 1;
     const canvasW = this.canvas.width;
@@ -2150,7 +2164,7 @@ class FlameGraph extends Chart {
     ctx.clearRect(0, 0, canvasW, canvasH);
     this.flatNodes = [];
 
-    const totalValue = this.data.value || 1;
+    const totalValue = renderRoot.value || 1;
 
     // Lay out flame rectangles bottom-up (root at bottom, children stack upward)
     const queue: Array<{
@@ -2158,7 +2172,7 @@ class FlameGraph extends Chart {
       depth: number;
       x: number;
       w: number;
-    }> = [{ node: this.data, depth: 0, x: 0, w: canvasW }];
+    }> = [{ node: renderRoot, depth: 0, x: 0, w: canvasW }];
 
     while (queue.length > 0) {
       const { node, depth, x, w } = queue.shift()!;
@@ -2224,7 +2238,21 @@ class FlameGraph extends Chart {
   }
 
   navigateTo(path: string[]) {
-    this.currentPath = path.join("/");
+    const target = path.join("/");
+    if (target === this.currentPath) return;
+    this.currentPath = target;
+
+    // Walk the tree to find the node matching this path
+    let node = this.rootData;
+    if (!node) return;
+    for (let i = 1; i < path.length; i++) {
+      if (!node.children) break;
+      const child = node.children.find((c: any) => c.name === path[i]);
+      if (!child) break;
+      node = child;
+    }
+    this.viewRoot = node;
+    this.draw();
   }
 
   showMore() {
@@ -2242,6 +2270,8 @@ class FlameGraph extends Chart {
     this.flatNodes = [];
     this.hoveredNode = null;
     this.data = null;
+    this.rootData = null;
+    this.viewRoot = null;
     if (this.ctx) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
