@@ -1247,7 +1247,7 @@ function SunBurst() {
       if (node.depth - currentNode.depth > 1) {
         node = node.parent;
       }
-      if (node && (node._children || node.children)) {
+      if (node && (node._children || node.children || node._nodeId)) {
         State.navigateTo(keys(node));
       }
     }
@@ -1875,7 +1875,10 @@ function TreeMap() {
 
     if (found.length) {
       const d = found[hover.length - 1];
-      const to = d.children ? d : d.parent;
+      // Navigate to the node if it has children, otherwise navigate to it
+      // anyway if it has a _nodeId (truncated directory — the PluginManager
+      // navigateTo override will trigger a lazy-load fetch).
+      const to = d.children ? d : d._nodeId ? d : d.parent;
       State.navigateTo(keys(to));
     }
 
@@ -2077,6 +2080,12 @@ class FlameGraph extends Chart {
       } else if (hit.node.children && hit.node.children.length > 0) {
         // Zoom into this node — it becomes the new view root
         this.viewRoot = hit.node;
+      } else if (hit.node._nodeId) {
+        // Truncated directory — trigger lazy load via State.navigateTo
+        // which the PluginManager override will intercept and fetch
+        const path = this.getNodePath(hit.node);
+        State.navigateTo(path);
+        return;
       }
       const path = this.getNodePath(this.viewRoot);
       this.currentPath = path.join("/");
@@ -3126,18 +3135,22 @@ PluginManager.loadLast = function () {
 };
 
 // Override navigateTo to handle lazy loading of truncated directories.
-// A truncated dir has _nodeId, empty _children, and nonzero size — it exists
+// A truncated dir has _nodeId and no (or empty) children — it exists
 // in the SQLite DB but wasn't expanded in the current partial tree.
 const _originalPluginNavigateTo = PluginManager.navigateTo.bind(PluginManager);
 PluginManager.navigateTo = function (path: string[]) {
   if (!this.data) return;
   const current = getNodeFromPath(path, this.data);
 
+  const hasChildren =
+    (current._children && current._children.length > 0) ||
+    (current.children && current.children.length > 0);
+
   if (
     current &&
     current._nodeId &&
     current !== this.data &&
-    (!current._children || current._children.length === 0) &&
+    !hasChildren &&
     (current.sum > 0 || current.value > 0 || current.size > 0)
   ) {
     fetchAndDisplaySubtree(current._nodeId);
