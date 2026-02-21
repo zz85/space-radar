@@ -1437,6 +1437,11 @@ function SunBurst() {
     showMore() {
       LEVELS++;
       if (currentNode) {
+        // If we need more depth than what's loaded, fetch from SQLite
+        if (currentNode._nodeId && getLoadedDepthBelow(currentNode) < LEVELS) {
+          fetchAndDisplaySubtree(currentNode._nodeId);
+          return;
+        }
         computeVisibleNodes(currentNode);
         visibleNodes.forEach((n) => {
           n.fromStartAngle = n.startAngle;
@@ -2176,33 +2181,64 @@ class FlameGraph extends Chart {
     ctx.clearRect(0, 0, canvasW, canvasH);
     this.flatNodes = [];
 
-    const totalValue = renderRoot.value || 1;
+    // Build the ancestor chain from rootData down to viewRoot
+    const ancestors: any[] = [];
+    if (renderRoot !== this.rootData && this.rootData) {
+      let node = renderRoot;
+      while (node && node._parent) {
+        ancestors.unshift(node._parent);
+        node = node._parent;
+      }
+    }
+    const ancestorCount = ancestors.length;
 
-    // Lay out flame rectangles bottom-up (root at bottom, children stack upward)
+    // Draw ancestor stacks at the very bottom (dimmed)
+    for (let i = 0; i < ancestors.length; i++) {
+      const node = ancestors[i];
+      const depth = i;
+      const y = canvasH - (depth + 1) * cellH;
+      if (y < 0) continue;
+
+      const isHovered = node === this.hoveredNode;
+      ctx.fillStyle = isHovered ? "hsl(210, 15%, 65%)" : "hsl(210, 10%, 78%)";
+      ctx.fillRect(0, y, canvasW - 1, cellH - 1);
+
+      const label = node.name || "";
+      if (canvasW > 40 * dpr) {
+        ctx.fillStyle = isHovered ? "#333" : "#666";
+        ctx.font = `${11 * dpr}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(3 * dpr, y, canvasW - 6 * dpr, cellH);
+        ctx.clip();
+        ctx.fillText(label, 3 * dpr, y + cellH - 5 * dpr);
+        ctx.restore();
+      }
+      this.flatNodes.push({ x: 0, y, w: canvasW, h: cellH, node, label });
+    }
+
+    // Draw the viewRoot subtree above the ancestors
     const queue: Array<{
       node: any;
       depth: number;
       x: number;
       w: number;
-    }> = [{ node: renderRoot, depth: 0, x: 0, w: canvasW }];
+    }> = [{ node: renderRoot, depth: ancestorCount, x: 0, w: canvasW }];
 
     while (queue.length > 0) {
       const { node, depth, x, w } = queue.shift()!;
-      if (depth > this.LEVELS) continue;
+      if (depth - ancestorCount > this.LEVELS) continue;
 
       const y = canvasH - (depth + 1) * cellH;
       if (y < 0) continue;
       if (w < 1) continue;
 
-      // Determine color
       const isHovered = node === this.hoveredNode;
-      const color = this.getColor(node, depth, isHovered);
+      const color = this.getColor(node, depth - ancestorCount, isHovered);
 
-      // Draw rectangle
       ctx.fillStyle = color;
       ctx.fillRect(x, y, w - 1, cellH - 1);
 
-      // Draw label if wide enough
       const label = node.name || "";
       if (w > 40 * dpr) {
         ctx.fillStyle = isHovered ? "#000" : "#333";
@@ -2216,10 +2252,8 @@ class FlameGraph extends Chart {
         ctx.restore();
       }
 
-      // Store for hit testing
       this.flatNodes.push({ x, y, w, h: cellH, node, label });
 
-      // Layout children
       if (node.children && node.children.length > 0) {
         let childX = x;
         for (const child of node.children) {

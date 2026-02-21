@@ -571,6 +571,26 @@ function createAppWindow(): BrowserWindow<any> {
 
             return null;
           } catch (err) {
+            // Fallback: use df command (works when systeminformation fails
+            // in bundled contexts)
+            try {
+              const proc = Bun.spawnSync(["df", "-k", diskPath]);
+              const output = proc.stdout.toString();
+              const lines = output.trim().split("\n");
+              if (lines.length >= 2) {
+                const parts = lines[1].split(/\s+/);
+                // df -k columns: Filesystem 1K-blocks Used Available Capacity ...
+                const total = parseInt(parts[1], 10) * 1024;
+                const used = parseInt(parts[2], 10) * 1024;
+                const available = parseInt(parts[3], 10) * 1024;
+                const usePercent = total > 0 ? (used / total) * 100 : 0;
+                if (!isNaN(total) && !isNaN(available)) {
+                  return { total, used, available, usePercent };
+                }
+              }
+            } catch (dfErr) {
+              console.error("[getDiskInfo] df fallback error:", dfErr);
+            }
             console.error("[getDiskInfo] error:", err);
             return null;
           }
