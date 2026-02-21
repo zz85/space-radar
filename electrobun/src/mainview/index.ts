@@ -2086,8 +2086,15 @@ class FlameGraph extends Chart {
   }
 
   generate(data: any) {
-    // Clone to avoid mutating the shared tree
-    const cloned = JSON.parse(JSON.stringify(data));
+    // Clone to avoid mutating the shared tree. Use a replacer to skip
+    // circular .parent references added by d3 partition layouts (sunburst/
+    // treemap process the data before flamegraph sees it).
+    const cloned = JSON.parse(
+      JSON.stringify(data, (key, value) => {
+        if (key === "parent" || key === "_parent") return undefined;
+        return value;
+      }),
+    );
 
     // Compute value bottom-up
     function computeValue(node: any): number {
