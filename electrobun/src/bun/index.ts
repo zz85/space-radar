@@ -22,9 +22,19 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
 import type { SpaceRadarRPC } from "../shared/types";
+import { SqliteScanner } from "./scanner-sqlite";
 import { Scanner } from "./scanner";
+import type { TreeNode } from "./scanner";
 
 const execAsync = promisify(exec);
+
+// ---------------------------------------------------------------------------
+// Scanner toggle — set SCANNER=memory to use the old in-memory tree scanner
+//   bun run start              → SQLite (default)
+//   SCANNER=memory bun run start → in-memory tree
+// ---------------------------------------------------------------------------
+
+const USE_SQLITE_SCANNER = process.env.SCANNER !== "memory";
 
 // ---------------------------------------------------------------------------
 // Platform helpers
@@ -53,41 +63,34 @@ function ensureAppDataDir(): string {
 }
 
 const LAST_SCAN_FILE = "lastload.json.z";
-const SCAN_PREVIEW_FILE = "scanpreview.json.z";
+const SCAN_DB_FILE = "scan.db";
 
-/** Write tree to a compressed temp file so the webview can pull it on demand.
- *  Uses async Bun.write to avoid blocking the event loop. */
-async function saveTreeToPreview(tree: any): Promise<void> {
-  try {
-    const dataDir = ensureAppDataDir();
-    const filePath = join(dataDir, SCAN_PREVIEW_FILE);
-    const json = JSON.stringify(tree);
-    const compressed = deflateSync(Buffer.from(json, "utf-8"));
-    await Bun.write(filePath, compressed);
-  } catch (err) {
-    console.error("[saveTreeToPreview] error:", err);
-  }
-}
+/** Depth limits for subtree queries. */
+const SUBTREE_DEPTH_REFRESH = 3;
+const SUBTREE_DEPTH_FULL = 5;
 
-/** Read the scan preview file (returns decompressed JSON string or null). */
-function readScanPreview(): string | null {
-  try {
-    const dataDir = ensureAppDataDir();
-    const filePath = join(dataDir, SCAN_PREVIEW_FILE);
-    if (!existsSync(filePath)) return null;
-    const compressed = readFileSync(filePath);
-    return inflateSync(compressed).toString("utf-8");
-  } catch (err) {
-    console.error("[readScanPreview] error:", err);
-    return null;
+// ---------------------------------------------------------------------------
+// SQLite Scanner (single persistent instance, runs in-process)
+// ---------------------------------------------------------------------------
+
+let scanDb: SqliteScanner | null = null;
+
+/** Get or create the persistent SqliteScanner instance. */
+function getScanDb(): SqliteScanner {
+  if (!scanDb) {
+    const dbPath = join(ensureAppDataDir(), SCAN_DB_FILE);
+    scanDb = new SqliteScanner(dbPath);
   }
+  return scanDb;
 }
 
 // ---------------------------------------------------------------------------
-// Scanner instance (one per app, runs in-process)
+// In-memory Scanner state (used when USE_SQLITE_SCANNER = false)
 // ---------------------------------------------------------------------------
 
-let activeScanner: Scanner | null = null;
+let activeInMemoryScanner: Scanner | null = null;
+/** JSON string of the latest tree preview (replaces temp file IPC). */
+let scanPreviewJson: string | null = null;
 
 // ---------------------------------------------------------------------------
 // Memory scanning (port of app/js/mem.js)
@@ -342,81 +345,136 @@ function createAppWindow(): BrowserWindow<any> {
 
         scanDirectory: async ({ path: targetPath }) => {
           try {
-            // Cancel any in-progress scan
-            if (activeScanner) {
-              activeScanner.cancel();
-              activeScanner = null;
-            }
-
             const targetWin = windowRef.current;
-            console.log("[scanDirectory] starting scan:", targetPath);
-            console.log("[scanDirectory] window ref:", !!targetWin);
-            console.log(
-              "[scanDirectory] rpc send:",
-              !!targetWin?.webview.rpc?.send,
-            );
 
-            activeScanner = new Scanner({
-              onProgress: (
-                dir,
-                name,
-                size,
-                fileCount,
-                dirCount,
-                errorCount,
-              ) => {
-                targetWin?.webview.rpc?.send.scanProgress({
+            if (USE_SQLITE_SCANNER) {
+              // ----- SQLite-backed scanner -----
+              const db = getScanDb();
+              db.cancel();
+
+              console.log("[scanDirectory] starting SQLite scan:", targetPath);
+
+              db.setHandlers({
+                onProgress: (
                   dir,
                   name,
                   size,
                   fileCount,
                   dirCount,
                   errorCount,
-                });
-              },
-              onRefresh: (tree) => {
-                console.log(
-                  "[scanDirectory] refresh preview, children:",
-                  tree.children?.length,
-                );
-                saveTreeToPreview(tree);
-                targetWin?.webview.rpc?.send.scanRefresh({});
-              },
-              onComplete: (tree, stats) => {
-                console.log(
-                  "[scanDirectory] complete:",
-                  stats.fileCount,
-                  "files,",
-                  stats.dirCount,
-                  "dirs",
-                );
-                saveTreeToPreview(tree);
-                targetWin?.webview.rpc?.send.scanComplete({
-                  stats: {
-                    fileCount: stats.fileCount,
-                    dirCount: stats.dirCount,
-                    currentSize: stats.currentSize,
-                    errorCount: stats.errorCount,
-                    cancelled: stats.cancelled,
-                  },
-                });
-                activeScanner = null;
-              },
-              onError: (error) => {
-                console.error("[scanDirectory] scanner error:", error);
-                targetWin?.webview.rpc?.send.scanError({ error });
-                activeScanner = null;
-              },
-            });
-
-            // Fire-and-forget — progress is reported via RPC messages
-            activeScanner.scan(targetPath).catch((err) => {
-              console.error("[scanDirectory] unhandled scan error:", err);
-              targetWin?.webview.rpc?.send.scanError({
-                error: err instanceof Error ? err.message : String(err),
+                ) => {
+                  targetWin?.webview.rpc?.send.scanProgress({
+                    dir,
+                    name,
+                    size,
+                    fileCount,
+                    dirCount,
+                    errorCount,
+                  });
+                },
+                onRefresh: () => {
+                  targetWin?.webview.rpc?.send.scanRefresh({});
+                },
+                onComplete: (stats) => {
+                  console.log(
+                    "[scanDirectory] complete:",
+                    stats.fileCount,
+                    "files,",
+                    stats.dirCount,
+                    "dirs",
+                  );
+                  targetWin?.webview.rpc?.send.scanComplete({
+                    stats: {
+                      fileCount: stats.fileCount,
+                      dirCount: stats.dirCount,
+                      currentSize: stats.totalSize,
+                      errorCount: stats.errorCount,
+                      cancelled: stats.cancelled,
+                    },
+                  });
+                },
+                onError: (error) => {
+                  console.error("[scanDirectory] scanner error:", error);
+                  targetWin?.webview.rpc?.send.scanError({ error });
+                },
               });
-              activeScanner = null;
-            });
+
+              db.scan(targetPath).catch((err) => {
+                console.error("[scanDirectory] unhandled scan error:", err);
+                targetWin?.webview.rpc?.send.scanError({
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              });
+            } else {
+              // ----- In-memory tree scanner (original approach) -----
+              if (activeInMemoryScanner) {
+                activeInMemoryScanner.cancel();
+                activeInMemoryScanner = null;
+              }
+              scanPreviewJson = null;
+
+              console.log(
+                "[scanDirectory] starting in-memory scan:",
+                targetPath,
+              );
+
+              activeInMemoryScanner = new Scanner({
+                onProgress: (
+                  dir,
+                  name,
+                  size,
+                  fileCount,
+                  dirCount,
+                  errorCount,
+                ) => {
+                  targetWin?.webview.rpc?.send.scanProgress({
+                    dir,
+                    name,
+                    size,
+                    fileCount,
+                    dirCount,
+                    errorCount,
+                  });
+                },
+                onRefresh: (tree: TreeNode) => {
+                  scanPreviewJson = JSON.stringify(tree);
+                  targetWin?.webview.rpc?.send.scanRefresh({});
+                },
+                onComplete: (tree: TreeNode, stats) => {
+                  scanPreviewJson = JSON.stringify(tree);
+                  console.log(
+                    "[scanDirectory] complete:",
+                    stats.fileCount,
+                    "files,",
+                    stats.dirCount,
+                    "dirs",
+                  );
+                  targetWin?.webview.rpc?.send.scanComplete({
+                    stats: {
+                      fileCount: stats.fileCount,
+                      dirCount: stats.dirCount,
+                      currentSize: stats.currentSize,
+                      errorCount: stats.errorCount,
+                      cancelled: stats.cancelled,
+                    },
+                  });
+                  activeInMemoryScanner = null;
+                },
+                onError: (error: string) => {
+                  console.error("[scanDirectory] scanner error:", error);
+                  targetWin?.webview.rpc?.send.scanError({ error });
+                  activeInMemoryScanner = null;
+                },
+              });
+
+              activeInMemoryScanner.scan(targetPath).catch((err) => {
+                console.error("[scanDirectory] unhandled scan error:", err);
+                targetWin?.webview.rpc?.send.scanError({
+                  error: err instanceof Error ? err.message : String(err),
+                });
+                activeInMemoryScanner = null;
+              });
+            }
 
             return { started: true };
           } catch (err) {
@@ -427,20 +485,26 @@ function createAppWindow(): BrowserWindow<any> {
         },
 
         cancelScan: async () => {
-          if (activeScanner) {
-            activeScanner.cancel();
+          if (USE_SQLITE_SCANNER) {
+            getScanDb().cancel();
+          } else if (activeInMemoryScanner) {
+            activeInMemoryScanner.cancel();
           }
         },
 
         pauseScan: async () => {
-          if (activeScanner) {
-            activeScanner.pause();
+          if (USE_SQLITE_SCANNER) {
+            getScanDb().pause();
+          } else if (activeInMemoryScanner) {
+            activeInMemoryScanner.pause();
           }
         },
 
         resumeScan: async () => {
-          if (activeScanner) {
-            activeScanner.resume();
+          if (USE_SQLITE_SCANNER) {
+            getScanDb().resume();
+          } else if (activeInMemoryScanner) {
+            activeInMemoryScanner.resume();
           }
         },
 
@@ -507,6 +571,19 @@ function createAppWindow(): BrowserWindow<any> {
         },
 
         loadLastScan: async () => {
+          // Try SQLite DB first (primary storage)
+          try {
+            const db = getScanDb();
+            const rootId = db.getRootId();
+            if (rootId) {
+              const tree = db.getSubtree(rootId, SUBTREE_DEPTH_FULL);
+              if (tree) return JSON.stringify(tree);
+            }
+          } catch (err) {
+            console.error("[loadLastScan] SQLite error:", err);
+          }
+
+          // Fall back to compressed JSON file (legacy)
           try {
             const dataDir = ensureAppDataDir();
             const filePath = join(dataDir, LAST_SCAN_FILE);
@@ -525,7 +602,20 @@ function createAppWindow(): BrowserWindow<any> {
         },
 
         loadScanPreview: async () => {
-          return readScanPreview();
+          if (USE_SQLITE_SCANNER) {
+            try {
+              const db = getScanDb();
+              const rootId = db.getRootId();
+              if (!rootId) return null;
+              const tree = db.getSubtree(rootId, SUBTREE_DEPTH_REFRESH);
+              return tree ? JSON.stringify(tree) : null;
+            } catch (err) {
+              console.error("[loadScanPreview] error:", err);
+              return null;
+            }
+          }
+          // In-memory scanner: return the cached preview JSON
+          return scanPreviewJson;
         },
 
         saveScanData: async ({ data }) => {
@@ -558,6 +648,36 @@ function createAppWindow(): BrowserWindow<any> {
             return tree ? JSON.stringify(tree) : null;
           } catch (err) {
             console.error("[scanMemory] error:", err);
+            return null;
+          }
+        },
+
+        getSubtree: async ({ nodeId, depth }) => {
+          try {
+            const db = getScanDb();
+            const tree = db.getSubtree(nodeId, depth);
+            return tree ? JSON.stringify(tree) : null;
+          } catch (err) {
+            console.error("[getSubtree] error:", err);
+            return null;
+          }
+        },
+
+        getScanRootId: async () => {
+          if (!USE_SQLITE_SCANNER) return null;
+          try {
+            return getScanDb().getRootId();
+          } catch (err) {
+            console.error("[getScanRootId] error:", err);
+            return null;
+          }
+        },
+
+        getNodePath: async ({ nodeId }) => {
+          try {
+            return getScanDb().getNodePath(nodeId) || null;
+          } catch (err) {
+            console.error("[getNodePath] error:", err);
             return null;
           }
         },
@@ -782,5 +902,8 @@ Electrobun.events.on("context-menu-clicked", (e) => {
 const win = createAppWindow();
 
 console.log("[main] Space Radar started");
+console.log(
+  `[main] Scanner: ${USE_SQLITE_SCANNER ? "SQLite" : "in-memory tree"}`,
+);
 console.log(`[main] Platform: ${process.platform} ${process.arch}`);
 console.log(`[main] App data: ${getAppDataDir()}`);

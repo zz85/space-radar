@@ -94,6 +94,27 @@ export type SpaceRadarRPC = {
         params: {};
         response: string | null; // JSON string of tree data
       };
+      /** Get a depth-limited subtree from the SQLite scan DB.
+       *  Each node includes _nodeId for drill-down navigation. */
+      getSubtree: {
+        params: {
+          nodeId: number;
+          depth: number;
+        };
+        response: string | null; // JSON string of partial tree
+      };
+      /** Get the root node ID of the current/last scan. */
+      getScanRootId: {
+        params: {};
+        response: number | null;
+      };
+      /** Get the full filesystem path for a node (for breadcrumbs, Finder). */
+      getNodePath: {
+        params: {
+          nodeId: number;
+        };
+        response: string | null;
+      };
       /** Show a native context menu */
       showContextMenu: {
         params: {

@@ -55,13 +55,24 @@ const rpc = Electroview.defineRPC<SpaceRadarRPC>({
         );
       },
       scanRefresh(_params) {
-        // Tree data was flushed to file — pull it on demand
+        // Try SQLite first; fall back to file-based preview
         electroview.rpc.request
-          .loadScanPreview({})
+          .getScanRootId({})
+          .then((rootId) => {
+            if (rootId) {
+              return electroview.rpc.request.getSubtree({
+                nodeId: rootId,
+                depth: 3,
+              });
+            }
+            // In-memory scanner mode — pull full tree from backend
+            return electroview.rpc.request.loadScanPreview({});
+          })
           .then((data) => {
             if (data) {
               try {
                 const json = JSON.parse(data);
+                currentViewRootId = json._nodeId ?? null;
                 refresh(json);
               } catch (e) {
                 console.error(
@@ -76,13 +87,23 @@ const rpc = Electroview.defineRPC<SpaceRadarRPC>({
           );
       },
       scanComplete(params) {
-        // Tree data was flushed to file — pull it on demand
+        // Try SQLite first; fall back to file-based preview
         electroview.rpc.request
-          .loadScanPreview({})
+          .getScanRootId({})
+          .then((rootId) => {
+            if (rootId) {
+              return electroview.rpc.request.getSubtree({
+                nodeId: rootId,
+                depth: 5,
+              });
+            }
+            return electroview.rpc.request.loadScanPreview({});
+          })
           .then((data) => {
             if (data) {
               try {
                 const json = JSON.parse(data);
+                currentViewRootId = json._nodeId ?? null;
                 complete(json, {
                   fileCount: params.stats.fileCount,
                   dirCount: params.stats.dirCount,
@@ -133,6 +154,16 @@ const rpc = Electroview.defineRPC<SpaceRadarRPC>({
   },
 });
 const electroview = new Electroview({ rpc });
+
+// ---------------------------------------------------------------------------
+// SQLite lazy-loading state
+// ---------------------------------------------------------------------------
+
+/** Depth used when fetching subtrees for drill-down navigation. */
+const LAZY_LOAD_DEPTH = 5;
+
+/** Node ID of the current view root in the SQLite scan DB. */
+let currentViewRootId: number | null = null;
 
 // =============================================================================
 // UTILS (from app/js/utils.js)
@@ -980,6 +1011,8 @@ function SunBurst() {
       explanation.addEventListener("click", () => {
         if (currentNode && currentNode.parent) {
           State.navigateTo(keys(currentNode.parent));
+        } else if (currentNode && currentNode._parentNodeId) {
+          fetchAndDisplaySubtree(currentNode._parentNodeId);
         }
       });
     }
@@ -1180,6 +1213,8 @@ function SunBurst() {
     if (hit.type === "center") {
       if (currentNode && currentNode.parent) {
         State.navigateTo(keys(currentNode.parent));
+      } else if (currentNode && currentNode._parentNodeId) {
+        fetchAndDisplaySubtree(currentNode._parentNodeId);
       }
     } else if (hit.type === "arc") {
       let node = hit.node;
@@ -2798,6 +2833,33 @@ function onJson(data: any) {
   PluginManager.generate(data);
 }
 
+/**
+ * Fetch a depth-limited subtree from SQLite and replace the current view.
+ * Used for drill-down into truncated directories and navigate-up past root.
+ */
+async function fetchAndDisplaySubtree(nodeId: number) {
+  lightbox(true);
+  try {
+    const treeJson = await electroview.rpc.request.getSubtree({
+      nodeId,
+      depth: LAZY_LOAD_DEPTH,
+    });
+    if (treeJson) {
+      currentViewRootId = nodeId;
+      const tree = JSON.parse(treeJson);
+      Navigation.clear();
+      PluginManager.clear();
+      PluginManager.generate(tree);
+      lightbox(false);
+    } else {
+      lightbox(false);
+    }
+  } catch (err) {
+    console.error("[renderer] fetchAndDisplaySubtree error:", err);
+    lightbox(false);
+  }
+}
+
 function _loadLast(): any {
   // This is synchronous in the original but must be async with RPC.
   // For the plugin manager's loadLast, we use an async wrapper.
@@ -2824,6 +2886,39 @@ PluginManager.loadLast = function () {
   loadLastAsync().then((data) => {
     if (data) PluginManager.generate(data);
   });
+};
+
+// Override navigateTo to handle lazy loading of truncated directories.
+// A truncated dir has _nodeId, empty _children, and nonzero size — it exists
+// in the SQLite DB but wasn't expanded in the current partial tree.
+const _originalPluginNavigateTo = PluginManager.navigateTo.bind(PluginManager);
+PluginManager.navigateTo = function (path: string[]) {
+  if (!this.data) return;
+  const current = getNodeFromPath(path, this.data);
+
+  if (
+    current &&
+    current._nodeId &&
+    current !== this.data &&
+    (!current._children || current._children.length === 0) &&
+    (current.sum > 0 || current.value > 0 || current.size > 0)
+  ) {
+    fetchAndDisplaySubtree(current._nodeId);
+    return;
+  }
+
+  _originalPluginNavigateTo(path);
+};
+
+// Override navigateUp to handle navigation past the current view root.
+PluginManager.navigateUp = function () {
+  const current = Navigation.currentPath();
+  if (current.length > 1) {
+    current.pop();
+    State.navigateTo(current);
+  } else if (this.data && this.data._parentNodeId) {
+    fetchAndDisplaySubtree(this.data._parentNodeId);
+  }
 };
 
 // =============================================================================
