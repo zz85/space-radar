@@ -2152,7 +2152,7 @@ class FlameGraph extends Chart {
 
     const totalValue = this.data.value || 1;
 
-    // Lay out flame rectangles top-down (root at top)
+    // Lay out flame rectangles bottom-up (root at bottom, children stack upward)
     const queue: Array<{
       node: any;
       depth: number;
@@ -2164,8 +2164,8 @@ class FlameGraph extends Chart {
       const { node, depth, x, w } = queue.shift()!;
       if (depth > this.LEVELS) continue;
 
-      const y = depth * cellH;
-      if (y + cellH > canvasH) continue;
+      const y = canvasH - (depth + 1) * cellH;
+      if (y < 0) continue;
       if (w < 1) continue;
 
       // Determine color
