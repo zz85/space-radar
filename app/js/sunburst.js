@@ -418,6 +418,12 @@ function SunBurst() {
       if (innerR < 0) innerR = 0;
       if (outerR <= innerR) return;
 
+      // Skip arcs too small to draw — their angular span is less than the
+      // 0.005-radian gap subtracted below, which would invert startAngle
+      // and endAngle. The hitTest wrap-around logic then matches nearly
+      // every angle, stealing clicks from real arcs.
+      if (d.dx < 0.005) return;
+
       visibleNodes.push({
         data: d,
         startAngle: d.x + ADJUSTMENT,

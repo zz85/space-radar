@@ -1,9 +1,15 @@
 name: Build/release
 
-on: push
+on:
+  push:
+    tags:
+      - "v*"
 
 jobs:
-  release:
+  # ---------------------------------------------------------------------------
+  # Electron build (legacy) — macOS, Linux, Windows
+  # ---------------------------------------------------------------------------
+  electron:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
@@ -24,17 +30,61 @@ jobs:
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1.6.0
         with:
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
-
-          # macOS code signing certificate
           mac_certs: ${{ secrets.MAC_CERTS }}
           mac_certs_password: ${{ secrets.MAC_CERTS_PASSWORD }}
-
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
           release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-
-          # Build only for current platform, explicitly publish
           args: ${{ matrix.os == 'macos-latest' && '--mac --publish always' || matrix.os == 'ubuntu-latest' && '--linux --publish always' || '--win --publish always' }}
+
+  # ---------------------------------------------------------------------------
+  # Electrobun build — macOS ARM64 (Apple Silicon)
+  # ---------------------------------------------------------------------------
+  electrobun-macos-arm64:
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: electrobun
+
+      - name: Determine build environment
+        id: build-env
+        run: |
+          if [[ "${{ github.ref_name }}" == *"-canary"* ]]; then
+            echo "env=canary" >> $GITHUB_OUTPUT
+          else
+            echo "env=stable" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Electrobun app
+        working-directory: electrobun
+        env:
+          ELECTROBUN_DEVELOPER_ID: ${{ secrets.ELECTROBUN_DEVELOPER_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ "${{ steps.build-env.outputs.env }}" = "canary" ]; then
+            bun run build:canary
+          else
+            bun run build:stable
+          fi
+
+      - name: Upload Electrobun artifacts to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: electrobun/artifacts/*
+          draft: false
+          prerelease: ${{ steps.build-env.outputs.env == 'canary' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

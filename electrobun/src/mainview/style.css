@@ -1,0 +1,854 @@
+/**
+ * Space Radar - Electrobun Edition Styles
+ * 
+ * Consolidates:
+ * - app/css/style.css (main styles + dark mode)
+ * - app/css/throbber.css (loading spinner)
+ * - app/css/breadcrumb.css (breadcrumb navigation)
+ * - Subset of PhotonKit CSS (buttons, toolbar, window chrome)
+ * - d3-flamegraph tooltip styles
+ *
+ * Replaces PhotonKit dependency with self-contained CSS.
+ * Uses Electrobun's drag region system instead of -webkit-app-region.
+ */
+
+/* =============================================================================
+   RESET & BASE
+   ============================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-size: 13px;
+  color: #333;
+  background: #fff;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   PHOTONKIT-COMPATIBLE UI COMPONENTS
+   ============================================================================= */
+
+/* Window Chrome */
+.window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* Toolbar / Header */
+.toolbar {
+  min-height: 36px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #c4c4c4;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toolbar-header {
+  background: linear-gradient(to bottom, #f7f7f7, #e8e8e8);
+  /* Electrobun drag region for title bar */
+}
+
+/* Add drag region class for Electrobun */
+.toolbar-header .title {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  padding: 0 12px;
+  /* On macOS with hiddenInset, leave room for traffic lights */
+  margin-left: 68px;
+  white-space: nowrap;
+}
+
+.toolbar-actions {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-footer {
+  background: linear-gradient(to bottom, #f7f7f7, #e8e8e8);
+  border-top: 1px solid #c4c4c4;
+  border-bottom: none;
+  min-height: 32px;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  border: 1px solid #b8b8b8;
+  border-radius: 4px;
+  background: linear-gradient(to bottom, #fcfcfc, #e8e8e8);
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  user-select: none;
+  outline: none;
+}
+
+.btn:hover {
+  background: linear-gradient(to bottom, #fff, #efefef);
+}
+
+.btn:active,
+.btn.active {
+  background: linear-gradient(to bottom, #ddd, #e8e8e8);
+  border-color: #999;
+}
+
+.btn-large {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.btn-default {
+}
+
+.btn-primary {
+  background: linear-gradient(to bottom, #6eb4f7, #1a82e2);
+  border-color: #0f6dd3;
+  color: #fff;
+}
+
+.btn-positive {
+  background: linear-gradient(to bottom, #68cd67, #2faa2f);
+  border-color: #28962b;
+  color: #fff;
+}
+
+.btn-negative {
+  background: linear-gradient(to bottom, #e66e5f, #cc3a2a);
+  border-color: #b82e1f;
+  color: #fff;
+}
+
+.btn-warning {
+  background: linear-gradient(to bottom, #f7c948, #e6a817);
+  border-color: #c9920f;
+  color: #333;
+}
+
+/* Button Groups */
+.btn-group {
+  display: inline-flex;
+}
+
+.btn-group .btn {
+  border-radius: 0;
+  margin-left: -1px;
+}
+
+.btn-group .btn:first-child {
+  border-radius: 4px 0 0 4px;
+  margin-left: 0;
+}
+
+.btn-group .btn:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+/* Pull Right */
+.pull-right {
+  margin-left: auto !important;
+}
+
+/* Window Content */
+.window-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* =============================================================================
+   PHOTONKIT ICONS (subset using Unicode/emoji fallback)
+   ============================================================================= */
+
+.icon {
+  display: inline-block;
+}
+.icon-text {
+  margin-right: 2px;
+}
+.icon-popup::before {
+  content: "⊞";
+}
+.icon-drive::before {
+  content: "💿";
+  font-size: 0.9em;
+}
+.icon-folder::before {
+  content: "📁";
+  font-size: 0.9em;
+}
+.icon-target::before {
+  content: "🎯";
+  font-size: 0.9em;
+}
+.icon-back::before {
+  content: "◀";
+}
+.icon-minus::before {
+  content: "−";
+}
+.icon-plus::before {
+  content: "+";
+}
+.icon-up-circled::before {
+  content: "⬆";
+}
+.icon-cd::before {
+  content: "◉";
+}
+.icon-water::before {
+  content: "≡";
+}
+.icon-layout::before {
+  content: "▦";
+}
+.icon-left-bold::before {
+  content: "◀";
+}
+.icon-right-bold::before {
+  content: "▶";
+}
+.icon-record::before {
+  content: "●";
+  font-size: 0.8em;
+}
+
+/* =============================================================================
+   NAVIGATION & NAV GROUPS (PhotonKit sidebar)
+   ============================================================================= */
+
+.nav-group {
+  padding: 0;
+  margin: 0;
+}
+
+.nav-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+  padding: 6px 12px 2px;
+  margin: 0;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-group-item {
+  display: block;
+  padding: 2px 12px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-group-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.nav-group-item.active {
+  background: #116cd6;
+  color: #fff;
+}
+
+/* =============================================================================
+   APP-SPECIFIC STYLES (from app/css/style.css)
+   ============================================================================= */
+
+#photon-window {
+  z-index: 400;
+}
+
+path {
+  stroke: #fff;
+  fill-rule: evenodd;
+}
+
+circle {
+  pointer-events: all;
+  fill: #eee;
+  opacity: 0.2;
+}
+
+circle:hover {
+  fill: none;
+}
+
+#core:hover {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+/* Flame graph tooltip */
+.d3-flame-graph-tip {
+  z-index: 1000;
+}
+
+.cell > rect:hover {
+  fill: yellow;
+}
+
+/* Explanation / Center Display */
+#explanation {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  margin: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  text-align: center;
+  color: #333;
+  z-index: -1;
+  font-weight: 200;
+}
+
+#core_top {
+  font-size: 1.3em;
+}
+
+#core_center {
+  font-size: 2em;
+}
+
+/* Legend */
+#legend {
+  text-align: center;
+  padding-top: 20px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  z-index: 50;
+  background: #ddd;
+  display: none;
+}
+
+#legend h2 {
+  font-size: 1.2em;
+  font-style: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+#legend p {
+  font-size: 0.9em;
+  margin: 0;
+  padding: 0;
+}
+
+/* Loading Overlay */
+#loading {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: fixed;
+  display: inline-block;
+  margin: auto;
+  z-index: 250;
+  width: 100px;
+  height: 100px;
+  display: none;
+}
+
+.area {
+  cursor: pointer;
+}
+
+.area:hover {
+  stroke: #999;
+  stroke-width: 2px;
+  opacity: 1;
+}
+
+/* Flame chart */
+#flame-chart {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: top;
+}
+
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: top;
+  overflow: hidden;
+}
+
+/* Sunburst canvas styles */
+#sunburst-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#sunburst-chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#sunburst-chart #explanation {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+}
+
+/* Sequence / Breadcrumbs */
+#sequence {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+}
+
+#chart {
+  position: relative;
+}
+
+#chart path {
+  stroke: #fff;
+}
+
+/* Sidebar */
+#sidebar {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  transition: width 0.6s;
+  background: rgba(0, 0, 0, 0.05);
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+#sidebar:hover {
+  width: 400px;
+}
+
+/* Center-aligned Flex Box (Prompt Screen) */
+.Aligner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Aligner-item {
+  max-width: 50%;
+  background: #ddd;
+  opacity: 1;
+  border-radius: 4px;
+}
+
+.Aligner-item--top {
+  align-self: flex-start;
+}
+
+.Aligner-item--bottom {
+  align-self: flex-end;
+}
+
+#shades {
+  z-index: 200;
+  width: 100%;
+  height: 100%;
+  background: #333;
+  position: absolute;
+  display: none;
+}
+
+#promptbox {
+  width: 100%;
+  text-align: center;
+  padding: 20px;
+  height: 200px;
+}
+
+#bottom_status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+#disk_space_info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Graph containers - hide by default */
+.graph-container {
+  display: none;
+}
+
+/* =============================================================================
+   THROBBER / LOADING ANIMATION (from app/css/throbber.css)
+   ============================================================================= */
+
+@keyframes throbber-loader {
+  0% {
+    background: #dde2e7;
+  }
+  10% {
+    background: #6b9dc8;
+  }
+  40% {
+    background: #dde2e7;
+  }
+}
+
+.throbber-loader:not(:required) {
+  animation: throbber-loader 2000ms 300ms infinite ease-out;
+  background: #dde2e7;
+  display: inline-block;
+  position: relative;
+  text-indent: -9999px;
+  width: 0.9em;
+  height: 1.5em;
+  margin: 0 1.6em;
+}
+
+.throbber-loader:not(:required):before,
+.throbber-loader:not(:required):after {
+  background: #dde2e7;
+  content: "\200B";
+  display: inline-block;
+  width: 0.9em;
+  height: 1.5em;
+  position: absolute;
+  top: 0;
+}
+
+.throbber-loader:not(:required):before {
+  animation: throbber-loader 2000ms 150ms infinite ease-out;
+  left: -1.6em;
+}
+
+.throbber-loader:not(:required):after {
+  animation: throbber-loader 2000ms 450ms infinite ease-out;
+  right: -1.6em;
+}
+
+/* =============================================================================
+   BREADCRUMB NAVIGATION (from app/css/breadcrumb.css)
+   ============================================================================= */
+
+.breadcrumb {
+  display: inline-block;
+  box-shadow: 0 0 15px 1px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  border-radius: 5px;
+  counter-reset: flag;
+}
+
+.breadcrumb a {
+  text-decoration: none;
+  outline: none;
+  display: block;
+  float: left;
+  font-size: 12px;
+  line-height: 28px;
+  color: white;
+  padding: 0 10px 0 30px;
+  background: #666;
+  background: linear-gradient(#666, #333);
+  position: relative;
+}
+
+.breadcrumb a:first-child {
+  padding-left: 46px;
+  border-radius: 5px 0 0 5px;
+}
+
+.breadcrumb a:first-child:before {
+  left: 14px;
+}
+
+.breadcrumb a:last-child {
+  border-radius: 0 5px 5px 0;
+  padding-right: 20px;
+}
+
+.breadcrumb a.active,
+.breadcrumb a:hover {
+  opacity: 0.8;
+}
+
+.breadcrumb a.active:after,
+.breadcrumb a:hover:after {
+  opacity: 0.8;
+}
+
+.breadcrumb a:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -18px;
+  width: 36px;
+  height: 36px;
+  transform: scale(0.707) rotate(45deg);
+  z-index: 1;
+  background: #666;
+  background: linear-gradient(135deg, #666, #333);
+  box-shadow:
+    2px -2px 0 2px rgba(0, 0, 0, 0.4),
+    3px -3px 0 2px rgba(255, 255, 255, 0.1);
+  border-radius: 0 5px 0 50px;
+}
+
+.breadcrumb a:last-child:after {
+  content: none;
+}
+
+.breadcrumb a:before {
+  border-radius: 100%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  margin: 8px 0;
+  position: absolute;
+  top: 0;
+  left: 30px;
+  background: #444;
+  background: linear-gradient(#444, #222);
+  font-weight: bold;
+}
+
+.flat a,
+.flat a:after {
+  background: inherit;
+  color: black;
+  transition: all 0.5s;
+}
+
+.flat a:before {
+  background: white;
+  box-shadow: 0 0 0 1px #ccc;
+}
+
+/* =============================================================================
+   D3 FLAMEGRAPH STYLES (inlined from d3-flamegraph.css)
+   ============================================================================= */
+
+.d3-flame-graph rect {
+  stroke: #eeeeee;
+  fill-opacity: 0.8;
+}
+
+.d3-flame-graph rect:hover {
+  stroke: #474747;
+  fill-opacity: 1;
+}
+
+.d3-flame-graph-label {
+  pointer-events: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 12px;
+  font-family: Verdana;
+  margin-left: 4px;
+  margin-right: 4px;
+  line-height: 1.5;
+  padding: 0 0 0;
+  font-weight: 400;
+  color: black;
+  text-align: left;
+}
+
+.d3-flame-graph .fade {
+  opacity: 0.6 !important;
+}
+
+.d3-flame-graph .title {
+  font-size: 20px;
+  font-family: Verdana;
+}
+
+.d3-flame-graph-tip {
+  background-color: black;
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px 5px 10px;
+  min-height: 18px;
+  font-family: Verdana;
+  font-size: 12px;
+  color: white;
+  position: absolute;
+  z-index: 1000;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   DARK MODE STYLES
+   ============================================================================= */
+
+body.dark-mode {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+body.dark-mode .window {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode .toolbar-header,
+body.dark-mode .toolbar-footer {
+  background: linear-gradient(to bottom, #2d2d2d, #252525);
+  border-color: #3a3a3a;
+}
+
+body.dark-mode .toolbar-header .title {
+  color: #e0e0e0;
+}
+
+body.dark-mode .btn {
+  background: linear-gradient(to bottom, #404040, #353535);
+  border-color: #505050;
+  color: #e0e0e0;
+}
+
+body.dark-mode .btn:hover {
+  background: linear-gradient(to bottom, #4a4a4a, #404040);
+}
+
+body.dark-mode .btn:active,
+body.dark-mode .btn.active {
+  background: linear-gradient(to bottom, #353535, #404040);
+  border-color: #606060;
+}
+
+body.dark-mode .window-content {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode #sidebar {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .nav-group-item {
+  color: #ccc;
+}
+
+body.dark-mode .nav-group-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .nav-group-item.active {
+  background: #116cd6;
+  color: #fff;
+}
+
+body.dark-mode .nav-group-title {
+  color: #999;
+}
+
+body.dark-mode #legend {
+  background: #2d2d2d;
+  color: #e0e0e0;
+}
+
+body.dark-mode #shades {
+  background: #1a1a1a;
+}
+
+body.dark-mode .Aligner-item {
+  background: #2d2d2d;
+}
+
+body.dark-mode #promptbox {
+  color: #e0e0e0;
+}
+
+body.dark-mode #explanation {
+  color: #ccc;
+}
+
+body.dark-mode path {
+  stroke: rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode #chart path {
+  stroke: rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .breadcrumb {
+  background: #2d2d2d;
+}
+
+body.dark-mode .breadcrumb a {
+  background: #404040;
+  color: #e0e0e0;
+}
+
+body.dark-mode .breadcrumb a:hover {
+  background: #505050;
+}
+
+body.dark-mode #loading {
+  color: #e0e0e0;
+}
+
+body.dark-mode #bottom_status {
+  color: #b0b0b0;
+}
+
+/* Dark mode for flamegraph */
+body.dark-mode .d3-flame-graph rect {
+  stroke: #333;
+}
+
+body.dark-mode .d3-flame-graph-label {
+  color: #ddd;
+}
