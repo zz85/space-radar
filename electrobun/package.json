@@ -7,7 +7,8 @@
   "scripts": {
     "start": "bun run build:dev && electrobun dev",
     "build:dev": "bun install && electrobun build",
-    "build:release": "electrobun build --release"
+    "build:canary": "electrobun build --env=canary",
+    "build:stable": "electrobun build --env=stable"
   },
   "dependencies": {
     "d3": "^3.5.17",

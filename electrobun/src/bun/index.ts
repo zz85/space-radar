@@ -13,6 +13,7 @@ import Electrobun, {
   ContextMenu,
   Utils,
   Screen,
+  Updater,
 } from "electrobun/bun";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -936,3 +937,42 @@ console.log(
 );
 console.log(`[main] Platform: ${process.platform} ${process.arch}`);
 console.log(`[main] App data: ${getAppDataDir()}`);
+
+// ---------------------------------------------------------------------------
+// Auto-updater — check for updates on launch and periodically
+// ---------------------------------------------------------------------------
+
+const UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours
+
+async function checkAndApplyUpdate() {
+  try {
+    const localInfo = await Updater.getLocalInfo();
+    console.log(
+      `[updater] Local version: ${localInfo.version} (${localInfo.channel})`,
+    );
+
+    const updateInfo = await Updater.checkForUpdate();
+    if (!updateInfo.updateAvailable) {
+      console.log("[updater] No update available");
+      return;
+    }
+
+    console.log(`[updater] Update available: ${updateInfo.version}`);
+    await Updater.downloadUpdate();
+
+    const ready = Updater.updateInfo();
+    if (ready?.updateReady) {
+      console.log("[updater] Update downloaded and ready to install");
+      // Don't force-apply — the update will be installed on next launch
+      // or the user can trigger it. For now just log readiness.
+    }
+  } catch (err) {
+    console.warn("[updater] Update check failed:", err);
+  }
+}
+
+// Initial check after a short delay so it doesn't block startup
+setTimeout(checkAndApplyUpdate, 10_000);
+
+// Periodic checks
+setInterval(checkAndApplyUpdate, UPDATE_CHECK_INTERVAL);

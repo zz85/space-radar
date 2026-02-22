@@ -20,4 +20,7 @@ export default {
       "src/mainview/style.css": "views/mainview/style.css",
     },
   },
+  release: {
+    baseUrl: "https://github.com/zz85/space-radar/releases/latest/download",
+  },
 };
