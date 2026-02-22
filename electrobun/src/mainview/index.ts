@@ -1122,6 +1122,8 @@ function SunBurst() {
     let color;
     if (d._isFreeSpace) {
       color = "#e8e8e8";
+    } else if (d._isUnscanned) {
+      color = "#d5d0c8";
     } else {
       color = fill(d);
     }
@@ -1246,7 +1248,7 @@ function SunBurst() {
       }
     } else if (hit.type === "arc") {
       let node = hit.node;
-      if (node._isOtherFiles || node._isFreeSpace) return;
+      if (node._isOtherFiles || node._isFreeSpace || node._isUnscanned) return;
       if (node.depth - currentNode.depth > 1) {
         node = node.parent;
       }
@@ -1632,6 +1634,7 @@ function TreeMap() {
   let rootNode: any;
   let zooming = false;
   let full_repaint = true;
+  let ancestorBarAreaH = 0; // height reserved for ancestor path bars at top
 
   onResize();
 
@@ -1660,8 +1663,20 @@ function TreeMap() {
     const enter = fake_svg.data(nnn);
     enter.forEach(rectDrawNoAnimate);
 
+    // Compute ancestor bar area height so yd maps cells below the bars
+    let ancestorCount = 0;
+    if (currentNode && currentNode !== rootNode && currentNode.parent) {
+      let node = currentNode;
+      while (node && node.parent) {
+        ancestorCount++;
+        node = node.parent;
+      }
+    }
+    const barH = Math.max(textHeight * 2.5, 20);
+    ancestorBarAreaH = ancestorCount * barH;
+
     xd.domain([data.x, data.x + data.dx]);
-    yd.domain([data.y, data.y + data.dy]);
+    yd.domain([data.y, data.y + data.dy]).range([ancestorBarAreaH, height]);
 
     fake_svg.objects.forEach(rectDrawAnimate);
 
@@ -1767,6 +1782,49 @@ function TreeMap() {
     const dpr = window.devicePixelRatio;
     ctx.scale(dpr, dpr);
 
+    // --- Ancestor path bars at the top (like FlameGraph's ancestor bars) ---
+    const ancestorBarH = Math.max(textHeight * 2.5, 20);
+    let ancestorClicked: any = null;
+    let ancestorHovered: any = null;
+
+    if (currentNode && currentNode !== rootNode && currentNode.parent) {
+      const ancestors: any[] = [];
+      let node = currentNode;
+      while (node && node.parent) {
+        ancestors.unshift(node.parent);
+        node = node.parent;
+      }
+
+      for (let i = 0; i < ancestors.length; i++) {
+        const ancestor = ancestors[i];
+        const barY = i * ancestorBarH;
+
+        const isHov = isPointInRect(
+          mousex,
+          mousey,
+          0,
+          barY,
+          width,
+          ancestorBarH,
+        );
+        if (isHov) ancestorHovered = ancestor;
+        if (isHov && mouseclicked) ancestorClicked = ancestor;
+
+        ctx.fillStyle = isHov ? "hsl(210, 15%, 85%)" : "hsl(210, 10%, 92%)";
+        ctx.fillRect(0, barY, width, ancestorBarH - 1);
+
+        ctx.fillStyle = isHov ? "#333" : "#666";
+        ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.fillText(ancestor.name || "", 6, barY + ancestorBarH / 2);
+      }
+
+      // Restore default text settings for treemap cell labels
+      ctx.font = "10px Tahoma";
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+    }
+
     let needSvgUpdate = false;
 
     // Update animation
@@ -1836,7 +1894,8 @@ function TreeMap() {
         inHighlight = p === highlightNode;
       }
 
-      const inRect = isPointInRect(mousex, mousey, x, y, w, h);
+      const inRect =
+        mousey >= ancestorBarAreaH && isPointInRect(mousex, mousey, x, y, w, h);
 
       if (inHighlight) {
         ctx.globalAlpha = 1;
@@ -1870,13 +1929,23 @@ function TreeMap() {
     ctx.restore();
 
     if (BENCH) console.timeEnd("canvas draw");
-    if (hover.length) mouseovered = hover[hover.length - 1];
-    if (mouseovered) {
-      State.highlightPath(keys(mouseovered));
+
+    // Ancestor bars take priority over treemap cells for hover/click
+    if (ancestorHovered) {
+      mouseovered = null;
+      State.highlightPath(keys(ancestorHovered));
+    } else {
+      if (hover.length) mouseovered = hover[hover.length - 1];
+      if (mouseovered) {
+        State.highlightPath(keys(mouseovered));
+      }
     }
+
     mouseclicked = false;
 
-    if (found.length) {
+    if (ancestorClicked) {
+      State.navigateTo(keys(ancestorClicked));
+    } else if (found.length) {
       const d = found[hover.length - 1];
       // Navigate to the node if it has children, otherwise navigate to it
       // anyway if it has a _nodeId (truncated directory — the PluginManager
@@ -2004,9 +2073,8 @@ class FlameGraph extends Chart {
   currentPath: string = "";
   CELL_HEIGHT = 20;
   LEVELS = 30;
-  rootData: any = null;
-  viewRoot: any = null;
-  ancestorStack: Array<{ name: string; value: number }> = [];
+  rootData: any = null; // full tree root (for zooming back out)
+  viewRoot: any = null; // currently displayed root node
 
   constructor() {
     super();
@@ -2077,53 +2145,28 @@ class FlameGraph extends Chart {
     const my = e.clientY - rect.top;
     const hit = this.hitTest(mx, my);
     if (hit && hit.node) {
-      if (hit.node._isFreeSpace || hit.node._isOtherFiles) return;
-
-      // Clicking an ancestor bar — zoom out to that level
-      const ancestorIdx = this.ancestorStack.findIndex(
-        (a) => a.name === hit.node.name && a.value === hit.node.value,
-      );
-      if (ancestorIdx >= 0) {
-        // Pop the stack back to the clicked ancestor
-        this.ancestorStack = this.ancestorStack.slice(0, ancestorIdx);
-        // Navigate up to the clicked ancestor
-        const path = this.ancestorStack.map((a) => a.name);
-        path.push(hit.node.name);
-        State.navigateTo(path);
+      if (
+        hit.node._isFreeSpace ||
+        hit.node._isOtherFiles ||
+        hit.node._isUnscanned
+      )
         return;
-      }
-
-      // Clicking the current view root — zoom out one level
-      if (hit.node === this.viewRoot && this.ancestorStack.length > 0) {
-        this.ancestorStack.pop();
-        this.viewRoot = hit.node._parent || this.rootData;
-        this.draw();
-        return;
-      }
-
-      if (hit.node.children && hit.node.children.length > 0) {
-        // Zoom into this node — push current viewRoot to ancestor stack
-        if (this.viewRoot && hit.node !== this.viewRoot) {
-          // Push all nodes from viewRoot down to hit.node's parent
-          let n = hit.node;
-          const chain: any[] = [];
-          while (n && n._parent && n !== this.viewRoot) {
-            chain.unshift(n._parent);
-            n = n._parent;
-          }
-          for (const ancestor of chain) {
-            this.ancestorStack.push({
-              name: ancestor.name,
-              value: ancestor.value || 0,
-            });
-          }
-        }
+      // If clicking the current view root, zoom back out to parent or full root
+      if (hit.node === this.viewRoot && hit.node._parent) {
+        this.viewRoot = hit.node._parent;
+      } else if (hit.node.children && hit.node.children.length > 0) {
+        // Zoom into this node — it becomes the new view root
         this.viewRoot = hit.node;
       } else if (hit.node._nodeId) {
+        // Truncated directory — trigger lazy load via State.navigateTo
+        // which the PluginManager override will intercept and fetch
         const path = this.getNodePath(hit.node);
         State.navigateTo(path);
         return;
       }
+      const path = this.getNodePath(this.viewRoot);
+      this.currentPath = path.join("/");
+      State.navigateTo(path);
       this.draw();
     }
   }
@@ -2207,26 +2250,29 @@ class FlameGraph extends Chart {
     ctx.clearRect(0, 0, canvasW, canvasH);
     this.flatNodes = [];
 
-    const ancestorCount = this.ancestorStack.length;
+    // Build the ancestor chain from rootData down to viewRoot
+    const ancestors: any[] = [];
+    if (renderRoot !== this.rootData && this.rootData) {
+      let node = renderRoot;
+      while (node && node._parent) {
+        ancestors.unshift(node._parent);
+        node = node._parent;
+      }
+    }
+    const ancestorCount = ancestors.length;
 
     // Draw ancestor stacks at the very bottom (dimmed)
-    for (let i = 0; i < this.ancestorStack.length; i++) {
-      const ancestor = this.ancestorStack[i];
+    for (let i = 0; i < ancestors.length; i++) {
+      const node = ancestors[i];
       const depth = i;
       const y = canvasH - (depth + 1) * cellH;
       if (y < 0) continue;
 
-      // Create a synthetic node for hit testing
-      const syntheticNode = { name: ancestor.name, value: ancestor.value };
-      const isHovered =
-        this.hoveredNode === syntheticNode ||
-        (this.hoveredNode &&
-          this.hoveredNode.name === ancestor.name &&
-          this.hoveredNode.value === ancestor.value);
+      const isHovered = node === this.hoveredNode;
       ctx.fillStyle = isHovered ? "hsl(210, 15%, 65%)" : "hsl(210, 10%, 78%)";
       ctx.fillRect(0, y, canvasW - 1, cellH - 1);
 
-      const label = ancestor.name || "";
+      const label = node.name || "";
       if (canvasW > 40 * dpr) {
         ctx.fillStyle = isHovered ? "#333" : "#666";
         ctx.font = `${11 * dpr}px -apple-system, BlinkMacSystemFont, sans-serif`;
@@ -2237,14 +2283,7 @@ class FlameGraph extends Chart {
         ctx.fillText(label, 3 * dpr, y + cellH - 5 * dpr);
         ctx.restore();
       }
-      this.flatNodes.push({
-        x: 0,
-        y,
-        w: canvasW,
-        h: cellH,
-        node: syntheticNode,
-        label,
-      });
+      this.flatNodes.push({ x: 0, y, w: canvasW, h: cellH, node, label });
     }
 
     // Draw the viewRoot subtree above the ancestors
@@ -2304,6 +2343,7 @@ class FlameGraph extends Chart {
 
   private getColor(node: any, depth: number, hovered: boolean): string {
     if (node._isFreeSpace) return hovered ? "#ccc" : "#eee";
+    if (node._isUnscanned) return hovered ? "#c8c3ba" : "#d5d0c8";
     if (node._isOtherFiles) return hovered ? "#ddd" : "#f0f0f0";
 
     // Warm flame palette: hue 30-50 (orange/yellow), varying by depth
@@ -2318,16 +2358,13 @@ class FlameGraph extends Chart {
     if (target === this.currentPath) return;
     this.currentPath = target;
 
-    // Walk the tree to find the node matching this path,
-    // building the ancestor stack along the way
+    // Walk the tree to find the node matching this path
     let node = this.rootData;
     if (!node) return;
-    this.ancestorStack = [];
     for (let i = 1; i < path.length; i++) {
       if (!node.children) break;
       const child = node.children.find((c: any) => c.name === path[i]);
       if (!child) break;
-      this.ancestorStack.push({ name: node.name, value: node.value || 0 });
       node = child;
     }
     this.viewRoot = node;
@@ -2351,7 +2388,6 @@ class FlameGraph extends Chart {
     this.data = null;
     this.rootData = null;
     this.viewRoot = null;
-    this.ancestorStack = [];
     if (this.ctx) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -2932,6 +2968,7 @@ async function startScan(scanPath: string) {
   console.time("scan_job_time");
   isScanning = true;
   isPaused = false;
+  current_size = 0;
   updateScanButtons();
 
   // Get disk info via RPC
@@ -3129,16 +3166,68 @@ async function resumeScan() {
 }
 
 function onJson(data: any) {
-  // Add free space as a child of root if disk info is available
-  if (currentDiskInfo && currentDiskInfo.available > 0) {
+  // Add disk-context synthetic nodes as children of root if disk info is available.
+  // This gives the user a full-disk picture: scanned + unscanned-used + free.
+  if (currentDiskInfo) {
     if (!data.children) data.children = [];
-    data.children = data.children.filter((c: any) => !c._isFreeSpace);
-    data.children.push({
-      name: "Free Space",
-      size: currentDiskInfo.available,
-      _isFreeSpace: true,
-    });
-    console.log("Added free space:", format(currentDiskInfo.available));
+    data.children = data.children.filter(
+      (c: any) => !c._isFreeSpace && !c._isUnscanned,
+    );
+
+    // Compute scanned size directly from the tree (not current_size, which
+    // tracks the scanner's cumulative progress and may exceed disk.used when
+    // scanning a directory that spans mounts or includes hard-linked data).
+    let scannedSize = 0;
+    function sumTree(node: any): number {
+      if (!node) return 0;
+      if (node._isFreeSpace || node._isUnscanned) return 0;
+      if (node.children && node.children.length > 0) {
+        let s = 0;
+        for (const child of node.children) s += sumTree(child);
+        return s;
+      }
+      return node.size || 0;
+    }
+    scannedSize = sumTree(data);
+
+    // Derive "used" from total - available, not from the reported disk.used.
+    // On APFS, systeminformation/df may report a misleading "used" value that
+    // excludes purgeable space, snapshots, etc.  total - available gives the
+    // true occupied bytes and matches what the status bar displays.
+    const diskUsed = currentDiskInfo.total - currentDiskInfo.available;
+
+    // Unscanned used space = actual disk used - what the tree contains.
+    // Shrinks as the scan progresses; disappears when the tree accounts for
+    // all used space.
+    const unscannedUsed = Math.max(0, diskUsed - scannedSize);
+    console.log(
+      "[onJson] disk total:",
+      format(currentDiskInfo.total),
+      "| disk used (total-free):",
+      format(diskUsed),
+      "| tree size:",
+      format(scannedSize),
+      "| unscanned:",
+      format(unscannedUsed),
+      "| free:",
+      format(currentDiskInfo.available),
+    );
+    if (unscannedUsed > 0) {
+      data.children.push({
+        name: "Unscanned",
+        size: unscannedUsed,
+        _isUnscanned: true,
+      });
+    }
+
+    // Free disk space
+    if (currentDiskInfo.available > 0) {
+      data.children.push({
+        name: "Free Space",
+        size: currentDiskInfo.available,
+        _isFreeSpace: true,
+      });
+    }
   }
 
   // Save data via RPC (replaces fs.writeFileSync + zlib)
@@ -3166,9 +3255,67 @@ function getLoadedDepthBelow(node: any): number {
 }
 
 /**
+ * Fetch a depth-limited subtree from SQLite and graft it into the existing
+ * tree, then regenerate all charts and navigate to the target path.
+ * Unlike fetchAndDisplaySubtree (which replaces the entire tree), this
+ * preserves the full tree structure so ancestor paths, zoom state, and
+ * breadcrumbs are maintained across all views.
+ */
+let _isGrafting = false;
+async function fetchAndGraftSubtree(nodeId: number, path: string[]) {
+  const existingRoot = PluginManager.data;
+  if (!existingRoot) {
+    // No existing tree to graft into — fall back to full replacement
+    fetchAndDisplaySubtree(nodeId);
+    return;
+  }
+
+  lightbox(true);
+  try {
+    const treeJson = await electroview.rpc.request.getSubtree({
+      nodeId,
+      depth: LAZY_LOAD_DEPTH,
+    });
+    if (treeJson) {
+      const subtree = JSON.parse(treeJson);
+
+      // Find the target node in the existing tree and graft the fetched children
+      const target = getNodeFromPath(path, existingRoot);
+      if (target) {
+        target.children = subtree.children;
+        target._children = subtree._children;
+      }
+
+      // Regenerate all charts from the (now deeper) full tree
+      Navigation.clear();
+      PluginManager.clear();
+      PluginManager.generate(existingRoot);
+
+      // Navigate to the target path — each chart zooms to the right node
+      // with full ancestor context preserved.
+      // Use _isGrafting flag to skip the depth check in the navigateTo
+      // override, preventing an infinite loop for directories shallower
+      // than LAZY_LOAD_DEPTH.
+      _isGrafting = true;
+      try {
+        State.navigateTo(path);
+      } finally {
+        _isGrafting = false;
+      }
+      lightbox(false);
+    } else {
+      lightbox(false);
+    }
+  } catch (err) {
+    console.error("[renderer] fetchAndGraftSubtree error:", err);
+    lightbox(false);
+  }
+}
+
+/**
  * Fetch a depth-limited subtree from SQLite and replace the current view.
- * Used for drill-down when the loaded depth below a node is insufficient,
- * or when navigating up past the current view root.
+ * Used when navigating up past the current view root (where grafting is not
+ * possible because the parent tree isn't loaded).
  */
 async function fetchAndDisplaySubtree(nodeId: number) {
   lightbox(true);
@@ -3217,29 +3364,47 @@ async function loadLastAsync(): Promise<any> {
 const originalLoadLast = PluginManager.loadLast.bind(PluginManager);
 PluginManager.loadLast = function () {
   loadLastAsync().then((data) => {
-    if (data) PluginManager.generate(data);
+    if (data) {
+      console.log(
+        "[loadLast] loading saved scan — onJson NOT called, currentDiskInfo:",
+        currentDiskInfo ? "set" : "NULL",
+      );
+      PluginManager.generate(data);
+    }
   });
 };
 
-// Override navigateTo to handle lazy loading of truncated directories.
-// Only fetches when a node has _nodeId but NO loaded children (truncated
-// at the depth boundary). In-tree zooming is handled locally by each chart.
+// Override navigateTo to handle lazy loading of subtrees.
+// Fetches fresh data (grafted into the existing tree) when:
+//   1. The target node is truncated (no children but has _nodeId and nonzero size)
+//   2. The loaded depth below the target is less than LAZY_LOAD_DEPTH
+// Grafting preserves the full tree structure so ancestor paths, zoom state,
+// and breadcrumbs are maintained across all views.
 const _originalPluginNavigateTo = PluginManager.navigateTo.bind(PluginManager);
 PluginManager.navigateTo = function (path: string[]) {
   if (!this.data) return;
   const current = getNodeFromPath(path, this.data);
 
-  if (current && current._nodeId && current !== this.data) {
+  // Skip lazy-loading check when re-entering from fetchAndGraftSubtree
+  // (the data was just fetched — re-checking would loop infinitely for
+  // directories shallower than LAZY_LOAD_DEPTH).
+  if (!_isGrafting && current && current._nodeId && current !== this.data) {
     const hasChildren =
       (current._children && current._children.length > 0) ||
       (current.children && current.children.length > 0);
 
-    // Truncated node (no children at all) — fetch from SQLite
+    // Case 1: Truncated node (no children at all)
     if (
       !hasChildren &&
       (current.sum > 0 || current.value > 0 || current.size > 0)
     ) {
-      fetchAndDisplaySubtree(current._nodeId);
+      fetchAndGraftSubtree(current._nodeId, path);
+      return;
+    }
+
+    // Case 2: Has children but not enough depth loaded for a useful view
+    if (hasChildren && getLoadedDepthBelow(current) < LAZY_LOAD_DEPTH) {
+      fetchAndGraftSubtree(current._nodeId, path);
       return;
     }
   }
@@ -3508,14 +3673,6 @@ wireButton("prompt-load-last", () => {
 function ready() {
   showPrompt();
   showSunburst();
-
-  // Auto-open folder picker on startup
-  try {
-    console.log("[renderer] auto-opening folder picker on startup");
-    scanFolder();
-  } catch (e) {
-    console.error("[renderer] auto-open picker failed", e);
-  }
 }
 
 if (document.readyState === "loading") {

@@ -433,12 +433,11 @@ export class SqliteScanner {
     // have correct sizes from the DB so this loop is skipped entirely.
     const hasMissingSizes = rows.some((r) => r.is_dir && r.size === 0);
     if (hasMissingSizes) {
-      // During a mid-scan refresh, skip the expensive Phase 1 (per-directory
-      // recursive CTEs for edge nodes). Phase 2 bottom-up aggregation from
-      // in-memory children is fast and gives a good approximation.
-      // Phase 1 is only worthwhile after the scan finishes (when called from
-      // scanComplete → getSubtree, computeDirectorySizes has already run so
-      // this branch is skipped anyway).
+      // During a mid-scan refresh, skip the expensive Phase 1 (one recursive
+      // CTE per edge directory) and use the batched variant instead: a single
+      // recursive CTE seeded with all edge directories at once.
+      // After the scan finishes, computeDirectorySizes has already run so
+      // this branch is skipped anyway.
       const skipExpensivePhase1 = this.scanning;
       this.fillMissingSizes(rows, map, maxDepth, skipExpensivePhase1);
     }
@@ -459,8 +458,10 @@ export class SqliteScanner {
    * Phase 1 — edge directories (at maxDepth with size 0): run a recursive
    *   CTE per node to SUM all descendant file sizes. Uses a prepared
    *   statement so Bun's native SQLite binding avoids re-parsing.
-   *   Skipped during mid-scan refresh (too expensive: hundreds of recursive
-   *   CTEs on large tables).
+   *
+   * Phase 1-batched (mid-scan only) — same logic but seeds a single
+   *   recursive CTE with all edge directories at once, carrying each root
+   *   ID through the recursion. Much cheaper than N individual CTEs.
    *
    * Phase 2 — inner directories: simple bottom-up aggregation from their
    *   already-sized children (deepest first).
@@ -490,6 +491,48 @@ export class SqliteScanner {
           const result = descSizeStmt.get(r.id) as { total: number } | null;
           if (result && result.total > 0) {
             map.get(r.id).size = result.total;
+          }
+        }
+      }
+    } else {
+      // Phase 1-batched: during mid-scan, running one recursive CTE *per*
+      // edge directory is too expensive.  Instead we seed a single recursive
+      // CTE with all edge directories at once, carrying each edge dir's id
+      // (root_id) through the recursion so we can GROUP BY it at the end.
+      // One query ↔ one table scan, much cheaper than N separate CTEs.
+      const edgeIds: number[] = [];
+      for (const r of rows) {
+        if (r.is_dir && r.size === 0 && r.rel_depth === maxDepth) {
+          edgeIds.push(r.id);
+        }
+      }
+      if (edgeIds.length > 0) {
+        const BATCH = 500;
+        for (let i = 0; i < edgeIds.length; i += BATCH) {
+          const batch = edgeIds.slice(i, i + BATCH);
+          const placeholders = batch.map(() => "?").join(",");
+          const result = this.db
+            .query(
+              `WITH RECURSIVE desc AS (
+                 SELECT id, size, is_dir, parent_id AS root_id
+                   FROM nodes
+                  WHERE parent_id IN (${placeholders})
+                 UNION ALL
+                 SELECT n.id, n.size, n.is_dir, d.root_id
+                   FROM nodes n
+                   JOIN desc d ON n.parent_id = d.id
+               )
+               SELECT root_id,
+                      COALESCE(SUM(CASE WHEN is_dir = 0 THEN size ELSE 0 END), 0) AS total
+                 FROM desc
+                GROUP BY root_id`,
+            )
+            .all(...batch) as Array<{ root_id: number; total: number }>;
+          for (const row of result) {
+            if (row.total > 0) {
+              const node = map.get(row.root_id);
+              if (node) node.size = row.total;
+            }
           }
         }
       }
