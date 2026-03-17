@@ -467,6 +467,9 @@ function fsipc(filename) {
 function ready() {
   // start here
   showPrompt();
+  if (navigator.platform.includes("Mac")) {
+    toggleUnit()
+  }
   try {
     console.log("[renderer] auto-opening folder picker on startup");
     scanFolder();
@@ -699,6 +702,12 @@ function deactivateCharts() {
   [sunburstGraph, treemapGraph, flamegraphGraph].forEach((chart) =>
     PluginManager.deactivate(chart),
   );
+}
+
+function toggleUnit() {
+  PluginManager.unitIsSI = !PluginManager.unitIsSI;
+  unit_button.textContent = PluginManager.unitIsSI ? "KB" : "KiB"
+  PluginManager.loadLast()
 }
 
 function showSunburst() {

@@ -6,17 +6,17 @@ function format(bytes) {
     return "0 B";
   }
 
-  let kb = bytes / 1024;
-  let mb = bytes / 1024 / 1024;
-  let gb = bytes / 1024 / 1024 / 1024;
-  let tb = bytes / 1024 / 1024 / 1024 / 1024;
+  let unitIsSI = global.PluginManager.unitIsSI
+  let k = unitIsSI ? 1000 : 1024;
 
-  var units = {
-    KB: kb,
-    MB: mb,
-    GB: gb,
-    TB: tb
-  };
+  let kb = bytes / k;
+  let mb = bytes / k / k;
+  let gb = bytes / k / k / k;
+  let tb = bytes / k / k / k / k;
+
+  var units = unitIsSI
+    ? { KB: kb, MB: mb, GB: gb, TB: tb }
+    : { KiB: kb, MiB: mb, GiB: gb, TiB: tb };
 
   var last_unit = "B";
   var last_value = bytes;
