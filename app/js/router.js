@@ -100,6 +100,7 @@ class SpacePluginManager {
   constructor() {
     const activatedGraphs = new Set();
     this.activatedGraphs = activatedGraphs;
+    this.unitIsSI = false;
   }
 
   resize() {
